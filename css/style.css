@@ -1,0 +1,10 @@
+.bg-login-image {
+    background: url("http://aavo.free.fr/graph/logoaavo.jpg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.bg-login {
+    backgound-color: #4e73df;
+}

@@ -1,0 +1,28 @@
+extends layout.pug
+
+block scripts
+  script(src="js/login.js")
+
+block content
+  .container.text-center.bg-primary
+    .row
+      .card.border-0.shadow-lg.my-5
+        .card-body.p-0
+          .row
+            .col-lg-6.d-none.d-lg-block.mb-4.mt-1.bg-login-image
+            .col-lg-6
+              .p-5
+                .text-center
+                  h1 CFE AAVO Authentification
+                form(method="POST")
+                  .mb-3
+                    label.form-label(for="login") N° national ou courriel
+                    input.form-control(type="text" name="login")#login
+                    .form-text C'est votre identifiant GIVAV
+                  .mb-3
+                    label.form-label(for="pass") Mot de passe
+                    input.form-control(type="password" name="pass")#pass
+                    .form-text Votre mot de passe GIVAV
+                  if $error
+                    .alert.alert-danger(role="alert")= $error
+                  button.btn.btn-primary(type="submit") Connexion
