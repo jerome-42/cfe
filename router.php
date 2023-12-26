@@ -23,10 +23,42 @@ function any($route, $fct) {
     route($route, $fct);
 }
 
+function doRoute($fct) {
+    // connexion mysql
+    try {
+        // TODO mettre les credentials dans un fichier de config
+        $servername = 'localhost';
+        $username = 'cfe';
+        $password = 'cfe';
+        $conn = new PDO("mysql:host=$servername;dbname=remorques", $username, $password);
+        $conn->beginTransaction();
+    }
+    catch (Exception $e) {
+        http_response_code(500);
+        $vars = [ 'message' => 'Impossible de se connecter à la base de données' ];
+        return Phug::displayFile('view/error.pug', $vars);
+    }
+    try {
+        $fct($conn);
+        $conn->commit();
+    }
+    catch (Exception $e) {
+        $conn->rollBack();
+        http_response_code(500);
+        $stack = [];
+        $rawBacktrace = debug_backtrace();
+        for ($i = 1; $i < count($rawBacktrace); $i++) {
+            $stack[] = 'in '.$rawBacktrace[$i]['function'].' on '.$rawBacktrace[$i]['file'].' at line '.$rawBacktrace[$i]['line'];
+        }
+        $vars = [ 'message' => "Exception ".$e->getMessage(), 'stack' => implode("\n", $stack) ];
+        return Phug::displayFile('view/error.pug', $vars);
+    }
+}
+
 function route($route, $fct) {
   $ROOT = $_SERVER['DOCUMENT_ROOT'];
   if ($route == "/404") {
-      $fct();
+      doRoute($fct);
       exit();
   }
   $request_url = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
@@ -37,7 +69,7 @@ function route($route, $fct) {
   array_shift($route_parts);
   array_shift($request_url_parts);
   if ($route_parts[0] == '' && count($request_url_parts) == 0){
-      $fct();
+      doRoute($fct);
       exit();
   }
   if (count($route_parts) != count($request_url_parts)){ return; }
@@ -53,7 +85,7 @@ function route($route, $fct) {
         return;
     }
   }
-  $fct();
+  doRoute($fct);
   return;
 }
 

@@ -21,11 +21,18 @@ get('/Abandon', function() {
 //	Phug::displayFile('view/NewRec.pug');
 //});
 
-get('/NewRec', function() {
+get('/NewRec', function($conn) {
     if (!isset($_SESSION['auth'])) {
         redirect('/login');
     }
     Phug::displayFile('view/NewRec.pug', $_SESSION);
+});
+
+get('/test', function($conn) {
+    $query = 'SELECT * FROM remorque ORDER BY immatriculation LIMIT 1';
+    $sth = $conn->query($query);
+    $lines = $sth->fetchAll();
+    var_dump($lines);
 });
 
 get('/', function() {
