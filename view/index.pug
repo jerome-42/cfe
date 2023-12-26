@@ -6,5 +6,21 @@ block scripts
 block content
   .container
     .row
-      p Hello
-      button.btn.btn-secondary#logout Déconnexion
+      $msg="Bonjour " . $login
+      h1
+        p= $msg
+    .row
+      $msg1="Heures de CFE à faire : "
+      p= $msg1
+      $msg2="Heures de CFE soumises : "
+      p= $msg2
+      $msg3="Heures de CFE validées : "
+      p= $msg3
+      $msg4="Heures de CFE restant à faire : "
+      p= $msg4
+
+    .hstack.gap-4.mb-3
+      button.btn.btn-warning#liste validations
+      button.btn.btn-info(type='button') Télécharger
+      button.btn.btn-success#NewRec Nouvel Enregistrement
+      button.btn.btn-danger#logout Déconnexion

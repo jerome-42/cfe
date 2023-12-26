@@ -3,13 +3,36 @@
 // from https://github.com/phprouter/main
 
 include_once __DIR__ . '/router.php';
+include_once __DIR__ . '/givav.php';
 include_once __DIR__ . '/vendor/autoload.php';
+
+get('/Abandon', function() {
+    if (!isset($_SESSION['auth'])) {
+        redirect('/login');
+    }
+    Phug::displayFile('view/index.pug', $_SESSION);
+});
+
+//post('/Abandon', function() {
+//    Phug::displayFile('view/index.pug');
+//});
+
+//post("/NewRec", function() {
+//	Phug::displayFile('view/NewRec.pug');
+//});
+
+get('/NewRec', function() {
+    if (!isset($_SESSION['auth'])) {
+        redirect('/login');
+    }
+    Phug::displayFile('view/NewRec.pug', $_SESSION);
+});
 
 get('/', function() {
     if (!isset($_SESSION['auth'])) {
         redirect('/login');
     }
-    Phug::displayFile('view/index.pug');
+    Phug::displayFile('view/index.pug', $_SESSION);
 });
 
 get('/login', function() {
@@ -26,9 +49,22 @@ post('/login', function() {
         $vars['error'] = "Veuillez saisir votre mot de passe";
         return Phug::displayFile('view/login.pug', $vars);
     }
-    if ($_POST['login'] === 'toto' && $_POST['pass'] === 'toto') {
+    if ($_POST['login'] === 'admin' && $_POST['pass'] === 'admin') {
+        $_SESSION['login'] = $_POST['login'];
+        $_SESSION['isAdmin'] = true;
         $_SESSION['auth'] = true;
-        redirect('/');
+        return redirect('/validator');
+    }
+    try {
+        Givav::auth($_POST['login'], $_POST['pass']);
+        $_SESSION['login'] = $_POST['login'];
+        $_SESSION['isAdmin'] = false;
+        $_SESSION['auth'] = true;
+        return redirect('/');
+    }
+    catch (Exception $e) {
+        $vars['error'] = $e->getMessage();
+        return Phug::displayFile('view/login.pug', $vars);
     }
     $vars['error'] = "Pilote inconnu du GIVAV";
     Phug::displayFile('view/login.pug', $vars);

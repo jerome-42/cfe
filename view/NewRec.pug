@@ -1,0 +1,93 @@
+extends layout.pug
+
+block scripts
+  title Enregistrement CFE-AAVVO
+  script(src="js/NewRec.js")
+
+block content
+  .text-bg-light.p-3
+    .container
+      h1 Nouvel enregistrement CFE-AAVO
+      script(src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js' integrity='sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL' crossorigin='anonymous')
+      .mb-3
+        svg(width='100' height='100' viewbox='0 0 788 728')
+          path(d='m8.79 3.32c8.89-1.95 17.52 3.53 21.98 10.99 64.78 85.3 129.73 170.51 197.2 253.72 39.27 46.79 79.56 92.76 118.47 139.82 57.44 13.48 116.58 7.7 174.91 5.44 41.34-0.69 82.72-1.51 124-3.65 20.21-29.47 41.48-58.31 60.61-88.46-12.79-16.5-25.28-33.28-36.87-50.64 6.71-0.32 15.19-5.05 20.64 0.78 14.22 12.07 28.68 23.85 42.73 36.12 6.24 7.89 17.01 2.48 25.28 3.7 0.76 6.32-2.52 12.22-2.44 18.44 8.76 10.7 19.09 19.96 28.67 29.9-11.03 3.3-21.96 1.8-30.09-6.65-6.97 17.53-7.77 37.4-13.61 55.46-16.59 5.75-34.85 7.53-50.16 16.54-3.09-0.89-5.7-3.27-8.96-3.41-81.55 4.79-163.07 10.68-244.3 19.41-15.22 3.81-31.4 4.48-46.1 9.89 112.97 92.88 230.12 181.25 355.26 257.21 4.27 4.02 17.61 8.06 12.63 15.78-12.63-1.43-25.32-5.85-36.6-11.76-70.89-39.55-141.82-79.31-209.03-124.96-56.87-36.51-109.46-79.09-163.8-119.15-2.42-1.53-4.92-4.14-8.09-3.65-67.37 11.05-137.08 20.76-204.66 6.38-6.59-1.88-23.52-5.6-14.64-14.72 48.94-29.29 105.08-46.53 161.91-50.91-55.85-70-112.13-141.23-163.56-215.11-41.32-52.86-71.04-113.45-110.06-167.9-3.43-4.26-10.93-16.7-1.32-18.61z')
+        svg(width='50' height='50' viewbox='0 0 788 728')
+          path(d='m8.79 3.32c8.89-1.95 17.52 3.53 21.98 10.99 64.78 85.3 129.73 170.51 197.2 253.72 39.27 46.79 79.56 92.76 118.47 139.82 57.44 13.48 116.58 7.7 174.91 5.44 41.34-0.69 82.72-1.51 124-3.65 20.21-29.47 41.48-58.31 60.61-88.46-12.79-16.5-25.28-33.28-36.87-50.64 6.71-0.32 15.19-5.05 20.64 0.78 14.22 12.07 28.68 23.85 42.73 36.12 6.24 7.89 17.01 2.48 25.28 3.7 0.76 6.32-2.52 12.22-2.44 18.44 8.76 10.7 19.09 19.96 28.67 29.9-11.03 3.3-21.96 1.8-30.09-6.65-6.97 17.53-7.77 37.4-13.61 55.46-16.59 5.75-34.85 7.53-50.16 16.54-3.09-0.89-5.7-3.27-8.96-3.41-81.55 4.79-163.07 10.68-244.3 19.41-15.22 3.81-31.4 4.48-46.1 9.89 112.97 92.88 230.12 181.25 355.26 257.21 4.27 4.02 17.61 8.06 12.63 15.78-12.63-1.43-25.32-5.85-36.6-11.76-70.89-39.55-141.82-79.31-209.03-124.96-56.87-36.51-109.46-79.09-163.8-119.15-2.42-1.53-4.92-4.14-8.09-3.65-67.37 11.05-137.08 20.76-204.66 6.38-6.59-1.88-23.52-5.6-14.64-14.72 48.94-29.29 105.08-46.53 161.91-50.91-55.85-70-112.13-141.23-163.56-215.11-41.32-52.86-71.04-113.45-110.06-167.9-3.43-4.26-10.93-16.7-1.32-18.61z')
+        svg(width='25' height='25' viewbox='0 0 788 728')
+          path(d='m8.79 3.32c8.89-1.95 17.52 3.53 21.98 10.99 64.78 85.3 129.73 170.51 197.2 253.72 39.27 46.79 79.56 92.76 118.47 139.82 57.44 13.48 116.58 7.7 174.91 5.44 41.34-0.69 82.72-1.51 124-3.65 20.21-29.47 41.48-58.31 60.61-88.46-12.79-16.5-25.28-33.28-36.87-50.64 6.71-0.32 15.19-5.05 20.64 0.78 14.22 12.07 28.68 23.85 42.73 36.12 6.24 7.89 17.01 2.48 25.28 3.7 0.76 6.32-2.52 12.22-2.44 18.44 8.76 10.7 19.09 19.96 28.67 29.9-11.03 3.3-21.96 1.8-30.09-6.65-6.97 17.53-7.77 37.4-13.61 55.46-16.59 5.75-34.85 7.53-50.16 16.54-3.09-0.89-5.7-3.27-8.96-3.41-81.55 4.79-163.07 10.68-244.3 19.41-15.22 3.81-31.4 4.48-46.1 9.89 112.97 92.88 230.12 181.25 355.26 257.21 4.27 4.02 17.61 8.06 12.63 15.78-12.63-1.43-25.32-5.85-36.6-11.76-70.89-39.55-141.82-79.31-209.03-124.96-56.87-36.51-109.46-79.09-163.8-119.15-2.42-1.53-4.92-4.14-8.09-3.65-67.37 11.05-137.08 20.76-204.66 6.38-6.59-1.88-23.52-5.6-14.64-14.72 48.94-29.29 105.08-46.53 161.91-50.91-55.85-70-112.13-141.23-163.56-215.11-41.32-52.86-71.04-113.45-110.06-167.9-3.43-4.26-10.93-16.7-1.32-18.61z')
+      .hstack.row.g-3.align-items-center.mb-3
+        label
+          h3 Identit&eacute;
+        .col-auto
+          label.col-form-label(for='inputFirstName')
+          input#inputFirstName.form-control(type='FirstName' placeholder='Prénom' aria-describedby='t12345678901234567890')
+          span#t123456789012345678901234567890.form-text
+        .col-auto
+          label.col-form-label(for='inputLastName')
+          input#inputLastName.form-control(type='LastName' placeholder='Nom' aria-describedby='t12345678901234567890')
+          span#t123456789012345678901234567890.form-text(style='color:blue')
+        .col-auto
+          label.col-form-label(for='inputNationalNumber')
+          input#inputNationalNumber.form-control(type='NationalNumber' placeholder='Numéro national' aria-describedby='n123')
+          span#n123.form-text(width='10')
+        .col-auto
+          label.col-form-label(for='inputEmail')
+          input#inputEmail.form-control(type='Email' placeholder='Email' aria-describedby='t12345678901234567890')
+      // ***** Date : Remplir la date de réalisation des heures de CFE. *****
+      .row.g-3.align-items-center.mb-3
+        label(for='dateCFE')
+          h4 Date de r&eacute;alisation des heures de CFE:
+        form.form-control(action='/action_page.php' class='width=200px')
+          .col-auto
+            input#dateCFE(type='date' name='dateCFE')
+      .hstack.gap-5.mb-3
+        div
+          label.form-label(for='TypeTravaux')
+            h4 Type de travaux r&eacute;alis&eacute;s
+          input#exampleDataList.form-control(list='TypeTravauxOptions' placeholder='Choisir...' mb-3='')
+          datalist#TypeTravauxOptions
+            option(value='Atelier planeur')
+            option(value='Atelier ULM')
+            option(value='Entretien bâtiments intérieur')
+            option(value='Entretien bâtiments extérieur')
+            option(value='Espaces verts')
+            option(value='Autre')
+        div
+          label.form-label(for='Beneficiaire' align-items-center='')
+            h4 B&eacute;n&eacute;ficiaire
+          input#exampleDataList.form-control(list='BeneficiaireOptions' placeholder='Choisir...')
+          datalist#BeneficiaireOptions
+            option(value='AAVO')
+            option(value='Section ANEG')
+            option(value='Section Cormeilles')
+            option(value='Privé')
+            option(value='Autre')
+      // ***** Durée *****
+      .row.g-3.align-items-center.mb-3
+        label
+          h4 Dur&eacute;e des travaux
+        .col-auto.mb-3
+          label.col-form-label(for='inputDurationHours')
+        .col-auto.mb-3
+          input#inputDurationHours.form-control(type='DurationHours' placeholder='Durée : heures' aria-describedby='t12345678901234567890')
+        .col-auto.mb-3
+          span#t123456789012345678901234567890.form-text
+        .col-auto.mb-3
+          label.col-form-label(for='inputDurationMinutes')
+        .col-auto(mb-3='')
+          input#inputDurationMinutes.form-control(type='DurationMinutes' placeholder='Durée : minutes' aria-describedby='t12345678901234567890')
+        .col-auto.mb-3
+          span#t123456789012345678901234567890.form-text
+      .row.g-3.align-items-center.mb-3
+        label.form-label(for='Commentaires')
+          h4 Commentaires
+        // <input type="Commentaires" class="form-control" id="Commentaires" placeholder="Commentaires">
+        textarea#Commentaires(name='Commentaires' rows='2' cols='50')
+          | Commentaire
+          | Max 512 caract&egrave;res
+      .hstack.gap-4.mb-3
+        button.btn.btn-success#Enregistrer Enregistrer
+        button.btn.btn-secondary#RAZ RAZ
+        button.btn.btn-danger#Abandon Abandonner
+
