@@ -23,14 +23,14 @@ function any($route, $fct) {
     route($route, $fct);
 }
 
-function doRoute($fct) {
+function doRoute($fct,) {
     // connexion mysql
     try {
         // TODO mettre les credentials dans un fichier de config
         $servername = 'localhost';
         $username = 'cfe';
         $password = 'cfe';
-        $conn = new PDO("mysql:host=$servername;dbname=remorques", $username, $password);
+        $conn = new PDO("mysql:host=$servername;dbname=cfe", $username, $password);
         $conn->beginTransaction();
     }
     catch (Exception $e) {

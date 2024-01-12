@@ -6,18 +6,14 @@ block scripts
 block content
   .container
     .row
-      $msg="Bonjour " . $login
+      $msg="Bonjour " . $name . " (".$givavNumber.")"
       h1
         p= $msg
     .row
-      $msg1="Heures de CFE à faire : "
-      p= $msg1
-      $msg2="Heures de CFE soumises : "
-      p= $msg2
-      $msg3="Heures de CFE validées : "
-      p= $msg3
-      $msg4="Heures de CFE restant à faire : "
-      p= $msg4
+      p= "Heures de CFE à faire : "
+      p= "Heures de CFE soumises : " . $submited
+      p= "Heures de CFE validées : " . $validated
+      p= "Heures de CFE restant à faire : "
 
     .hstack.gap-4.mb-3
       button.btn.btn-warning#liste validations
