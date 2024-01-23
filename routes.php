@@ -14,6 +14,16 @@ get('/Abandon', function() {
     Phug::displayFile('view/index.pug', $_SESSION);
 });
 
+get('/doRecord', function() {
+    if (!isset($_SESSION['auth'])) {
+        redirect('/login');
+    }
+     $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
+     $sth = $conn->query($query);
+     var_dump($sth);
+     Phug::displayFile('view/index.pug', $_SESSION);
+});
+
 get('/NewRec', function($conn) {
     if (!isset($_SESSION['auth'])) {
         redirect('/login');
@@ -21,8 +31,20 @@ get('/NewRec', function($conn) {
     Phug::displayFile('view/NewRec.pug', $_SESSION);
 });
 
+post('/NewRec', function($conn) {
+    if (!isset($_SESSION['auth'])) {
+        redirect('/login');
+    }
+    echo '<pre>';
+    var_dump($_POST);
+    $query = 'SELECT 1';
+    $sth = $conn->prepare($query);
+    $sth->execute([  ]);
+    echo json_encode([ 'result' => true ]);
+});
+
 get('/test', function($conn) {
-    $query = 'SELECT name FROM personnes  WHERE first_name = "Gilles" ; //"$conn"';  //ORDER BY name LIMIT 1';
+    $query = 'SELECT email FROM personnes  WHERE NumNational = "695" ; //"$conn"';  //ORDER BY name LIMIT 1';
     $sth = $conn->query($query);
     $lines = $sth->fetchAll();
     echo '<pre>';

@@ -10,10 +10,11 @@ block content
       h1
         p= $msg
     .row
-      p= "Heures de CFE à faire : "
+      p= "Heures de CFE à faire : " . $thecfetodo
       p= "Heures de CFE soumises : " . $submited
       p= "Heures de CFE validées : " . $validated
-      p= "Heures de CFE restant à faire : "
+      $reste = $thecfetodo - $validated
+      p= "Heures de CFE restant à faire : " . $reste
 
     .hstack.gap-4.mb-3
       button.btn.btn-warning#liste validations
