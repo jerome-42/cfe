@@ -45,13 +45,16 @@ post('/declaration', function($conn) {
     $sth->execute([  ]);
     echo json_encode([ 'result' => true ]);
          $temp_time = time();
-//     var_dump($temp_time);
-     $sth = $conn->query($query);
+         //$theDate = date_create()
+	 $theDate = date_create_from_format("Y-m-d", NULL);
+         var_dump($temp_time);
+	 var_dump($theDate);
+     //$sth = $conn->query($query);
 //     var_dump($sth);
      var_dump($_SESSION);
      $temp ='INSERT into cfe_records values ("';
      //var_dump($temp);
-     $temp = $temp . $temp_time . '", "NULL", "' .  $_SESSION['name'] . '", "';
+     $temp = $temp . "2024-01-25" . '", "NULL", "' .  $_SESSION['name'] . '", "';
      $temp = $temp . $_SESSION['givavNumber'] .'", "';
      $temp = $temp . $_SESSION['mail'] .'", "' ;
      $temp = $temp . $_POST['type'] .'", "' ;

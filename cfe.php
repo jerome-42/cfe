@@ -29,7 +29,7 @@ class CFE {
     public function getStats() {
         return [ 'submited' => $this->getLines('Soumis'),
                  'validated' => $this->getLines('Validé'),
-		 'rejected' => $this->getLines('Rejeté'),
+                 'rejected' => $this->getLines('Rejeté'),
                  'thecfetodo' => $this->getTask('cfetodo')	];
     }
 }

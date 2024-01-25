@@ -1,5 +1,7 @@
 <?php
 
+include_once __DIR__ . '/vendor/autoload.php';
+
 ini_set('session.cookie_lifetime', 86400 * 365);
 ini_set('session.gc_maxlifetime', 86400 * 365);
 session_start();

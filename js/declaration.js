@@ -1,7 +1,10 @@
+
+
 $(document).ready(function() {
     $('#dateCFE').focus();
-    $("#Abandon").click(function() {
+    $("#abandon").click(function(event) {
 	history.back();
+	return event.preventDefault();
     });
     $('#doRecord').click(function() {
 	$('#newRec').submit();

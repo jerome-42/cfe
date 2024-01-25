@@ -5,19 +5,38 @@ block scripts
 
 block content
   .container
+    .row.mt-2
+      .alert.alert-primary Bonjour #{$name}
+        small.text-muted &nbsp; (numéro GIVAV : #{$givavNumber})
     .row
-      $msg="Bonjour " . $name . " (".$givavNumber.")"
-      h1
-        p= $msg
-    .row
-      p= "Heures de CFE à faire : " . $thecfetodo
-      p= "Heures de CFE soumises : " . $submited
-      p= "Heures de CFE validées : " . $validated
+      if $validated > 0
+        .alert.alert-success Vous avez réalisé #{round($validated, 2)} heures de CFE
+          small.text-muted &nbsp;(depuis le 1er janvier)
+      if $submited > 0
+        .alert.alert-info Il y a #{round($submited, 2)} heures en attente de validation
+          small.text-muted &nbsp;(les heures sont généralement validées tous les 2 ou 3 jours)
       $reste = $thecfetodo - $validated
-      p= "Heures de CFE restant à faire : " . $reste
+      if $reste > 0
+        .alert.alert-warning Il vous reste #{round($reste, 2)} heures à faire
+          small.text-muted &nbsp;(d'ici au 31 décembre)
+      else
+        .alert.alert-success Vous n'êtes plus redevable d'heure de CFE
+      if $thecfetodo > 0
+        p Sur cette année vous êtes redevable de
+          b &nbsp;#{$thecfetodo}&nbsp;
+          | heures de CFE.
+          small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année), si vous êtes pilote-propriétaire vous avez un quota de CNB à réaliser.
 
-    .hstack.gap-4.mb-3
-      button.btn.btn-warning#liste validations
-      button.btn.btn-info(type='button') Télécharger
-      button.btn.btn-success#declaration Déclarer
-      button.btn.btn-danger#logout Déconnexion
+    .row.d-block.d-sm-none.justify-content-md-center
+      .btn-group-vertical(role="group")
+        //button.btn.btn-warning#liste validations
+        button.btn.btn-success.declaration Déclarer
+        button.btn.btn-info.download Télécharger
+        button.btn.btn-danger.logout Déconnexion
+
+    .row.d-none.d-sm-block.justify-content-md-center
+      .btn-group(role="group")
+        //button.btn.btn-warning#liste validations
+        button.btn.btn-success.declaration Déclarer
+        button.btn.btn-info.download Télécharger
+        button.btn.btn-danger.logout Déconnexion
