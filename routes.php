@@ -9,14 +9,14 @@ include_once __DIR__ . '/vendor/autoload.php';
 
 get('/Abandon', function() {
     if (!isset($_SESSION['auth'])) {
-        redirect('/login');
+        redirect('/connexion');
     }
     Phug::displayFile('view/index.pug', $_SESSION);
 });
 
 post('/doRecord', function() {
     if (!isset($_SESSION['auth'])) {
-        redirect('/login');
+        redirect('/connexion');
     }
      $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
      $temp ='INSERT into cfe_records values ("';
@@ -27,16 +27,16 @@ post('/doRecord', function() {
      Phug::displayFile('view/index.pug', $_SESSION);
 });
 
-get('/NewRec', function($conn) {
+get('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        redirect('/login');
+        redirect('/connexion');
     }
-    Phug::displayFile('view/NewRec.pug', $_SESSION);
+    Phug::displayFile('view/declaration.pug', $_SESSION);
 });
 
-post('/NewRec', function($conn) {
+post('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        redirect('/login');
+        redirect('/connexion');
     }
     echo '<pre>';
     var_dump($_POST);
@@ -105,26 +105,26 @@ get('/Voeux2024', function($conn) {
 
 get('/', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        redirect('/login');
+        redirect('/connexion');
     }
     $cfe = new CFE($conn, $_SESSION['givavNumber']);
     $vars = array_merge($_SESSION, $cfe->getStats());
     Phug::displayFile('view/index.pug', $vars);
 });
 
-get('/login', function() {
-    Phug::displayFile('view/login.pug');
+get('/connexion', function() {
+    Phug::displayFile('view/connexion.pug');
 });
 
-post('/login', function($conn) {
+post('/connexion', function($conn) {
     $vars = [];
     if (!isset($_POST['login']) || $_POST['login'] === '') {
         $vars['error'] = "Veuillez saisir votre n°nationnal ou courriel";
-	return Phug::displayFile('view/login.pug', $vars);
+	return Phug::displayFile('view/connexion.pug', $vars);
     }
     if (!isset($_POST['pass']) || $_POST['pass'] === '') {
         $vars['error'] = "Veuillez saisir votre mot de passe";
-        return Phug::displayFile('view/login.pug', $vars);
+        return Phug::displayFile('view/connexion.pug', $vars);
     }
     if ($_POST['login'] === 'admin' && $_POST['pass'] === 'admin') {
         $_SESSION['login'] = $_POST['login'];
@@ -145,10 +145,10 @@ post('/login', function($conn) {
     }
     catch (Exception $e) {
         $vars['error'] = $e->getMessage();
-        return Phug::displayFile('view/login.pug', $vars);
+        return Phug::displayFile('view/connexion.pug', $vars);
     }
     $vars['error'] = "Pilote inconnu du GIVAV";
-    Phug::displayFile('view/login.pug', $vars);
+    Phug::displayFile('view/connexion.pug', $vars);
 });
 
 get('/logout', function() {
