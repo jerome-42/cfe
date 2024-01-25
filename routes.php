@@ -14,13 +14,16 @@ get('/Abandon', function() {
     Phug::displayFile('view/index.pug', $_SESSION);
 });
 
-get('/doRecord', function() {
+post('/doRecord', function() {
     if (!isset($_SESSION['auth'])) {
         redirect('/login');
     }
      $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
+     $temp ='INSERT into cfe_records values ("';
+     $temp_time = time();
+     var_dump($temp_time);
      $sth = $conn->query($query);
-     var_dump($sth);
+     //var_dump($sth);
      Phug::displayFile('view/index.pug', $_SESSION);
 });
 
@@ -41,6 +44,25 @@ post('/NewRec', function($conn) {
     $sth = $conn->prepare($query);
     $sth->execute([  ]);
     echo json_encode([ 'result' => true ]);
+         $temp_time = time();
+//     var_dump($temp_time);
+     $sth = $conn->query($query);
+//     var_dump($sth);
+     var_dump($_SESSION);
+     $temp ='INSERT into cfe_records values ("';
+     //var_dump($temp);
+     $temp = $temp . $temp_time . '", "NULL", "' .  $_SESSION['name'] . '", "';
+     $temp = $temp . $_SESSION['givavNumber'] .'", "';
+     $temp = $temp . $_SESSION['mail'] .'", "' ;
+     $temp = $temp . $_POST['type'] .'", "' ;
+     $temp = $temp . $_POST['duree'] .'", "' . $_POST['commentaires'] .'", "' ;;
+     $temp = $temp . $_POST['beneficiaire'] . '", "' ;
+     $temp = $temp . $_POST['dateCFE'] . '", "Soumis",  " ")';
+     var_dump($temp);
+     //$temp = $_POST['beneficiaire'];
+     //var_dump($temp);
+     $query=$temp;
+     $sth = $conn->query($query);
 });
 
 get('/test', function($conn) {

@@ -1,11 +1,12 @@
 $(document).ready(function() {
+    $('#dateCFE').focus();
     $("#Abandon").click(function() {
 	history.back();
     });
     $('#doRecord').click(function() {
 	$('#newRec').submit();
     });
-    $('#newRec').on('submit', function(event) {
+    $('newRec').on('submit', function(event) {
 	// on vérifie ici les entrées
 	$('.invalid-feedback').remove();
 

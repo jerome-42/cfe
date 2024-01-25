@@ -1,5 +1,7 @@
 <?php
 
+ini_set('session.cookie_lifetime', 86400 * 365);
+ini_set('session.gc_maxlifetime', 86400 * 365);
 session_start();
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
