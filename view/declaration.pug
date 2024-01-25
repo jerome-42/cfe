@@ -17,10 +17,12 @@ block content
       .hstack.row.g-3.align-items-center.mb-3
         label
           h3= "Vous déclarez en tant que " . $name . " (" .  $givavNumber.")"
-      form(method="POST")#newRec
+      form(method="POST")
         .mb-3
           label.form-label(for='dateCFE') Date de r&eacute;alisation des heures de CFE:
-          input.form-control#dateCFE(type='date' name='dateCFE')
+          - $minDate=date('Y')."-01-01"
+          - $maxDate=date('Y')."-12-31"
+          input.form-control#dateCFE(type='date' name='dateCFE' min=$minDate max=$maxDate)
         .mb-3
           label.form-label(for='type') Type de travaux réalisés
           select.form-select#type(name="type" placeholder='Choisir...')
