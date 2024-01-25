@@ -25,4 +25,6 @@ block content
                     .form-text Votre mot de passe GIVAV
                   if $error
                     .alert.alert-danger(role="alert")= $error
-                  button.btn.btn-primary(type="submit") Connexion
+                  button.btn.btn-primary(type="submit")#submit Connexion
+                  .spinner-border.text-primary.visually-hidden(role="status")#spinner
+                    span.visually-hidden Connexion en cours
