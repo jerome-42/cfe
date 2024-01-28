@@ -19,10 +19,3 @@ function renderHTML($file) {
     $content = file_get_contents($file);
     echo $content;
 }
-
-function registerPerson($conn, $user) {
-    $query = "INSERT IGNORE INTO personnes (name, Email, NumNational) VALUES (:name, :email, :numNational)";
-    $sth = $conn->prepare($query);
-    $sth->execute([ ':name' => $user['name'], ':email' => $user['mail'], ':numNational' => $user['number'] ]);
-    $conn->commit();
-}

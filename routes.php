@@ -5,6 +5,7 @@
 include_once __DIR__ . '/router.php';
 include_once __DIR__ . '/cfe.php';
 include_once __DIR__ . '/givav.php';
+include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
 
 get('/Abandon', function() {
@@ -61,7 +62,7 @@ post('/declaration', function($conn) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
     }
-    // TODO on vérifie que duree est > 0 et <= 10
+    // vérification duree est > 0 et <= 10
     if (!is_numeric($_POST['duree'])) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "duree n'est pas un nombre" ]);
@@ -71,7 +72,7 @@ post('/declaration', function($conn) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "duree doit être entre 0 et 10" ]);
     }
-    $commentaire = '';
+    $commentaire = ''; // default comment
     if (isset($_POST['commentaires']))
         $commentaire = $_POST['commentaires'];
     //DEBUG echo '<pre>';
@@ -172,9 +173,8 @@ post('/connexion', function($conn) {
     }
     try {
         $user = Givav::auth($_POST['login'], $_POST['pass']);
-        registerPerson($conn, $user);
+        Personne::creeOuMAJ($conn, $user);
         $_SESSION['login'] = $_POST['login'];
-        $_SESSION['isAdmin'] = false;
         $_SESSION['auth'] = true;
         $_SESSION['givavNumber'] = $user['number'];
         $_SESSION['name'] = $user['name'];

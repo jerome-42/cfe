@@ -5,4 +5,7 @@ $(document).ready(function() {
     $(".declaration").click(function() {
         window.location = "/declaration";
     });
+    $(".membres").click(function() {
+        window.location = "/listeMembres";
+    });
 });
