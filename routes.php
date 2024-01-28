@@ -39,19 +39,25 @@ post('/declaration', function($conn) {
         redirect('/connexion');
     }
     echo '<pre>';
-    var_dump($_POST);
+    //var_dump($_POST);
     $query = 'SELECT 1';
     $sth = $conn->prepare($query);
     $sth->execute([  ]);
     echo json_encode([ 'result' => true ]);
-         $temp_time = time();
+    $temp_time = time();
+         $annee = floor( $temp_time / 3600 / 24 / 365.25) +1970 ;
+    $jours= floor( ( $temp_time - ($annee-1970)  * 365.25 * 24 * 3600 ) /3600/24 );
+   var_dump($jours); 
+	 var_dump($annee);
+    $heures = floor( (($temp_time - ($annee-1970)  * 365.25 * 24 * 3600 ) - $jours * 24 *3600  ) / 3600);
+    var_dump($heures);
          //$theDate = date_create()
-	 $theDate = date_create_from_format("Y-m-d", NULL);
-         var_dump($temp_time);
-	 var_dump($theDate);
+	 //$theDate = date_create_from_format("Y-m-d", NULL);
+         //var_dump($temp_time);
+	 //var_dump($theDate);
      //$sth = $conn->query($query);
 //     var_dump($sth);
-     var_dump($_SESSION);
+     //var_dump($_SESSION);
      $temp ='INSERT into cfe_records values ("';
      //var_dump($temp);
      $temp = $temp . "2024-01-25" . '", "NULL", "' .  $_SESSION['name'] . '", "';
@@ -66,6 +72,11 @@ post('/declaration', function($conn) {
      //var_dump($temp);
      $query=$temp;
      $sth = $conn->query($query);
+});
+	
+get('/editRecords', function($conn) {
+	$query="SELECT * from cfe_records WHERE NumNational = " ;
+	
 });
 
 get('/test', function($conn) {
@@ -116,6 +127,9 @@ get('/', function($conn) {
 });
 
 get('/connexion', function() {
+    if (isset($_SESSION['auth'])) {
+        redirect('/');
+    }
     Phug::displayFile('view/connexion.pug');
 });
 
@@ -188,3 +202,7 @@ post('/db', function() {
     $returnData['draw'] = $queryParams['draw'];
     echo json_encode($returnData);
 });
+
+// si on arrive là c'est qu'aucune URL n'a matchée, donc => 404
+http_response_code(404);
+Phug::displayFile('view/404.pug');
