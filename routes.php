@@ -41,19 +41,6 @@ post('/changeAdmin', function($conn) {
     Personne::modifieStatutAdmin($conn, intval($_POST['num']), $statut);
 });
 
-post('/doRecord', function() {
-    if (!isset($_SESSION['auth'])) {
-        return redirect('/connexion');
-    }
-    $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
-    $temp ='INSERT into cfe_records values ("';
-    $temp_time = time();
-    var_dump($temp_time);
-    $sth = $conn->query($query);
-    //var_dump($sth);
-    Phug::displayFile('view/index.pug', $_SESSION);
-});
-
 get('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
@@ -125,44 +112,6 @@ get('/declaration-completee', function() {
 get('/editRecords', function($conn) {
 	$query="SELECT * from cfe_records WHERE NumNational = " ;
 	
-});
-
-get('/test', function($conn) {
-    $query = 'SELECT email FROM personnes  WHERE NumNational = "695" ; //"$conn"';  //ORDER BY name LIMIT 1';
-    $sth = $conn->query($query);
-    $lines = $sth->fetchAll();
-    echo '<pre>';
-    var_dump($lines);
-    echo '</pre>';
-    //echo $lines[0]['name'];
-});
-
-get('/test2', function($conn) {
-    $query = 'SELECT durée Nom FROM cfe_records WHERE NumNational = "695"';
-    $sth = $conn->query($query);
-    $lines = $sth->fetchAll();
-    //var_dump($lines);
-    $query = 'SELECT SUM(Durée) from cfe_records WHERE NumNational = "695"';
-//  $sth = $conn->query($query);
-?>
-    <img src="~/www-cfe/img/carteVoeux.svg">
-    <?php 
-//    $lines = $sth->fetchAll();
-//    var_dump($lines);
-//    echo $lines // | awk " print $1" ;
-//    $duree_totale = 'echo var_dump($lines)' ;//| 'awk $1' ;
-//    var_dump($duree_totale);
-});
-
-get('/test3', function($conn) {
-    $line = "Bonne Année 2024";
-    var_dump($line);
-});
-
-get('/Voeux2024', function($conn) {
-    $line = "Bonne Année 2024";
-    var_dump($line);
-        Phug::displayFile('view/Voeux2024.pug');
 });
 
 get('/', function($conn) {
