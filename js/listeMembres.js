@@ -20,7 +20,7 @@ var displayEstAdmin = function(elem) {
 };
 
 $(document).ready(function() {
-    $('td.estAdmin')
+    $('#list').find('td.estAdmin')
 	.each(function() {
 	    displayEstAdmin($(this));
 	})
@@ -43,4 +43,19 @@ $(document).ready(function() {
     $('.back').click(function() {
 	window.location = '/';
     });
+
+    $('#search').on('keyup', function() {
+	var search = $(this).val().toLowerCase();
+	$('#list > tbody > tr').each(function() {
+	    if (search === '')
+		$(this).show();
+	    else {
+		if ($(this).find('td:nth-child(3)').text().toLowerCase().indexOf(search) === -1)
+		    $(this).hide();
+		else
+		    $(this).show();
+	    }
+	});
+    });
+    $('#search').focus();
 });

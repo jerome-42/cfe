@@ -8,8 +8,14 @@ block content
   .row
     h1 Liste des membres
   .row
+    .col-md-3.offset-md-9
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="nom / prénom")#search
+  .row
     .col-12
-      table.table.table-striped
+      table.table.table-striped#list
         thead
           tr
             th Endosser
