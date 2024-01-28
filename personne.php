@@ -1,6 +1,17 @@
 <?php
 
 class Personne {
+    static public function modifieStatutAdmin($conn, $num, $statut) {
+        if ($statut === true)
+            $query = "UPDATE personnes set estAdmin = true WHERE NumNational = :num";
+        else
+            $query = "UPDATE personnes set estAdmin = false WHERE NumNational = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':num' => $num ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("Impossible de changer le statut estAdmin de l'utilisateur");
+    }
+
     static public function creeOuMAJ($conn, $user) {
         $query = "INSERT INTO personnes (name, Email, NumNational) VALUES (:name, :email, :numNational) ON DUPLICATE KEY UPDATE name = :name, email = :email";
         $sth = $conn->prepare($query);

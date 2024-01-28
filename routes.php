@@ -15,17 +15,43 @@ get('/Abandon', function() {
     Phug::displayFile('view/index.pug', $_SESSION);
 });
 
+post('/changeAdmin', function($conn) {
+    if (!isset($_SESSION['auth'])) {
+        echo "vous n'êtes pas connecté";
+        return http_response_code(500);
+    }
+    if (!isset($_SESSION['isAdmin'])) {
+        echo "vous n'êtes pas admin";
+        return http_response_code(500);
+    }
+    foreach ([ 'num', 'statut' ] as $elem) {
+        if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+            echo "le paramètre ".$elem." est absent";
+            return http_response_code(500);
+        }
+    }
+    if (!is_numeric($_POST['num'])) {
+        echo "le paramètre num doit être un entier";
+        return http_response_code(500);
+    }
+    $statut = false;
+    if ($_POST['statut'] === 'true')
+        $statut = true;
+    var_dump($statut);
+    Personne::modifieStatutAdmin($conn, intval($_POST['num']), $statut);
+});
+
 post('/doRecord', function() {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
-     $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
-     $temp ='INSERT into cfe_records values ("';
-     $temp_time = time();
-     var_dump($temp_time);
-     $sth = $conn->query($query);
-     //var_dump($sth);
-     Phug::displayFile('view/index.pug', $_SESSION);
+    $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
+    $temp ='INSERT into cfe_records values ("';
+    $temp_time = time();
+    var_dump($temp_time);
+    $sth = $conn->query($query);
+    //var_dump($sth);
+    Phug::displayFile('view/index.pug', $_SESSION);
 });
 
 get('/declaration', function($conn) {

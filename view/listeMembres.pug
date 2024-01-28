@@ -24,7 +24,7 @@ block content
                   button.btn.btn-secondary.sudo(x-num=$membre['NumNational']) Endosser
               td #{$membre['NumNational']}
               td #{$membre['name']}
-              td.estAdmin(value=$membre['estAdmin'])
+              td.estAdmin(x-num=$membre['NumNational'] value=$membre['estAdmin'])
         tfoot
           tr
             th Endosser
