@@ -166,7 +166,7 @@ get('/listeMembres', function($conn) {
                                                  'membres' => $membres ]);
 });
 
-get('/logout', function($conn) {
+get('/deconnexion', function($conn) {
     if (isset($_SESSION['inSudo'])) {
         unset($_SESSION['inSudo']);
         $previousUser = Personne::load($conn, $_SESSION['previousGivavNumber']);
