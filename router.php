@@ -39,6 +39,9 @@ function doRoute($fct,) {
         return Phug::displayFile('view/error.pug', $vars);
     }
     try {
+        // on met à jour admin
+        if (isset($_SESSION['auth']))
+            $_SESSION['isAdmin'] = Personne::estAdmin($conn, $_SESSION['givavNumber']);
         $fct($conn);
         $conn->commit();
     }
