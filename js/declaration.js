@@ -67,7 +67,7 @@ $(document).ready(function() {
 	$('.invalid-feedback').css({ 'display': 'initial' });
 	if ($('.invalid-feedback').length === 0) {
 	    // il n'y a pas d'erreur, on envoie le formulaire
-	    return nextWithPostData('/declaration', { dateCFE: date, duree: duree, type: $('#type').val(), beneficiaire: $('#beneficiaire').val(), commentaires: $('#commentaires').val() });
+	    return nextWithPostData('/declaration', { dateCFE: (+date)/1000, duree: duree, type: $('#type').val(), beneficiaire: $('#beneficiaire').val(), commentaires: $('#commentaires').val() });
 	}
     });
 });

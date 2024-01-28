@@ -1,0 +1,21 @@
+extends layout.pug
+
+block scripts
+  title Enregistrement CFE-AAVVO
+  script(src="js/declaration-completee.js")
+
+block content
+  .text-bg-light.p-3
+    .container
+      .row
+        .mb-3
+          .alert.alert-success(role="alert") Votre déclaration vient d'être enregistrée avec succès
+      .row.d-block.d-sm-none.justify-content-md-center
+        .btn-group-vertical(role="group")
+          button.btn.btn-success.declaration Nouvelle déclaration
+          button.btn.btn-danger.index Retour
+  
+      .row.d-none.d-sm-block.justify-content-md-center
+        .btn-group(role="group")
+          button.btn.btn-success.declaration Nouvelle déclaration
+          button.btn.btn-danger.index Retour

@@ -38,42 +38,63 @@ post('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
         redirect('/connexion');
     }
-    echo '<pre>';
-    //var_dump($_POST);
-    $query = 'SELECT 1';
+    // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
+    foreach ([ 'dateCFE', 'type', 'beneficiaire', 'duree' ] as $elem) {
+        if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+            http_response_code(500);
+            return Phug::displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
+        }
+    }
+    // vérification que dateCFE est entre le 1er janvier et le 31 décembre de cette année
+    if (!is_numeric($_POST['dateCFE'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "dateCFE n'est pas un entier" ]);
+    }
+    $now = new DateTime();
+    $dateCFE = new DateTime();
+    $dateCFE->setTimestamp(intval($_POST['dateCFE']));
+    if ($dateCFE->format('Y') !== $now->format('Y')) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
+    }
+    if ($dateCFE > $now) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
+    }
+    // TODO on vérifie que duree est > 0 et <= 10
+    if (!is_numeric($_POST['duree'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "duree n'est pas un nombre" ]);
+    }
+    $duree = floatval($_POST['duree']);
+    if ($duree <= 0 || $duree > 10) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "duree doit être entre 0 et 10" ]);
+    }
+    $commentaire = '';
+    if (isset($_POST['commentaires']))
+        $commentaire = $_POST['commentaires'];
+    //DEBUG echo '<pre>';
+    //DEBUG var_dump($_POST);
+    $query ='INSERT into cfe_records (NumNational, Bénéficiaire, TypeTravaux, Durée, Commentaires, DateTravaux) values (:num, :beneficiaire, :type, :duree, :commentaire, :dateCFE)';
     $sth = $conn->prepare($query);
-    $sth->execute([  ]);
-    echo json_encode([ 'result' => true ]);
-    $temp_time = time();
-         $annee = floor( $temp_time / 3600 / 24 / 365.25) +1970 ;
-    $jours= floor( ( $temp_time - ($annee-1970)  * 365.25 * 24 * 3600 ) /3600/24 );
-   var_dump($jours); 
-	 var_dump($annee);
-    $heures = floor( (($temp_time - ($annee-1970)  * 365.25 * 24 * 3600 ) - $jours * 24 *3600  ) / 3600);
-    var_dump($heures);
-         //$theDate = date_create()
-	 //$theDate = date_create_from_format("Y-m-d", NULL);
-         //var_dump($temp_time);
-	 //var_dump($theDate);
-     //$sth = $conn->query($query);
-//     var_dump($sth);
-     //var_dump($_SESSION);
-     $temp ='INSERT into cfe_records values ("';
-     //var_dump($temp);
-     $temp = $temp . "2024-01-25" . '", "NULL", "' .  $_SESSION['name'] . '", "';
-     $temp = $temp . $_SESSION['givavNumber'] .'", "';
-     $temp = $temp . $_SESSION['mail'] .'", "' ;
-     $temp = $temp . $_POST['type'] .'", "' ;
-     $temp = $temp . $_POST['duree'] .'", "' . $_POST['commentaires'] .'", "' ;;
-     $temp = $temp . $_POST['beneficiaire'] . '", "' ;
-     $temp = $temp . $_POST['dateCFE'] . '", "Soumis",  " ")';
-     var_dump($temp);
-     //$temp = $_POST['beneficiaire'];
-     //var_dump($temp);
-     $query=$temp;
-     $sth = $conn->query($query);
+    $sth->execute([ ':num' => $_SESSION['givavNumber'],
+                    ':beneficiaire' => $_POST['beneficiaire'],
+                    ':type' => $_POST['type'],
+                    ':duree' => $duree,
+                    ':commentaire' => $commentaire,
+                    ':dateCFE' => $dateCFE->format('Y-m-d'),
+    ]);
+    redirect("/declaration-completee");
 });
-	
+
+get('/declaration-completee', function() {
+    if (!isset($_SESSION['auth'])) {
+        redirect('/connexion');
+    }
+    Phug::displayFile('view/declaration-completee.pug');
+});
+
 get('/editRecords', function($conn) {
 	$query="SELECT * from cfe_records WHERE NumNational = " ;
 	

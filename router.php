@@ -86,7 +86,7 @@ function route($route, $fct) {
     }
   }
   doRoute($fct);
-  return;
+  exit; // permet de ne pas passer dans le handler qui gère le 404
 }
 
 function out($text) {
