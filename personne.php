@@ -8,6 +8,22 @@ class Personne {
         $conn->commit();
     }
 
+    static public function load($conn, $num) {
+        $query = "SELECT * FROM personnes WHERE NumNational = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':num' => $num ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("Utilisateur inconnu");
+        return $sth->fetchAll()[0];
+    }
+
+    static public function getAll($conn) {
+        $query = "SELECT * FROM personnes ORDER BY NumNational";
+        $sth = $conn->prepare($query);
+        $sth->execute();
+        return $sth->fetchAll();
+    }
+
     static public function estAdmin($conn, $numGivav) {
         $query = "SELECT 1 FROM personnes WHERE NumNational = :num AND estAdmin IS true";
         $sth = $conn->prepare($query);

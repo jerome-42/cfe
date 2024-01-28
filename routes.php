@@ -10,14 +10,14 @@ include_once __DIR__ . '/vendor/autoload.php';
 
 get('/Abandon', function() {
     if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
+        return redirect('/connexion');
     }
     Phug::displayFile('view/index.pug', $_SESSION);
 });
 
 post('/doRecord', function() {
     if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
+        return redirect('/connexion');
     }
      $query = 'INSERT into cfe_records values ("", "", "", "695", "gilles.hug@gmail.com", "Autres", 1,"", "AAVO", "2024/01/19", "Soumis",  " ")';
      $temp ='INSERT into cfe_records values ("';
@@ -30,14 +30,14 @@ post('/doRecord', function() {
 
 get('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
+        return redirect('/connexion');
     }
     Phug::displayFile('view/declaration.pug', $_SESSION);
 });
 
 post('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
+        return redirect('/connexion');
     }
     // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
     foreach ([ 'dateCFE', 'type', 'beneficiaire', 'duree' ] as $elem) {
@@ -165,16 +165,9 @@ post('/connexion', function($conn) {
         $vars['error'] = "Veuillez saisir votre mot de passe";
         return Phug::displayFile('view/connexion.pug', $vars);
     }
-    if ($_POST['login'] === 'admin' && $_POST['pass'] === 'admin') {
-        $_SESSION['login'] = $_POST['login'];
-        $_SESSION['isAdmin'] = true;
-        $_SESSION['auth'] = true;
-        return redirect('/validator');
-    }
     try {
         $user = Givav::auth($_POST['login'], $_POST['pass']);
         Personne::creeOuMAJ($conn, $user);
-        $_SESSION['login'] = $_POST['login'];
         $_SESSION['auth'] = true;
         $_SESSION['givavNumber'] = $user['number'];
         $_SESSION['name'] = $user['name'];
@@ -189,9 +182,47 @@ post('/connexion', function($conn) {
     Phug::displayFile('view/connexion.pug', $vars);
 });
 
-get('/logout', function() {
+get('/listeMembres', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $membres = Personne::getAll($conn);
+    Phug::displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
+                                                 'inSudo' => isset($_SESSION['inSudo']),
+                                                 'membres' => $membres ]);
+});
+
+get('/logout', function($conn) {
+    if (isset($_SESSION['inSudo'])) {
+        unset($_SESSION['inSudo']);
+        $previousUser = Personne::load($conn, $_SESSION['previousGivavNumber']);
+        unset($_SESSION['previousGivavNumber']);
+        $_SESSION['givavNumber'] = $previousUser['NumNational'];
+        $_SESSION['name'] = $previousUser['name'];
+        $_SESSION['mail'] = $previousUser['mail'];
+        return redirect('/');
+    }
     session_destroy();
     redirect('/');
+});
+
+get('/sudo', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (isset($_SESSION['inSudo'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Veuillez vous déconnecter avant de tenter à nouveau un sudo" ]);
+    }
+    if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Numéro attendu" ]);
+    }
+    $_SESSION['inSudo'] = true;
+    $_SESSION['previousGivavNumber'] = $_SESSION['givavNumber'];
+    $newUser = Personne::load($conn, $_GET['numero']);
+    $_SESSION['givavNumber'] = $newUser['NumNational'];
+    $_SESSION['name'] = $newUser['name'];
+    $_SESSION['mail'] = $newUser['mail'];
+    return redirect('/');
 });
 
 post('/db', function() {

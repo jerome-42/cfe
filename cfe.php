@@ -18,9 +18,11 @@ class CFE {
     }
 
     private function getTask($cfetodo) {
-        $query = 'SELECT cfetodo From personnes WHERE NumNational = :givavNumber';
+        $query = 'SELECT COALESCE(cfetodo, 0) AS cfetodo FROM personnes WHERE NumNational = :givavNumber';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':givavNumber' => $this->givavNumber ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("pas de ligne dans personnes pour cet utilisateur");
         $lines = $sth->fetchAll();
         return $lines[0]['cfetodo'];
     }

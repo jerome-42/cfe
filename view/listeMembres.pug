@@ -1,0 +1,35 @@
+extends layout.pug
+
+block scripts
+  title Liste des membres
+  script(src="js/listeMembres.js")
+
+block content
+  .row
+    h1 Liste des membres
+  .row
+    .col-12
+      table.table.table-striped
+        thead
+          tr
+            th Endosser
+            th Numéro GIVAV
+            th Nom
+            th Admin
+        tbody
+          each membre in $membres
+            tr
+              td
+                if $inSudo == false && $currentUser != $membre['NumNational']
+                  button.btn.btn-secondary.sudo(x-num=$membre['NumNational']) Endosser
+              td #{$membre['NumNational']}
+              td #{$membre['name']}
+              td.estAdmin(value=$membre['estAdmin'])
+        tfoot
+          tr
+            th Endosser
+            th Numéro GIVAV
+            th Nom
+            th Admin
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour
