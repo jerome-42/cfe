@@ -17,6 +17,14 @@ class CFE {
         return $lines[0]['total'];
     }
 
+    public function getLinesToValidate() {
+        $query = "SELECT cfe_records.*, personnes.name FROM cfe_records JOIN personnes ON cfe_records.who = personnes.givavNumber WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
+        $sth = $this->conn->prepare($query);
+        $sth->execute([]);
+        $lines = $sth->fetchAll();
+        return $lines;
+    }
+
     public function getRecords() {
         $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber ORDER BY workDate DESC'; // TODO WHERE année
         $sth = $this->conn->prepare($query);

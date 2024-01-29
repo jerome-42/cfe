@@ -11,4 +11,7 @@ $(document).ready(function() {
     $(".membres").click(function() {
         window.location = "/listeMembres";
     });
+    $(".validation").click(function() {
+        window.location = "/validation";
+    });
 });

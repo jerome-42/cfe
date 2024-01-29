@@ -204,6 +204,14 @@ get('/listeMembres', function($conn) {
                                                  'membres' => $membres ]);
 });
 
+get('/validation', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $cfe = new CFE($conn, null);
+    $lines = $cfe->getLinesToValidate();
+    Phug::displayFile('view/validation.pug', [ 'lines' => $lines ]);
+});
+
 post('/updateCFE_TODO', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

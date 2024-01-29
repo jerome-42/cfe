@@ -1,0 +1,48 @@
+extends layout.pug
+
+block scripts
+  title Validation des CFE
+  script(src="js/validation.js")
+
+block content
+  .row
+    h1 Validation des CFE
+  .row
+    .col-md-3.offset-md-9
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-9
+          input.form-control(type="text" placeholder="")#search
+  .row
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th Statut
+            th Membre
+            th Date
+            th Bénéficiaire
+            th Type
+            th Durée
+            th(width="30%") Détails
+        tbody
+          each line in $lines
+            tr(x-id=$line['id'] x-validation=$line['status'])
+              td.validation #{$line['status']}
+              td #{$line['name']}
+              td #{$line['workDate']}
+              td #{$line['beneficiary']}
+              td #{$line['workType']}
+              td #{$line['duration']}
+              td #{$line['details']}
+        tfoot
+          tr
+            th Statut
+            th Membre
+            th Date
+            th Bénéficiaire
+            th Type
+            th Durée
+            th Détails
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour
