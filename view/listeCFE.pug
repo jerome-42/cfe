@@ -19,24 +19,26 @@ block content
         thead
           tr
             th Date
-            th Type
+            th Statut
             th Bénéficiaire
+            th Type
             th Durée
             th Détails
         tbody
           each line in $lines
-            tr(x-validation=$line['Validation'])
-              td #{$line['Validation']}
-              td #{$line['DateTravaux']}
-              td #{$line['TypeTravaux']}
-              td #{$line['Bénéficiaire']}
-              td #{$line['Durée']}
-              td #{$line['Détails']}
+            tr(x-validation=$line['status'])
+              td.date #{$line['workDate']}
+              td.status #{$line['status']}
+              td #{$line['beneficiary']}
+              td #{$line['workType']}
+              td #{$line['duration']}
+              td #{$line['details']}
         tfoot
           tr
             th Date
-            th Type
+            th Statut
             th Bénéficiaire
+            th Type
             th Durée
             th Détails
   .hstack.gap-4.mb-3

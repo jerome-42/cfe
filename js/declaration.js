@@ -49,25 +49,30 @@ $(document).ready(function() {
 
 	// DUREE
 	// on remplace les virgules par des . (notation française versus anglaise)
-	var duree = $('#duree').val().replace(',', '.');
-	$('#duree').val(duree);
+	var duration = $('#duration').val().replace(',', '.');
+	$('#duration').val(duration);
 	// on vérifie que la durée est bonne
-	if ($('#duree').val() === '') {
-	    $('#duree').after($('<div class="invalid-feedback">').text('Type obligatoire'));
-	} else if (isNaN(parseFloat($('#duree').val()))) {
-	    $('#duree').after($('<div class="invalid-feedback">').text('Un nombre est attendu').css('display', ''));
-	} else if (parseFloat($('#duree').val()) <= 0) {
-	    $('#duree').after($('<div class="invalid-feedback">').text('Un nombre positif est attendu').css('display', ''));
-	} else if (parseFloat($('#duree').val()) > 10) {
-	    $('#duree').after($('<div class="invalid-feedback">').text('Impossible de saisir plus de 10 heures').css('display', ''));
+	if ($('#duration').val() === '') {
+	    $('#duration').after($('<div class="invalid-feedback">').text('Type obligatoire'));
+	} else if (isNaN(parseFloat($('#duration').val()))) {
+	    $('#duration').after($('<div class="invalid-feedback">').text('Un nombre est attendu').css('display', ''));
+	} else if (parseFloat($('#duration').val()) <= 0) {
+	    $('#duration').after($('<div class="invalid-feedback">').text('Un nombre positif est attendu').css('display', ''));
+	} else if (parseFloat($('#duration').val()) > 10) {
+	    $('#duration').after($('<div class="invalid-feedback">').text('Impossible de saisir plus de 10 heures').css('display', ''));
 	}
 	// /DUREE
+
+	if ($('#details').val() === '')
+	    $('#details').after($('<div class="invalid-feedback">').text("Il faut le détail du travail effectué pour l'évaluation du travail effectué"));
+	if ($('#details').val().length < 10)
+	    $('#details').after($('<div class="invalid-feedback">').text("C'est un peu court, il faut plus d'information pour permettre l'évaluation de ce travail"));
 
 	// on affiche toutes les erreurs
 	$('.invalid-feedback').css({ 'display': 'initial' });
 	if ($('.invalid-feedback').length === 0) {
 	    // il n'y a pas d'erreur, on envoie le formulaire
-	    return nextWithPostData('/declaration', { dateCFE: (+date)/1000, duree: duree, type: $('#type').val(), beneficiaire: $('#beneficiaire').val(), commentaires: $('#commentaires').val() });
+	    return nextWithPostData('/declaration', { dateCFE: (+date)/1000, duration: duration, type: $('#type').val(), beneficiary: $('#beneficiary').val(), details: $('#details').val() });
 	}
     });
 });

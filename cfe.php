@@ -10,7 +10,7 @@ class CFE {
     }
 
     private function getLines($validation) {
-        $query = 'SELECT COALESCE(SUM(Durée), 0) as total FROM cfe_records WHERE NumNational = :givavNumber AND Validation = :statut'; // TODO WHERE année
+        $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :statut'; // TODO WHERE année
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':givavNumber' => $this->givavNumber, ':statut' => $validation ]);
         $lines = $sth->fetchAll();
@@ -18,7 +18,7 @@ class CFE {
     }
 
     public function getRecords() {
-        $query = 'SELECT * FROM cfe_records WHERE NumNational = :givavNumber ORDER BY DateTravaux DESC'; // TODO WHERE année
+        $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber ORDER BY workDate DESC'; // TODO WHERE année
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':givavNumber' => $this->givavNumber ]);
         $lines = $sth->fetchAll();
@@ -37,9 +37,9 @@ class CFE {
 
 
     public function getStats() {
-        return [ 'submited' => floatval($this->getLines('Soumis')),
-                 'validated' => floatval($this->getLines('Validé')),
-                 'rejected' => floatval($this->getLines('Rejeté')),
+        return [ 'submited' => floatval($this->getLines('submitted')),
+                 'validated' => floatval($this->getLines('validated')),
+                 'rejected' => floatval($this->getLines('rejected')),
                  'thecfetodo' => floatval($this->getTask('cfetodo'))	];
     }
 }

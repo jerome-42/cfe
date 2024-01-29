@@ -111,7 +111,7 @@ $(document).ready(function() {
     });
 
     $('.download').click(function() {
-	var csvContent = "data:text/csv;charset=utf-8,\r\n";
+	var csvContent = "data:text/csv;charset=utf-8,";
 	var row = $('#list > thead > tr > th').map(function() {
 	    return $(this).text();
 	});

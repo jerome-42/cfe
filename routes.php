@@ -53,7 +53,7 @@ post('/declaration', function($conn) {
         return redirect('/connexion');
     }
     // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
-    foreach ([ 'dateCFE', 'type', 'beneficiaire', 'duree' ] as $elem) {
+    foreach ([ 'dateCFE', 'type', 'beneficiary', 'duration' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
             http_response_code(500);
             return Phug::displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
@@ -75,38 +75,36 @@ post('/declaration', function($conn) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
     }
-    // vérification duree est > 0 et <= 10
-    if (!is_numeric($_POST['duree'])) {
+    // vérification duration est > 0 et <= 10
+    if (!is_numeric($_POST['duration'])) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "duree n'est pas un nombre" ]);
     }
-    $duree = floatval($_POST['duree']);
-    if ($duree <= 0 || $duree > 10) {
+    $duration = floatval($_POST['duration']);
+    if ($duration <= 0 || $duration > 10) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "duree doit être entre 0 et 10" ]);
     }
-    $commentaire = ''; // default comment
-    if (isset($_POST['commentaires']))
-        $commentaire = $_POST['commentaires'];
     //DEBUG echo '<pre>';
     //DEBUG var_dump($_POST);
-    $query ='INSERT into cfe_records (NumNational, Bénéficiaire, TypeTravaux, Durée, Commentaires, DateTravaux) values (:num, :beneficiaire, :type, :duree, :commentaire, :dateCFE)';
+    $query ="INSERT into cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details)";
     $sth = $conn->prepare($query);
     $sth->execute([ ':num' => $_SESSION['givavNumber'],
-                    ':beneficiaire' => $_POST['beneficiaire'],
-                    ':type' => $_POST['type'],
-                    ':duree' => $duree,
-                    ':commentaire' => $commentaire,
-                    ':dateCFE' => $dateCFE->format('Y-m-d'),
+                    ':workDate' => $dateCFE->format('Y-m-d'),
+                    ':workType' => $_POST['type'],
+                    ':beneficiary' => $_POST['beneficiary'],
+                    ':duration' => $duration,
+                    ':details' => $_POST['details'],
     ]);
-    redirect("/declaration-completee");
+    $conn->commit();
+    redirect("/declaration-complete");
 });
 
-get('/declaration-completee', function() {
+get('/declaration-complete', function() {
     if (!isset($_SESSION['auth'])) {
         redirect('/connexion');
     }
-    Phug::displayFile('view/declaration-completee.pug');
+    Phug::displayFile('view/declaration-complete.pug');
 });
 
 get('/detailsMembre', function($conn) {
@@ -135,11 +133,6 @@ post('/detailsMembreStats', function($conn) {
     $num = intval($_POST['num']);
     $cfe = new CFE($conn, $num);
     echo json_encode($cfe->getStats());
-});
-
-get('/editRecords', function($conn) {
-	$query="SELECT * from cfe_records WHERE NumNational = " ;
-	
 });
 
 get('/', function($conn) {

@@ -12,17 +12,25 @@ String.prototype.replaceSpecialChars = function() {
 $(document).ready(function() {
     $('#list > tbody > tr').each(function() {
 	switch ($(this).attr('x-validation')) {
-	case 'Validé':
+	case 'validated':
+	    $(this).find('.status').text('Validé');
 	    $(this).addClass('table-primary');
 	    break;
-	case 'Rejeté':
+	case 'rejected':
+	    $(this).find('.status').text('Rejeté');
 	    $(this).addClass('table-danger');
 	    break;
-	case 'Soumis':
+	case 'submitted':
 	default:
+	    $(this).find('.status').text('Soumis');
 	    $(this).addClass('table-secondary');
 	    break;
 	}
+    });
+    $('.date').each(function() {
+	var d = new Date($(this).text());
+	var date = ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getFullYear()).slice(-4);
+	$(this).text(date);
     });
 
     $('.back').click(function() {
@@ -30,7 +38,7 @@ $(document).ready(function() {
     });
 
     $('.download').click(function() {
-	var csvContent = "data:text/csv;charset=utf-8,\r\n";
+	var csvContent = "data:text/csv;charset=utf-8,";
 	var row = $('#list > thead > tr > th').map(function() {
 	    return $(this).text();
 	});

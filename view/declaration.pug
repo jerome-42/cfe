@@ -26,28 +26,26 @@ block content
         .mb-3
           label.form-label(for='type') Type de travaux réalisés
           select.form-select#type(name="type" placeholder='Choisir...')
-            option(value='Ateliers planeur') Ateliers planeur
-            option(value='Ateliers ULM') Ateliers ULM
+            option(value='Atelier planeur') Ateliers planeur
+            option(value='Atelier ULM') Ateliers ULM
             option(value='Entretien bâtiments intérieur') Entretien bâtiments intérieur
             option(value='Entretien bâtiments extérieur') Entretien bâtiments extérieur
             option(value='Espaces verts') Espaces verts
             option(value='Autre') Autre
         .mb-3
-          label.form-label(for='beneficiaire') Beneficiaire
-          select.form-select#beneficiaire(name='beneficiaire' placeholder='Choisir...')
+          label.form-label(for='beneficiary') Beneficiaire
+          select.form-select#beneficiary(name='beneficiary' placeholder='Choisir...')
             option(value='AAVO') AAVO
             option(value='Section ANEG') Section ANEG
             option(value='Section Cormeilles') Section Cormeilles
             option(value='Privé') Privé
             option(value='Autre') Autre
         .mb-3
-          label.form-label(for="duree") Durée
-          input.form-control#duree.form-control(type="text" name="duree" placeholder="heures")
+          label.form-label(for="duration") Durée
+          input.form-control#duration.form-control(type="text" name="duration" placeholder="heures")
         .mb-3
-          label.form-label(for='commentaires') Commentaires
-          textarea.form-control#commentaires(name='commentaires' rows='2' cols='50')
-            | Commentaire
-            | Max 512 caract&egrave;res
+          label.form-label(for='details') Détails
+          textarea.form-control#details(name='details' rows='2' cols='50')
         .hstack.gap-4.mb-3
           button.btn.btn-success#doRecord Enregistrer
           button.btn.btn-danger#abandon Abandonner
