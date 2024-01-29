@@ -9,10 +9,10 @@ String.prototype.replaceSpecialChars = function() {
     return newString;
 };
 
-var changeAdmin = function(num, statut) {
+var changeAdmin = function(num, status) {
     $.ajax({
         url: '/changeAdmin',
-        data: { num: num, statut: statut },
+        data: { num: num, status: status },
         type: 'POST',
         error: function() {
 	    alert("Impossible");
@@ -38,11 +38,11 @@ $(document).ready(function() {
 	.click(function() {
 	    if ($(this).attr('value') === '1') {
 		$(this).attr('value', 0);
-		changeAdmin($(this).parent('tr').attrs('x-num'), false);
+		changeAdmin($(this).parents('tr').attr('x-num'), false);
 	    }
 	    else {
 		$(this).attr('value', 1);
-		changeAdmin($(this).parent('tr').attrs('x-num'), true);
+		changeAdmin($(this).parents('tr').attr('x-num'), true);
 	    }
 	    displayEstAdmin($(this));
 	});

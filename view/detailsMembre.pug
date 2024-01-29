@@ -6,7 +6,7 @@ block scripts
 
 block content
   .row
-    h1 Détails pour (#{$membre['name']} - #{$membre['NumNational']} - #{$membre['email']})
+    h1 Détails pour (#{$membre['name']} - #{$membre['givavNumber']} - #{$membre['email']})
   .row
     div#details
   .row
@@ -17,7 +17,7 @@ block content
           input.form-control(type="text" placeholder="")#search
   .row
     .col-12
-      table.table.table-striped(x-numero=$membre['NumNational'])#list
+      table.table.table-striped(x-numero=$membre['givavNumber'])#list
         thead
           tr
             th Statut

@@ -50,7 +50,7 @@ function doRoute($fct,) {
         http_response_code(500);
         $stack = [];
         $rawBacktrace = debug_backtrace();
-        for ($i = 1; $i < count($rawBacktrace); $i++) {
+        for ($i = 0; $i < count($rawBacktrace); $i++) {
             $stack[] = 'in '.$rawBacktrace[$i]['function'].' on '.$rawBacktrace[$i]['file'].' at line '.$rawBacktrace[$i]['line'];
         }
         $vars = [ 'message' => "Exception ".$e->getMessage(), 'stack' => implode("\n", $stack) ];

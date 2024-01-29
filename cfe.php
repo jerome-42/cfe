@@ -25,14 +25,14 @@ class CFE {
         return $lines;
     }
 
-    private function getTask($cfetodo) {
-        $query = 'SELECT COALESCE(cfetodo, 0) AS cfetodo FROM personnes WHERE NumNational = :givavNumber';
+    private function getCFE_TODO() {
+        $query = "SELECT COALESCE(cfeTODO, settings.value) AS cfeTODO FROM personnes JOIN settings ON settings.what = 'defaultCFE_TODO' WHERE givavNumber = :num";
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':givavNumber' => $this->givavNumber ]);
+        $sth->execute([ ':num' => $this->givavNumber ]);
         if ($sth->rowCount() !== 1)
             throw new Exception("pas de ligne dans personnes pour cet utilisateur");
         $lines = $sth->fetchAll();
-        return $lines[0]['cfetodo'];
+        return $lines[0]['cfeTODO'];
     }
 
 
@@ -40,6 +40,6 @@ class CFE {
         return [ 'submited' => floatval($this->getLines('submitted')),
                  'validated' => floatval($this->getLines('validated')),
                  'rejected' => floatval($this->getLines('rejected')),
-                 'thecfetodo' => floatval($this->getTask('cfetodo'))	];
+                 'thecfetodo' => floatval($this->getCFE_TODO())	];
     }
 }

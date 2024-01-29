@@ -24,7 +24,7 @@ post('/changeAdmin', function($conn) {
         echo "vous n'êtes pas admin";
         return http_response_code(500);
     }
-    foreach ([ 'num', 'statut' ] as $elem) {
+    foreach ([ 'num', 'status' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
             echo "le paramètre ".$elem." est absent";
             return http_response_code(500);
@@ -34,11 +34,10 @@ post('/changeAdmin', function($conn) {
         echo "le paramètre num doit être un entier";
         return http_response_code(500);
     }
-    $statut = false;
-    if ($_POST['statut'] === 'true')
-        $statut = true;
-    var_dump($statut);
-    Personne::modifieStatutAdmin($conn, intval($_POST['num']), $statut);
+    $status = false;
+    if ($_POST['status'] === 'true')
+        $status = true;
+    Personne::modifieStatutAdmin($conn, intval($_POST['num']), $status);
 });
 
 get('/declaration', function($conn) {
@@ -202,7 +201,7 @@ get('/deconnexion', function($conn) {
         unset($_SESSION['inSudo']);
         $previousUser = Personne::load($conn, $_SESSION['previousGivavNumber']);
         unset($_SESSION['previousGivavNumber']);
-        $_SESSION['givavNumber'] = $previousUser['NumNational'];
+        $_SESSION['givavNumber'] = $previousUser['givavNumber'];
         $_SESSION['name'] = $previousUser['name'];
         $_SESSION['mail'] = $previousUser['mail'];
         return redirect('/');
@@ -246,7 +245,7 @@ get('/sudo', function($conn) {
     $_SESSION['inSudo'] = true;
     $_SESSION['previousGivavNumber'] = $_SESSION['givavNumber'];
     $newUser = Personne::load($conn, $_GET['numero']);
-    $_SESSION['givavNumber'] = $newUser['NumNational'];
+    $_SESSION['givavNumber'] = $newUser['givavNumber'];
     $_SESSION['name'] = $newUser['name'];
     $_SESSION['mail'] = $newUser['mail'];
     return redirect('/');

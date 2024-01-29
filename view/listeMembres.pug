@@ -25,17 +25,17 @@ block content
             th Admin
         tbody
           each membre in $membres
-            tr(x-num=$membre['NumNational'])
+            tr(x-num=$membre['givavNumber'])
               td
-                if $inSudo == false && $currentUser != $membre['NumNational']
+                if $inSudo == false && $currentUser != $membre['givavNumber']
                   button.btn.btn-secondary.sudo Endosser
-              td #{$membre['NumNational']}
+              td #{$membre['givavNumber']}
               td #{$membre['name']}
               td
                 button.btn.btn-primary.displayDetails
                   i.bi.bi-eye
                   | &nbsp;Détails
-              td.estAdmin(value=$membre['estAdmin'])
+              td.estAdmin(value=$membre['isAdmin'])
         tfoot
           tr
             th Endosser
