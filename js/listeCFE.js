@@ -29,6 +29,26 @@ $(document).ready(function() {
 	window.location = '/';
     });
 
+    $('.download').click(function() {
+	var csvContent = "data:text/csv;charset=utf-8,\r\n";
+	var row = $('#list > thead > tr > th').map(function() {
+	    return $(this).text();
+	});
+	csvContent += row.get().toString() + "\r\n";
+	$('#list > tbody > tr').each(function() {
+	    var row = $(this).find('td').map(function() {
+		return $(this).text();
+	    });
+	    csvContent += row.get().toString() + "\r\n";
+	});
+	var encodedUri = encodeURI(csvContent);
+	var link = document.createElement("a");
+	link.setAttribute("href", encodedUri);
+	link.setAttribute("download", "cfe.csv");
+	document.body.appendChild(link); // Required for FF
+	link.click();
+    });
+
     $('#search').on('keyup', function() {
 	var search = $(this).val().toLowerCase().replaceSpecialChars();
 	$('#list > tbody > tr').each(function() {
