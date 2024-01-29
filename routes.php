@@ -8,11 +8,13 @@ include_once __DIR__ . '/givav.php';
 include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
 
-get('/Abandon', function() {
+get('/', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        return redirect('/connexion');
+        redirect('/connexion');
     }
-    Phug::displayFile('view/index.pug', $_SESSION);
+    $cfe = new CFE($conn, $_SESSION['givavNumber']);
+    $vars = array_merge($_SESSION, $cfe->getStats());
+    Phug::displayFile('view/index.pug', $vars);
 });
 
 post('/changeAdmin', function($conn) {
@@ -38,6 +40,40 @@ post('/changeAdmin', function($conn) {
     if ($_POST['status'] === 'true')
         $status = true;
     Personne::modifieStatutAdmin($conn, intval($_POST['num']), $status);
+});
+
+get('/connexion', function() {
+    if (isset($_SESSION['auth'])) {
+        redirect('/');
+    }
+    Phug::displayFile('view/connexion.pug');
+});
+
+post('/connexion', function($conn) {
+    $vars = [];
+    if (!isset($_POST['login']) || $_POST['login'] === '') {
+        $vars['error'] = "Veuillez saisir votre n°nationnal ou courriel";
+	return Phug::displayFile('view/connexion.pug', $vars);
+    }
+    if (!isset($_POST['pass']) || $_POST['pass'] === '') {
+        $vars['error'] = "Veuillez saisir votre mot de passe";
+        return Phug::displayFile('view/connexion.pug', $vars);
+    }
+    try {
+        $user = Givav::auth($_POST['login'], $_POST['pass']);
+        Personne::creeOuMAJ($conn, $user);
+        $_SESSION['auth'] = true;
+        $_SESSION['givavNumber'] = $user['number'];
+        $_SESSION['name'] = $user['name'];
+        $_SESSION['mail'] = $user['mail'];
+        return redirect('/');
+    }
+    catch (Exception $e) {
+        $vars['error'] = $e->getMessage();
+        return Phug::displayFile('view/connexion.pug', $vars);
+    }
+    $vars['error'] = "Pilote inconnu du GIVAV";
+    Phug::displayFile('view/connexion.pug', $vars);
 });
 
 get('/declaration', function($conn) {
@@ -106,6 +142,20 @@ get('/declaration-complete', function() {
     Phug::displayFile('view/declaration-complete.pug');
 });
 
+get('/deconnexion', function($conn) {
+    if (isset($_SESSION['inSudo'])) {
+        unset($_SESSION['inSudo']);
+        $previousUser = Personne::load($conn, $_SESSION['previousGivavNumber']);
+        unset($_SESSION['previousGivavNumber']);
+        $_SESSION['givavNumber'] = $previousUser['givavNumber'];
+        $_SESSION['name'] = $previousUser['name'];
+        $_SESSION['mail'] = $previousUser['mail'];
+        return redirect('/');
+    }
+    session_destroy();
+    redirect('/');
+});
+
 get('/detailsMembre', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
@@ -135,49 +185,6 @@ post('/detailsMembreStats', function($conn) {
     echo json_encode($cfe->getStats());
 });
 
-get('/', function($conn) {
-    if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
-    }
-    $cfe = new CFE($conn, $_SESSION['givavNumber']);
-    $vars = array_merge($_SESSION, $cfe->getStats());
-    Phug::displayFile('view/index.pug', $vars);
-});
-
-get('/connexion', function() {
-    if (isset($_SESSION['auth'])) {
-        redirect('/');
-    }
-    Phug::displayFile('view/connexion.pug');
-});
-
-post('/connexion', function($conn) {
-    $vars = [];
-    if (!isset($_POST['login']) || $_POST['login'] === '') {
-        $vars['error'] = "Veuillez saisir votre n°nationnal ou courriel";
-	return Phug::displayFile('view/connexion.pug', $vars);
-    }
-    if (!isset($_POST['pass']) || $_POST['pass'] === '') {
-        $vars['error'] = "Veuillez saisir votre mot de passe";
-        return Phug::displayFile('view/connexion.pug', $vars);
-    }
-    try {
-        $user = Givav::auth($_POST['login'], $_POST['pass']);
-        Personne::creeOuMAJ($conn, $user);
-        $_SESSION['auth'] = true;
-        $_SESSION['givavNumber'] = $user['number'];
-        $_SESSION['name'] = $user['name'];
-        $_SESSION['mail'] = $user['mail'];
-        return redirect('/');
-    }
-    catch (Exception $e) {
-        $vars['error'] = $e->getMessage();
-        return Phug::displayFile('view/connexion.pug', $vars);
-    }
-    $vars['error'] = "Pilote inconnu du GIVAV";
-    Phug::displayFile('view/connexion.pug', $vars);
-});
-
 get('/listeCFE', function($conn) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
@@ -195,41 +202,6 @@ get('/listeMembres', function($conn) {
     Phug::displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
                                                  'inSudo' => isset($_SESSION['inSudo']),
                                                  'membres' => $membres ]);
-});
-
-get('/deconnexion', function($conn) {
-    if (isset($_SESSION['inSudo'])) {
-        unset($_SESSION['inSudo']);
-        $previousUser = Personne::load($conn, $_SESSION['previousGivavNumber']);
-        unset($_SESSION['previousGivavNumber']);
-        $_SESSION['givavNumber'] = $previousUser['givavNumber'];
-        $_SESSION['name'] = $previousUser['name'];
-        $_SESSION['mail'] = $previousUser['mail'];
-        return redirect('/');
-    }
-    session_destroy();
-    redirect('/');
-});
-
-post('/updateCFELine', function($conn) {
-    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
-        return redirect('/');
-    if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
-        echo "id doit être un nombre";
-        return http_response_code(500);
-    }
-    if (!isset($_POST['status']) || $_POST['status'] === '') {
-        echo "status est obligatoire";
-        return http_response_code(500);
-    }
-    $query = "UPDATE cfe_records SET status = :status, statusWho = :num, statusDate = NOW() WHERE id = :id";
-    $sth = $conn->prepare($query);
-    $sth->execute([
-        ':id' => $_POST['id'],
-        ':status' => $_POST['status'],
-        ':num' => $_SESSION['givavNumber'],
-    ]);
-    echo "OK";
 });
 
 post('/updateCFE_TODO', function($conn) {
@@ -265,6 +237,27 @@ post('/updateCFE_TODO', function($conn) {
     echo "OK";
 });
 
+post('/updateCFELine', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
+        echo "id doit être un nombre";
+        return http_response_code(500);
+    }
+    if (!isset($_POST['status']) || $_POST['status'] === '') {
+        echo "status est obligatoire";
+        return http_response_code(500);
+    }
+    $query = "UPDATE cfe_records SET status = :status, statusWho = :num, statusDate = NOW() WHERE id = :id";
+    $sth = $conn->prepare($query);
+    $sth->execute([
+        ':id' => $_POST['id'],
+        ':status' => $_POST['status'],
+        ':num' => $_SESSION['givavNumber'],
+    ]);
+    echo "OK";
+});
+
 get('/sudo', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
@@ -283,36 +276,6 @@ get('/sudo', function($conn) {
     $_SESSION['name'] = $newUser['name'];
     $_SESSION['mail'] = $newUser['mail'];
     return redirect('/');
-});
-
-post('/db', function() {
-    $queryParams = [
-        'draw' => 1,
-        'fromId' => 0,
-        'orderBy' => 'id',
-        'order' => 'asc',
-        'length' => PHP_INT_MAX,
-        'start' => 0,
-    ];
-    if ($_POST['object'] === 'character')
-        $queryParams['orderBy'] = 'name';
-    // intval parameters
-    foreach ([ 'draw', 'length', 'start' ] as $key) {
-        if (isset($_POST[$key]) && intval($_POST[$key]) >= 0)
-            $queryParams[$key] = intval($_POST[$key]);
-    }
-    if (isset($_POST['order']) && isset($_POST['order'][0]['column'])) {
-        $orderColumn = intval($_POST['order'][0]['column']);
-        $queryParams['orderBy'] = $_POST['columns'][$orderColumn]['data'];
-        $queryParams['order'] = $_POST['order'][0]['dir'];
-    }
-    if (isset($_POST['search']) && isset($_POST['search']['value']) && $_POST['search']['value'] != "") {
-        $queryParams['search'] = $_POST['search']['value'];
-    }
-    $db = new Db();
-    $returnData = $db->list($queryParams);
-    $returnData['draw'] = $queryParams['draw'];
-    echo json_encode($returnData);
 });
 
 // si on arrive là c'est qu'aucune URL n'a matchée, donc => 404
