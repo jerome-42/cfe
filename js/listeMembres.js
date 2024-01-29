@@ -38,21 +38,27 @@ $(document).ready(function() {
 	.click(function() {
 	    if ($(this).attr('value') === '1') {
 		$(this).attr('value', 0);
-		changeAdmin($(this).attr('x-num'), false);
+		changeAdmin($(this).parent('tr').attrs('x-num'), false);
 	    }
 	    else {
 		$(this).attr('value', 1);
-		changeAdmin($(this).attr('x-num'), true);
+		changeAdmin($(this).parent('tr').attrs('x-num'), true);
 	    }
 	    displayEstAdmin($(this));
 	});
 
     $('.sudo').click(function() {
-	window.location = '/sudo?numero='+$(this).attr('x-num');
+	var numGivav = $(this).parents('tr').attr('x-num');
+	window.location = '/sudo?numero='+numGivav;
     });
 
     $('.back').click(function() {
 	window.location = '/';
+    });
+
+    $('.displayDetails').click(function() {
+	var numGivav = $(this).parents('tr').attr('x-num');
+	window.location = '/detailsMembre?numero='+numGivav;
     });
 
     $('#search').on('keyup', function() {

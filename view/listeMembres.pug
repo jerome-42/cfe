@@ -21,16 +21,21 @@ block content
             th Endosser
             th Numéro GIVAV
             th Nom
+            th CFE
             th Admin
         tbody
           each membre in $membres
-            tr
+            tr(x-num=$membre['NumNational'])
               td
                 if $inSudo == false && $currentUser != $membre['NumNational']
-                  button.btn.btn-secondary.sudo(x-num=$membre['NumNational']) Endosser
+                  button.btn.btn-secondary.sudo Endosser
               td #{$membre['NumNational']}
               td #{$membre['name']}
-              td.estAdmin(x-num=$membre['NumNational'] value=$membre['estAdmin'])
+              td
+                button.btn.btn-primary.displayDetails
+                  i.bi.bi-eye
+                  | &nbsp;Détails
+              td.estAdmin(value=$membre['estAdmin'])
         tfoot
           tr
             th Endosser
