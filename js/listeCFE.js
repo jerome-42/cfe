@@ -10,6 +10,21 @@ String.prototype.replaceSpecialChars = function() {
 };
 
 $(document).ready(function() {
+    $('#list > tbody > tr').each(function() {
+	switch ($(this).attr('x-validation')) {
+	case 'Validé':
+	    $(this).addClass('table-primary');
+	    break;
+	case 'Rejeté':
+	    $(this).addClass('table-danger');
+	    break;
+	case 'Soumis':
+	default:
+	    $(this).addClass('table-secondary');
+	    break;
+	}
+    });
+
     $('.back').click(function() {
 	window.location = '/';
     });

@@ -25,7 +25,8 @@ block content
             th Détails
         tbody
           each line in $lines
-            tr
+            tr(x-validation=$line['Validation'])
+              td #{$line['Validation']}
               td #{$line['DateTravaux']}
               td #{$line['TypeTravaux']}
               td #{$line['Bénéficiaire']}
