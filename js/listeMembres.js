@@ -1,3 +1,14 @@
+String.prototype.replaceSpecialChars = function() {
+    var newString = this;
+    newString = newString
+	.replace(/[âäà]/gm, 'a')
+	.replace(/[êëéèê]/gm, 'e')
+	.replace(/[îï]/gm, 'o')
+	.replace(/[ôö]/gm, 'o')
+	.replace(/[ù]/gm, 'u');
+    return newString;
+};
+
 var changeAdmin = function(num, statut) {
     $.ajax({
         url: '/changeAdmin',
@@ -45,12 +56,18 @@ $(document).ready(function() {
     });
 
     $('#search').on('keyup', function() {
-	var search = $(this).val().toLowerCase();
+	var search = $(this).val().toLowerCase().replaceSpecialChars();
 	$('#list > tbody > tr').each(function() {
 	    if (search === '')
 		$(this).show();
 	    else {
-		if ($(this).find('td:nth-child(3)').text().toLowerCase().indexOf(search) === -1)
+		var match = false;
+		$(this).find('td').each(function() {
+		    if ($(this).text().toLowerCase().replaceSpecialChars().indexOf(search) !== -1)
+			match = true;
+		});
+
+		if (match === false)
 		    $(this).hide();
 		else
 		    $(this).show();
