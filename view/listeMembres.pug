@@ -21,7 +21,8 @@ block content
             th Endosser
             th Numéro GIVAV
             th Nom
-            th CFE
+            th CFE à réaliser
+            th Détails
             th Admin
         tbody
           each membre in $membres
@@ -31,6 +32,7 @@ block content
                   button.btn.btn-secondary.sudo Endosser
               td #{$membre['givavNumber']}
               td #{$membre['name']}
+              td #{$membre['cfeTODO']}
               td
                 button.btn.btn-primary.displayDetails
                   i.bi.bi-eye
@@ -41,6 +43,7 @@ block content
             th Endosser
             th Numéro GIVAV
             th Nom
+            th CFE à réaliser
             th Admin
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour

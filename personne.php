@@ -29,7 +29,7 @@ class Personne {
     }
 
     static public function getAll($conn) {
-        $query = "SELECT * FROM personnes ORDER BY givavNumber";
+        $query = "SELECT *, COALESCE(personnes.cfeTODO, settings.value) AS cfeTODO FROM personnes JOIN settings ON settings.what = 'defaultCFE_TODO' ORDER BY givavNumber";
         $sth = $conn->prepare($query);
         $sth->execute();
         return $sth->fetchAll();
