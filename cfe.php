@@ -18,7 +18,7 @@ class CFE {
     }
 
     public function getRecords() {
-        $query = 'SELECT * FROM cfe_records WHERE NumNational = :givavNumber ORDER BY DateTravaux'; // TODO WHERE année
+        $query = 'SELECT * FROM cfe_records WHERE NumNational = :givavNumber ORDER BY DateTravaux DESC'; // TODO WHERE année
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':givavNumber' => $this->givavNumber ]);
         $lines = $sth->fetchAll();
@@ -37,9 +37,9 @@ class CFE {
 
 
     public function getStats() {
-        return [ 'submited' => $this->getLines('Soumis'),
-                 'validated' => $this->getLines('Validé'),
-                 'rejected' => $this->getLines('Rejeté'),
-                 'thecfetodo' => $this->getTask('cfetodo')	];
+        return [ 'submited' => floatval($this->getLines('Soumis')),
+                 'validated' => floatval($this->getLines('Validé')),
+                 'rejected' => floatval($this->getLines('Rejeté')),
+                 'thecfetodo' => floatval($this->getTask('cfetodo'))	];
     }
 }

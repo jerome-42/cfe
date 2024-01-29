@@ -125,6 +125,18 @@ get('/detailsMembre', function($conn) {
     Phug::displayFile('view/detailsMembre.pug', $vars);
 });
 
+post('/detailsMembreStats', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_POST['num']) || !is_numeric($_POST['num'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
+    }
+    $num = intval($_POST['num']);
+    $cfe = new CFE($conn, $num);
+    echo json_encode($cfe->getStats());
+});
+
 get('/editRecords', function($conn) {
 	$query="SELECT * from cfe_records WHERE NumNational = " ;
 	

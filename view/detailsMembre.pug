@@ -8,6 +8,8 @@ block content
   .row
     h1 Détail de (#{$membre['name']} - #{$membre['NumNational']} - #{$membre['email']})
   .row
+    div#details
+  .row
     .col-md-3.offset-md-9
       .row
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
@@ -15,7 +17,7 @@ block content
           input.form-control(type="text" placeholder="")#search
   .row
     .col-12
-      table.table.table-striped#list
+      table.table.table-striped(x-numero=$membre['NumNational'])#list
         thead
           tr
             th Date
@@ -25,8 +27,8 @@ block content
             th Détails
         tbody
           each line in $lines
-            tr(x-validation=$line['Validation'])
-              td #{$line['Validation']}
+            tr(x-id=$line['DateEnregistrement'] x-validation=$line['Validation'])
+              td.validation #{$line['Validation']}
               td #{$line['DateTravaux']}
               td #{$line['TypeTravaux']}
               td #{$line['Bénéficiaire']}
