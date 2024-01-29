@@ -17,6 +17,14 @@ class CFE {
         return $lines[0]['total'];
     }
 
+    public function getRecords() {
+        $query = 'SELECT * FROM cfe_records WHERE NumNational = :givavNumber ORDER BY DateTravaux'; // TODO WHERE année
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ':givavNumber' => $this->givavNumber ]);
+        $lines = $sth->fetchAll();
+        return $lines;
+    }
+
     private function getTask($cfetodo) {
         $query = 'SELECT COALESCE(cfetodo, 0) AS cfetodo FROM personnes WHERE NumNational = :givavNumber';
         $sth = $this->conn->prepare($query);

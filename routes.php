@@ -157,6 +157,16 @@ post('/connexion', function($conn) {
     Phug::displayFile('view/connexion.pug', $vars);
 });
 
+get('/listeCFE', function($conn) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    $cfe = new CFE($conn, $_SESSION['givavNumber']);
+    $lines = $cfe->getRecords();
+    $vars = $_SESSION;
+    $vars['lines'] = $lines;
+    Phug::displayFile('view/listeCFE.pug', $vars);
+});
+
 get('/listeMembres', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
