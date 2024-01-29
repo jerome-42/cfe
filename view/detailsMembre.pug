@@ -6,7 +6,7 @@ block scripts
 
 block content
   .row
-    h1 Détail de (#{$membre['name']} - #{$membre['NumNational']} - #{$membre['email']})
+    h1 Détails pour (#{$membre['name']} - #{$membre['NumNational']} - #{$membre['email']})
   .row
     div#details
   .row
@@ -20,25 +20,27 @@ block content
       table.table.table-striped(x-numero=$membre['NumNational'])#list
         thead
           tr
+            th Statut
             th Date
-            th Type
             th Bénéficiaire
+            th Type
             th Durée
             th Détails
         tbody
           each line in $lines
-            tr(x-id=$line['DateEnregistrement'] x-validation=$line['Validation'])
-              td.validation #{$line['Validation']}
-              td #{$line['DateTravaux']}
-              td #{$line['TypeTravaux']}
-              td #{$line['Bénéficiaire']}
-              td #{$line['Durée']}
-              td #{$line['Détails']}
+            tr(x-id=$line['id'] x-validation=$line['status'])
+              td.validation #{$line['status']}
+              td #{$line['workDate']}
+              td #{$line['beneficiary']}
+              td #{$line['workType']}
+              td #{$line['duration']}
+              td #{$line['details']}
         tfoot
           tr
+            th Statut
             th Date
-            th Type
             th Bénéficiaire
+            th Type
             th Durée
             th Détails
   .hstack.gap-4.mb-3

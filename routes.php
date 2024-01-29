@@ -211,6 +211,27 @@ get('/deconnexion', function($conn) {
     redirect('/');
 });
 
+post('/updateCFELine', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
+        echo "id doit être un nombre";
+        return http_response_code(500);
+    }
+    if (!isset($_POST['status']) || $_POST['status'] === '') {
+        echo "status est obligatoire";
+        return http_response_code(500);
+    }
+    $query = "UPDATE cfe_records SET status = :status, statusWho = :num, statusDate = NOW() WHERE id = :id";
+    $sth = $conn->prepare($query);
+    $sth->execute([
+        ':id' => $_POST['id'],
+        ':status' => $_POST['status'],
+        ':num' => $_SESSION['givavNumber'],
+    ]);
+    echo "OK";
+});
+
 get('/sudo', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

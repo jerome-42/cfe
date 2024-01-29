@@ -9,14 +9,39 @@ String.prototype.replaceSpecialChars = function() {
     return newString;
 };
 
+var changeStatus = function(elem, newStatus) {
+    var elem = elem.parents('td');
+    var id = elem.parents('tr').attr('x-id');
+    updateLine(id, newStatus, function() {
+	elem.parents('tr').attr('x-validation', newStatus);
+	setLineColor(elem.parents('tr'));
+	displayValidation(elem);
+	updateDetails();
+    });
+};
+
 var displayValidation = function(elem) {
     switch (elem.parents('tr').attr('x-validation')) {
-    case 'Validé':
-    case 'Rejeté':
-	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i>&nbsp;Annuler</button>'));
-    case 'Soumis':
+    case 'validated':
+	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i>&nbsp;Annuler</button><span>&nbsp;Validé</span>'));
+    case 'rejected':
+	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i>&nbsp;Annuler</button><span>&nbsp;Rejeté</span>'));
+    case 'submitted':
     default:
-	return elem.html($('<button class="btn btn-success me-2 validate"><i class="bi bi-check-circle"></i>&nbsp;Valider</button><button class="btn btn-danger refuse"><i class="bi bi-x-circle"></i>&nbsp;Rejeter</button>'));
+	return elem.html($('<button class="btn btn-success me-2 validate"><i class="bi bi-check-circle"></i>&nbsp;Valider</button><button class="btn btn-danger refuse"><i class="bi bi-x-circle"></i>&nbsp;Rejeter</button><span>&nbsp;Soumis</span>'));
+    }
+};
+
+var setLineColor = function(tr) {
+    tr.removeClass([ 'table-success', 'table-danger', 'table-secondary' ]);
+    switch (tr.attr('x-validation')) {
+    case 'validated':
+	return tr.addClass('table-success');
+    case 'rejected':
+	return tr.addClass('table-danger');
+    case 'submitted':
+    default:
+	return tr.addClass('table-secondary');
     }
 };
 
@@ -46,10 +71,10 @@ var updateDetails = function() {
     });
 };
 
-var updateLine = function(id, statut, cb) {
+var updateLine = function(id, status, cb) {
     $.ajax({
         url: '/updateCFELine',
-        data: { num: $('#list').attr('x-numero'), id: id, statut: statut },
+        data: { id: id, status: status },
         type: 'POST',
         error: function() {
 	    alert("Impossible");
@@ -62,18 +87,7 @@ var updateLine = function(id, statut, cb) {
 
 $(document).ready(function() {
     $('#list > tbody > tr').each(function() {
-	switch ($(this).attr('x-validation')) {
-	case 'Validé':
-	    $(this).addClass('table-primary');
-	    break;
-	case 'Rejeté':
-	    $(this).addClass('table-danger');
-	    break;
-	case 'Soumis':
-	default:
-	    $(this).addClass('table-secondary');
-	    break;
-	}
+	setLineColor($(this));
     });
     $('.validation').each(function() {
 	displayValidation($(this));
@@ -84,30 +98,15 @@ $(document).ready(function() {
     });
 
     $(document.body).on('click', '.cancel', function() {
-	var elem = $(this).parents('td');
-	var id = $(this).parents('tr').attr('x-id');
-	updateLine(id, 'Soumis', function() {
-	    $(this).parents('tr').attr('x-validation', 'Soumis');
-	    displayValidation(elem);
-	});
+	changeStatus($(this), 'submitted');
     });
 
     $(document.body).on('click', '.validate', function() {
-	var elem = $(this).parents('td');
-	var id = $(this).parents('tr').attr('x-id');
-	updateLine(id, 'Validé', function() {
-	    $(this).parents('tr').attr('x-validation', 'Validé');
-	    displayValidation(elem);
-	});
+	changeStatus($(this), 'validated');
     });
 
     $(document.body).on('click', '.refuse', function() {
-	var elem = $(this).parents('td');
-	var id = $(this).parents('tr').attr('x-id');
-	updateLine(id, 'Refusé', function() {
-	    $(this).parents('tr').attr('x-validation', 'Refusé');
-	    displayValidation(elem);
-	});
+	changeStatus($(this), 'rejected');
     });
 
     $('.download').click(function() {

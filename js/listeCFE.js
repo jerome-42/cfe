@@ -14,7 +14,7 @@ $(document).ready(function() {
 	switch ($(this).attr('x-validation')) {
 	case 'validated':
 	    $(this).find('.status').text('Validé');
-	    $(this).addClass('table-primary');
+	    $(this).addClass('table-success');
 	    break;
 	case 'rejected':
 	    $(this).find('.status').text('Rejeté');
