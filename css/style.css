@@ -8,3 +8,13 @@
 .bg-login {
     backgound-color: #4e73df;
 }
+
+.d-sm-block2 {
+    display: inline!important;
+}
+
+@media (max-width: 576px) {
+    .d-sm-block2 {
+	display: none!important;
+    }
+}

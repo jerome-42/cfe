@@ -28,7 +28,7 @@ var displayValidation = function(elem) {
 	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i>&nbsp;Annuler</button><span>&nbsp;Rejeté</span>'));
     case 'submitted':
     default:
-	return elem.html($('<button class="btn btn-success me-2 validate"><i class="bi bi-check-circle"></i>&nbsp;Valider</button><button class="btn btn-danger refuse"><i class="bi bi-x-circle"></i>&nbsp;Rejeter</button><span>&nbsp;Soumis</span>'));
+	return elem.html($('<button class="btn btn-success me-2 validate"><i class="bi bi-check-circle"></i><span class="d-none d-sm-block2">&nbsp;Valider</span></button><button class="btn btn-danger refuse"><i class="bi bi-x-circle"></i><span class="d-none d-sm-block2">&nbsp;Rejeter</span></button><span>&nbsp;Soumis</span>'));
     }
 };
 
@@ -95,6 +95,20 @@ $(document).ready(function() {
 
     $('.back').click(function() {
 	history.back();
+    });
+
+    $('#updateCFE_TODO').click(function() {
+	$.ajax({
+            url: '/updateCFE_TODO',
+            data: { num: $('#list').attr('x-numero'), cfeTODO: $('#cfeTODO').val() },
+            type: 'POST',
+            error: function() {
+		alert("Impossible");
+            },
+            success: function(res) {
+		updateDetails();
+            }
+	});
     });
 
     $(document.body).on('click', '.cancel', function() {

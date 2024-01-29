@@ -35,6 +35,15 @@ class CFE {
         return $lines[0]['cfeTODO'];
     }
 
+    public function getDefaultCFE_TODO() {
+        $query = "SELECT value FROM settings WHERE what = 'defaultCFE_TODO'";
+        $sth = $this->conn->prepare($query);
+        $sth->execute([]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("pas de settings defaultCPE_TODO");
+        $lines = $sth->fetchAll();
+        return $lines[0]['value'];
+    }
 
     public function getStats() {
         return [ 'submited' => floatval($this->getLines('submitted')),

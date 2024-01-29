@@ -117,6 +117,7 @@ get('/detailsMembre', function($conn) {
     $vars = $_SESSION;
     $vars['membre'] = Personne::load($conn, $num);
     $cfe = new CFE($conn, $num);
+    $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO();
     $lines = $cfe->getRecords();
     $vars['lines'] = $lines;
     Phug::displayFile('view/detailsMembre.pug', $vars);
@@ -228,6 +229,39 @@ post('/updateCFELine', function($conn) {
         ':status' => $_POST['status'],
         ':num' => $_SESSION['givavNumber'],
     ]);
+    echo "OK";
+});
+
+post('/updateCFE_TODO', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_POST['num']) || !is_numeric($_POST['num'])) {
+        echo "num doit être un nombre";
+        return http_response_code(500);
+    }
+    if (!isset($_POST['cfeTODO'])) {
+        echo "cfeTODO est obligatoire";
+        return http_response_code(500);
+    }
+    if ($_POST['cfeTODO'] === '') {
+        $query = "UPDATE personnes SET cfeTODO = NULL WHERE givavNumber = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([
+            ':num' => intval($_POST['num']),
+        ]);
+    } else {
+        if (!is_numeric($_POST['cfeTODO']) ||
+            intval($_POST['cfeTODO']) < 0 || intval($_POST['cfeTODO']) > 100) {
+            echo "cfeTODO doit être entre 0 et 100";
+            return http_response_code(500);
+        }
+        $query = "UPDATE personnes SET cfeTODO = :cfeTODO WHERE givavNumber = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([
+            ':num' => intval($_POST['num']),
+            ':cfeTODO' => intval($_POST['cfeTODO']),
+        ]);
+    }
     echo "OK";
 });
 
