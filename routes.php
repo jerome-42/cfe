@@ -109,6 +109,22 @@ get('/declaration-completee', function() {
     Phug::displayFile('view/declaration-completee.pug');
 });
 
+get('/detailsMembre', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
+    }
+    $num = intval($_GET['numero']);
+    $vars = $_SESSION;
+    $vars['membre'] = Personne::load($conn, $num);
+    $cfe = new CFE($conn, $num);
+    $lines = $cfe->getRecords();
+    $vars['lines'] = $lines;
+    Phug::displayFile('view/detailsMembre.pug', $vars);
+});
+
 get('/editRecords', function($conn) {
 	$query="SELECT * from cfe_records WHERE NumNational = " ;
 	

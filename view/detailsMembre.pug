@@ -1,0 +1,44 @@
+extends layout.pug
+
+block scripts
+  title Détails membre
+  script(src="js/detailsMembre.js")
+
+block content
+  .row
+    h1 Détail de (#{$membre['name']} - #{$membre['NumNational']} - #{$membre['email']})
+  .row
+    .col-md-3.offset-md-9
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="")#search
+  .row
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th Date
+            th Type
+            th Bénéficiaire
+            th Durée
+            th Détails
+        tbody
+          each line in $lines
+            tr(x-validation=$line['Validation'])
+              td #{$line['Validation']}
+              td #{$line['DateTravaux']}
+              td #{$line['TypeTravaux']}
+              td #{$line['Bénéficiaire']}
+              td #{$line['Durée']}
+              td #{$line['Détails']}
+        tfoot
+          tr
+            th Date
+            th Type
+            th Bénéficiaire
+            th Durée
+            th Détails
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour
+    button.btn.btn-primary.download(x-name=$membre['name']) Télécharger en CSV
