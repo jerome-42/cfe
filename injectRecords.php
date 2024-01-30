@@ -69,8 +69,8 @@ if (($handle = fopen($argv[1], "r")) !== FALSE) {
         $data[7] = parseDateDDMMAAAA($data[7]); // workDate
         if ($data[7]['year'] != '2024')
             continue;
-        //DEBUG echo "row: ".$row.PHP_EOL;
-        //DEBUG var_dump($data);
+        echo "row: ".$row.PHP_EOL;
+        var_dump($data);
         $details = [];
         foreach ([ 5, 8 ] as $column) {
             if ($data[$column] !== '')
@@ -86,7 +86,7 @@ if (($handle = fopen($argv[1], "r")) !== FALSE) {
                         ':workDate' => toDate($data[7], false),
                         ':workType' => $data[3],
                         ':beneficiary' => $data[6],
-                        ':duration' => $data[4],
+                        ':duration' => floatval($data[4]),
                         ':status' => 'submitted',
                         ':details' => implode(' ', $details),
         ]);
