@@ -39,14 +39,16 @@ block content
             tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'])
               td
                 if $inSudo == false && $currentUser != $membre['givavNumber']
-                  button.btn.btn-secondary.sudo Endosser
+                  button.btn.btn-secondary.sudo
+                    i.bi.bi-person-circle
+                    span.d-none.d-sm-block2 Endosser
               td #{$membre['givavNumber']}
               td #{$membre['name']}
               td #{$membre['cfeTODO']}
               td
                 button.btn.btn-primary.displayDetails
                   i.bi.bi-eye
-                  | &nbsp;Détails
+                  span.d-none.d-sm-block2 &nbsp;Détails
               td.isAdmin
         tfoot
           tr

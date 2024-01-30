@@ -22,9 +22,9 @@ var changeStatus = function(elem, newStatus) {
 var displayValidation = function(elem) {
     switch (elem.parents('tr').attr('x-validation')) {
     case 'validated':
-	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i>&nbsp;Annuler</button><span>&nbsp;Validé</span>'));
+	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i><span class="d-none d-sm-block2">&nbsp;Annuler</span></button><span>&nbsp;Validé</span>'));
     case 'rejected':
-	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i>&nbsp;Annuler</button><span>&nbsp;Rejeté</span>'));
+	return elem.html($('<button class="btn btn-warning cancel"><i class="bi bi-x-circle"></i><span class="d-none d-sm-block2">&nbsp;Annuler</span></button><span>&nbsp;Rejeté</span>'));
     case 'submitted':
     default:
 	return elem.html($('<button class="btn btn-success me-2 validate"><i class="bi bi-check-circle"></i><span class="d-none d-sm-block2">&nbsp;Valider</span></button><button class="btn btn-danger refuse"><i class="bi bi-x-circle"></i><span class="d-none d-sm-block2">&nbsp;Rejeter</span></button><span>&nbsp;Soumis</span>'));

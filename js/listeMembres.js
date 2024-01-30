@@ -25,9 +25,9 @@ var changeAdmin = function(num, status) {
 
 var displayIsAdmin = function(elem) {
     if (elem.parents('tr').attr('x-isAdmin') === '1')
-	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i>&nbsp;Révoquer les droits administrateur</button>'));
+	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2">&nbsp;Révoquer les droits administrateur</span></button>'));
     else
-	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i>&nbsp;Passer administrateur</button>'));
+	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2">&nbsp;Passer administrateur</span></button>'));
 };
 
 var updateList = function() {
