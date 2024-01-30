@@ -18,6 +18,12 @@ block content
         .alert.alert-warning
           b Il vous reste #{round($reste, 2)} heures à faire
           small.text-muted &nbsp;(d'ici au 31 décembre)
+      else if $thecfetodo == 0
+        .alert.alert-success
+          span.h3
+            i.bi.bi-emoji-smile
+            b &nbsp;Vous n'êtes pas redevable d'heure de CFE&nbsp;
+            i.bi.bi-emoji-smile
       else
         .alert.alert-success
           span.h3

@@ -33,8 +33,8 @@ function doRoute($fct,) {
         $database = 'cfe';
         $dsn = join(';', [ 'host='.$servername, 'dbname='.$database ]);
         $conn = new PDO("mysql:".$dsn, $username, $password);
-        $conn->beginTransaction();
         checkDatabase($conn, $database);
+        $conn->beginTransaction();
     }
     catch (Exception $e) {
         http_response_code(500);
