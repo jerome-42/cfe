@@ -3,12 +3,22 @@ extends layout.pug
 block scripts
   title Liste des membres
   script(src="js/listeMembres.js")
+  script
+    | var defaultCFE_TODO = #{$defaultCFE_TODO};
 
 block content
   .row
     h1 Liste des membres
   .row
-    .col-md-3.offset-md-9
+    .col-md-4.offset-md-3
+      .row
+	.col-sm-2
+          select.form-control#filter
+            option(value="all") Tous
+            option(value="0") CFE=0
+            option(value="admin") Les admin
+            option(value="not0notDefault") Ni à CFE 0 ni au défaut
+    .col-md-3
       .row
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
@@ -26,7 +36,7 @@ block content
             th Admin
         tbody
           each membre in $membres
-            tr(x-num=$membre['givavNumber'])
+            tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'])
               td
                 if $inSudo == false && $currentUser != $membre['givavNumber']
                   button.btn.btn-secondary.sudo Endosser
@@ -37,7 +47,7 @@ block content
                 button.btn.btn-primary.displayDetails
                   i.bi.bi-eye
                   | &nbsp;Détails
-              td.estAdmin(value=$membre['isAdmin'])
+              td.isAdmin
         tfoot
           tr
             th Endosser

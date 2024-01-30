@@ -23,28 +23,62 @@ var changeAdmin = function(num, status) {
     });
 };
 
-var displayEstAdmin = function(elem) {
-    if (elem.attr('value') === '1')
+var displayIsAdmin = function(elem) {
+    if (elem.parents('tr').attr('x-isAdmin') === '1')
 	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i>&nbsp;Révoquer les droits administrateur</button>'));
     else
 	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i>&nbsp;Passer administrateur</button>'));
 };
 
+var updateList = function() {
+    var search = $('#search').val().toLowerCase().replaceSpecialChars();
+    $('#list > tbody > tr').each(function() {
+	var displayLine = false;
+	if (search === '')
+	    displayLine = true;
+	else {
+	    $(this).find('td').each(function() {
+		if ($(this).text().toLowerCase().replaceSpecialChars().indexOf(search) !== -1)
+		    displayLine = true;
+	    });
+	}
+	switch ($('#filter').val()) {
+	case '0': // CFE = 0
+	    if ($(this).attr('x-cfeTODO') !== '0')
+		displayLine = false;
+	    break;
+	case 'admin':
+	    if ($(this).attr('x-isAdmin') === '0')
+		displayLine = false;
+	    break;
+	case 'not0notDefault':
+	    console.log(parseFloat($(this).attr('x-cfeTODO')));
+	    if (parseFloat($(this).attr('x-cfeTODO')) === '0' || parseFloat($(this).attr('x-cfeTODO')) === defaultCFE_TODO)
+		displayLine = false;
+	    break;
+	}
+	if (displayLine === false)
+	    $(this).hide();
+	else
+	    $(this).show();
+    });
+};
+
 $(document).ready(function() {
-    $('#list').find('td.estAdmin')
+    $('#list').find('td.isAdmin')
 	.each(function() {
-	    displayEstAdmin($(this));
+	    displayIsAdmin($(this));
 	})
 	.click(function() {
-	    if ($(this).attr('value') === '1') {
-		$(this).attr('value', 0);
+	    if ($(this).parents('tr').attr('x-isAdmin') === '1') {
+		$(this).parents('tr').attr('x-isAdmin', 0);
 		changeAdmin($(this).parents('tr').attr('x-num'), false);
 	    }
 	    else {
-		$(this).attr('value', 1);
+		$(this).parents('tr').attr('x-isAdmin', 1);
 		changeAdmin($(this).parents('tr').attr('x-num'), true);
 	    }
-	    displayEstAdmin($(this));
+	    displayIsAdmin($(this));
 	});
 
     $('.sudo').click(function() {
@@ -61,24 +95,12 @@ $(document).ready(function() {
 	window.location = '/detailsMembre?numero='+numGivav;
     });
 
-    $('#search').on('keyup', function() {
-	var search = $(this).val().toLowerCase().replaceSpecialChars();
-	$('#list > tbody > tr').each(function() {
-	    if (search === '')
-		$(this).show();
-	    else {
-		var match = false;
-		$(this).find('td').each(function() {
-		    if ($(this).text().toLowerCase().replaceSpecialChars().indexOf(search) !== -1)
-			match = true;
-		});
+    $('#filter').on('change', function() {
+	updateList();
+    });
 
-		if (match === false)
-		    $(this).hide();
-		else
-		    $(this).show();
-	    }
-	});
+    $('#search').on('keyup', function() {
+	updateList();
     });
     $('#search').focus();
 });

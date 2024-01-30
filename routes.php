@@ -222,9 +222,13 @@ get('/listeMembres', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $membres = Personne::getAll($conn);
+    $cfe = new CFE($conn, null);
+    $defaultCFE_TODO = $cfe->getDefaultCFE_TODO();
     Phug::displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
                                                  'inSudo' => isset($_SESSION['inSudo']),
-                                                 'membres' => $membres ]);
+                                                 'membres' => $membres,
+                                                 'defaultCFE_TODO' => $defaultCFE_TODO,
+    ]);
 });
 
 get('/validation', function($conn) {
