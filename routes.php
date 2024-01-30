@@ -10,7 +10,7 @@ include_once __DIR__ . '/vendor/autoload.php';
 
 get('/', function($conn) {
     if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
+        return redirect('/connexion');
     }
     $cfe = new CFE($conn, $_SESSION['givavNumber']);
     $vars = array_merge($_SESSION, $cfe->getStats());
@@ -44,7 +44,7 @@ post('/changeAdmin', function($conn) {
 
 get('/connexion', function() {
     if (isset($_SESSION['auth'])) {
-        redirect('/');
+        return redirect('/');
     }
     Phug::displayFile('view/connexion.pug');
 });
@@ -137,7 +137,7 @@ post('/declaration', function($conn) {
 
 get('/declaration-complete', function() {
     if (!isset($_SESSION['auth'])) {
-        redirect('/connexion');
+        return redirect('/connexion');
     }
     Phug::displayFile('view/declaration-complete.pug');
 });
