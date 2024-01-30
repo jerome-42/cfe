@@ -14,4 +14,7 @@ $(document).ready(function() {
     $(".validation").click(function() {
         window.location = "/validation";
     });
+    $(".export").click(function() {
+        window.location = "/exportAllData";
+    });
 });

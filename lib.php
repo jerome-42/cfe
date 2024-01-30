@@ -10,9 +10,70 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
 
+function exportAllData_getPersonnes($conn) {
+    $fd = fopen('php://temp/maxmemory:1048576', 'w');
+    if ($fd === false) {
+        throw new Exception('Failed to open temporary file');
+    }
+    $membres = Personne::getAll($conn);
+    $columns = [ [ 'givavNumber', 'givav' ], [ 'name', 'nom' ], [ 'email', 'email' ],
+                 [ 'isAdmin', 'administrateur' ], [ 'cfeTODO', 'cfe' ] ];
+    $headers = array_map(function($i) {
+        return $i[1];
+    }, $columns);
+    fputcsv($fd, $headers);
+    foreach ($membres as $membre) {
+        $line = [];
+        foreach ($columns as $column) {
+            if (isset($membre[$column[0]]))
+                $line[] = $membre[$column[0]];
+            else
+                $line[] = '';
+        }
+        fputcsv($fd, $line);
+    }
+    rewind($fd);
+    $csv = stream_get_contents($fd);
+    fclose($fd);
+    return $csv;
+}
+
+function exportAllData_getRecords($conn) {
+    $fd = fopen('php://temp/maxmemory:1048576', 'w');
+    if ($fd === false) {
+        throw new Exception('Failed to open temporary file');
+    }
+    $cfe = new CFE($conn, null);
+    $columns = [ [ 'who', 'givav' ], [ 'registerDate', 'date enregistrement' ],
+                 [ 'workDate', 'date CFE' ], [ 'workType', 'type' ],
+                 [ 'beneficiary', 'beneficiaire' ], [ 'duration', 'durée' ],
+                 [ 'details', 'détails' ],
+                 [ 'status', 'statut' ], [ 'statusDate', 'date de validation' ],
+                 [ 'statusWho', 'validation par' ] ];
+    $headers = array_map(function($i) {
+        return $i[1];
+    }, $columns);
+    fputcsv($fd, $headers);
+    $records = $cfe->getAllRecords();
+    foreach ($records as $record) {
+        $line = [];
+        foreach ($columns as $column) {
+            if (isset($record[$column[0]]))
+                $line[] = $record[$column[0]];
+            else
+                $line[] = '';
+        }
+        fputcsv($fd, $line);
+    }
+    rewind($fd);
+    $csv = stream_get_contents($fd);
+    fclose($fd);
+    return $csv;
+}
+
 function redirect($to) {
     header('Location: '.$to);
-    exit;
+    return;
 }
 
 function renderHTML($file) {

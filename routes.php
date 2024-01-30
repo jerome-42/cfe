@@ -185,6 +185,29 @@ post('/detailsMembreStats', function($conn) {
     echo json_encode($cfe->getStats());
 });
 
+get('/exportAllData', function($conn) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $zipFilename = 'export-'.date('d-m-Y').'.zip';
+    $zip = new ZipStream\ZipStream(
+        outputName: $zipFilename,
+        sendHttpHeaders: true, // enable output of HTTP headers
+    );
+    // membres
+    $data = exportAllData_getPersonnes($conn);
+    $zip->addFile(
+        fileName: 'membres.csv',
+        data: $data,
+    );
+    // cfe
+    $data = exportAllData_getRecords($conn);
+    $zip->addFile(
+        fileName: 'cfe.csv',
+        data: $data,
+    );
+    $zip->finish();
+});
+
 get('/listeCFE', function($conn) {
     if (!isset($_SESSION['auth']))
         return redirect('/');

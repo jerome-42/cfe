@@ -1,6 +1,7 @@
 {
     "require": {
-        "pug-php/pug": "^3.5"
+        "pug-php/pug": "^3.5",
+        "maennchen/zipstream-php": "^3.1"
     },
     "config": {
         "allow-plugins": {

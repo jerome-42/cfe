@@ -25,6 +25,14 @@ class CFE {
         return $lines;
     }
 
+    public function getAllRecords() {
+        $query = 'SELECT * FROM cfe_records ORDER BY workDate DESC';
+        $sth = $this->conn->prepare($query);
+        $sth->execute([]);
+        $lines = $sth->fetchAll();
+        return $lines;
+    }
+
     public function getRecords() {
         $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber ORDER BY workDate DESC'; // TODO WHERE année
         $sth = $this->conn->prepare($query);

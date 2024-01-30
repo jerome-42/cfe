@@ -31,9 +31,11 @@ block content
       .btn-group-vertical(role="group")
         if $isAdmin
           button.btn.btn-warning.validation Validations
-          button.btn.btn-prymary.membres Membres
+          button.btn.btn-primary.membres Membres
         button.btn.btn-success.declaration Déclarer
         button.btn.btn-info.listeCFE Consulter
+        if $isAdmin
+          button.btn.btn-primary.export Export
         button.btn.btn-danger.logout Déconnexion
 
     .row.d-none.d-sm-block.justify-content-md-center
@@ -43,4 +45,6 @@ block content
           button.btn.btn-primary.membres Membres
         button.btn.btn-success.declaration Déclarer
         button.btn.btn-info.listeCFE Consulter
+        if $isAdmin
+          button.btn.btn-primary.export Export
         button.btn.btn-danger.logout Déconnexion
