@@ -2,6 +2,7 @@
 
 class CFE {
     private $conn;
+    private $defaultCFE_TODO = null;
 
     public function __construct($conn) {
         $this->conn = $conn;
@@ -57,6 +58,13 @@ class CFE {
             throw new Exception("pas de settings defaultCPE_TODO");
         $lines = $sth->fetchAll();
         return $lines[0]['value'];
+    }
+
+    public function isCompleted($membre) {
+        if ($membre['cfeValidated'] >= $membre['cfeTODO'])
+            return 1;
+        else
+            return 0;
     }
 
     public function getStats($givavNumber) {

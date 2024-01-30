@@ -168,7 +168,7 @@ get('/detailsMembre', function($conn) {
     $vars['membre'] = Personne::load($conn, $num);
     $cfe = new CFE($conn);
     $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO($num);
-    $lines = $cfe->getRecords();
+    $lines = $cfe->getRecords($num);
     $vars['lines'] = $lines;
     Phug::displayFile('view/detailsMembre.pug', $vars);
 });
@@ -224,6 +224,10 @@ get('/listeMembres', function($conn) {
     $membres = Personne::getAll($conn);
     $cfe = new CFE($conn);
     $defaultCFE_TODO = $cfe->getDefaultCFE_TODO();
+    foreach ($membres as &$membre) {
+        $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber']);
+        $membre['cfeCompleted'] = $cfe->isCompleted($membre);
+    }
     Phug::displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
                                                  'inSudo' => isset($_SESSION['inSudo']),
                                                  'membres' => $membres,

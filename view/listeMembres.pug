@@ -15,7 +15,8 @@ block content
 	.col-sm-2
           select.form-control#filter
             option(value="all") Tous
-            option(value="0") CFE=0
+            option(value="validated") Les membres ayant validés leurs CFE
+            option(value="0") Dispensés de CFE
             option(value="admin") Les admin
             option(value="not0notDefault") Ni à CFE 0 ni au défaut
     .col-md-3
@@ -31,12 +32,13 @@ block content
             th Endosser
             th Numéro GIVAV
             th Nom
+            th CFE réalisées
             th CFE à réaliser
             th Détails
             th Admin
         tbody
           each membre in $membres
-            tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'])
+            tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'])
               td
                 if $inSudo == false && $currentUser != $membre['givavNumber']
                   button.btn.btn-secondary.sudo
@@ -44,6 +46,7 @@ block content
                     span.d-none.d-sm-block2 Endosser
               td #{$membre['givavNumber']}
               td #{$membre['name']}
+              td #{$membre['cfeValidated']}
               td #{$membre['cfeTODO']}
               td
                 button.btn.btn-primary.displayDetails
@@ -55,6 +58,7 @@ block content
             th Endosser
             th Numéro GIVAV
             th Nom
+            th CFE réalisées
             th CFE à réaliser
             th Admin
   .hstack.gap-4.mb-3

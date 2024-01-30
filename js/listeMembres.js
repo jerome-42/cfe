@@ -52,8 +52,11 @@ var updateList = function() {
 		displayLine = false;
 	    break;
 	case 'not0notDefault':
-	    console.log(parseFloat($(this).attr('x-cfeTODO')));
 	    if (parseFloat($(this).attr('x-cfeTODO')) === '0' || parseFloat($(this).attr('x-cfeTODO')) === defaultCFE_TODO)
+		displayLine = false;
+	    break;
+	case 'validated':
+	    if ($(this).attr('x-cfeCompleted') === '0')
 		displayLine = false;
 	    break;
 	}
@@ -80,6 +83,11 @@ $(document).ready(function() {
 	    }
 	    displayIsAdmin($(this));
 	});
+    $('#list > tbody > tr').each(function() {
+	if ($(this).attr('x-cfeCompleted') === '1') {
+	    $(this).addClass('table-success');
+	}
+    });
 
     $('.sudo').click(function() {
 	var numGivav = $(this).parents('tr').attr('x-num');
