@@ -1,18 +1,16 @@
 <?php
 
 class CFE {
-    private $givavNumber;
     private $conn;
 
-    public function __construct($conn, $givavNumber) {
+    public function __construct($conn) {
         $this->conn = $conn;
-        $this->givavNumber = $givavNumber;
     }
 
-    private function getLines($validation) {
+    private function getLines($validation, $givavNumber) {
         $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :statut'; // TODO WHERE année
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':givavNumber' => $this->givavNumber, ':statut' => $validation ]);
+        $sth->execute([ ':givavNumber' => $givavNumber, ':statut' => $validation ]);
         $lines = $sth->fetchAll();
         return $lines[0]['total'];
     }
@@ -33,18 +31,18 @@ class CFE {
         return $lines;
     }
 
-    public function getRecords() {
+    public function getRecords($givavNumber) {
         $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber ORDER BY workDate DESC'; // TODO WHERE année
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':givavNumber' => $this->givavNumber ]);
+        $sth->execute([ ':givavNumber' => $givavNumber ]);
         $lines = $sth->fetchAll();
         return $lines;
     }
 
-    private function getCFE_TODO() {
+    private function getCFE_TODO($givavNumber) {
         $query = "SELECT COALESCE(cfeTODO, settings.value) AS cfeTODO FROM personnes JOIN settings ON settings.what = 'defaultCFE_TODO' WHERE givavNumber = :num";
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':num' => $this->givavNumber ]);
+        $sth->execute([ ':num' => $givavNumber ]);
         if ($sth->rowCount() !== 1)
             throw new Exception("pas de ligne dans personnes pour cet utilisateur");
         $lines = $sth->fetchAll();
@@ -61,10 +59,14 @@ class CFE {
         return $lines[0]['value'];
     }
 
-    public function getStats() {
-        return [ 'submited' => floatval($this->getLines('submitted')),
-                 'validated' => floatval($this->getLines('validated')),
-                 'rejected' => floatval($this->getLines('rejected')),
-                 'thecfetodo' => floatval($this->getCFE_TODO())	];
+    public function getStats($givavNumber) {
+        return [ 'submited' => floatval($this->getLines('submitted', $givavNumber)),
+                 'validated' => floatval($this->getLines('validated', $givavNumber)),
+                 'rejected' => floatval($this->getLines('rejected', $givavNumber)),
+                 'thecfetodo' => floatval($this->getCFE_TODO($givavNumber))	];
+    }
+
+    public function getValidated($givavNumber) {
+        return floatval($this->getLines('validated', $givavNumber));
     }
 }

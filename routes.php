@@ -12,8 +12,8 @@ get('/', function($conn) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
-    $cfe = new CFE($conn, $_SESSION['givavNumber']);
-    $vars = array_merge($_SESSION, $cfe->getStats());
+    $cfe = new CFE($conn);
+    $vars = array_merge($_SESSION, $cfe->getStats($_SESSION['givavNumber']));
     Phug::displayFile('view/index.pug', $vars);
 });
 
@@ -166,8 +166,8 @@ get('/detailsMembre', function($conn) {
     $num = intval($_GET['numero']);
     $vars = $_SESSION;
     $vars['membre'] = Personne::load($conn, $num);
-    $cfe = new CFE($conn, $num);
-    $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO();
+    $cfe = new CFE($conn);
+    $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO($num);
     $lines = $cfe->getRecords();
     $vars['lines'] = $lines;
     Phug::displayFile('view/detailsMembre.pug', $vars);
@@ -181,8 +181,8 @@ post('/detailsMembreStats', function($conn) {
         return Phug::displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
     }
     $num = intval($_POST['num']);
-    $cfe = new CFE($conn, $num);
-    echo json_encode($cfe->getStats());
+    $cfe = new CFE($conn);
+    echo json_encode($cfe->getStats($num));
 });
 
 get('/exportAllData', function($conn) {
@@ -211,8 +211,8 @@ get('/exportAllData', function($conn) {
 get('/listeCFE', function($conn) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
-    $cfe = new CFE($conn, $_SESSION['givavNumber']);
-    $lines = $cfe->getRecords();
+    $cfe = new CFE($conn);
+    $lines = $cfe->getRecords($_SESSION['givavNumber']);
     $vars = $_SESSION;
     $vars['lines'] = $lines;
     Phug::displayFile('view/listeCFE.pug', $vars);
@@ -222,7 +222,7 @@ get('/listeMembres', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $membres = Personne::getAll($conn);
-    $cfe = new CFE($conn, null);
+    $cfe = new CFE($conn);
     $defaultCFE_TODO = $cfe->getDefaultCFE_TODO();
     Phug::displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
                                                  'inSudo' => isset($_SESSION['inSudo']),
@@ -234,7 +234,7 @@ get('/listeMembres', function($conn) {
 get('/validation', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
-    $cfe = new CFE($conn, null);
+    $cfe = new CFE($conn);
     $lines = $cfe->getLinesToValidate();
     Phug::displayFile('view/validation.pug', [ 'lines' => $lines ]);
 });
