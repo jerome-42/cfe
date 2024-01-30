@@ -1,5 +1,6 @@
 <?php
 
+include_once __DIR__ . '/db.php';
 include_once __DIR__ . '/vendor/autoload.php';
 
 ini_set('session.cookie_lifetime', 86400 * 365);

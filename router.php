@@ -30,12 +30,15 @@ function doRoute($fct,) {
         $servername = 'localhost';
         $username = 'cfe';
         $password = 'cfe';
-        $conn = new PDO("mysql:host=$servername;dbname=cfe", $username, $password);
+        $database = 'cfe';
+        $dsn = join(';', [ 'host='.$servername, 'dbname='.$database ]);
+        $conn = new PDO("mysql:".$dsn, $username, $password);
         $conn->beginTransaction();
+        checkDatabase($conn, $database);
     }
     catch (Exception $e) {
         http_response_code(500);
-        $vars = [ 'message' => 'Impossible de se connecter à la base de données' ];
+        $vars = [ 'message' => 'Impossible de se connecter à la base de données: '.$e->getMessage() ];
         return Phug::displayFile('view/error.pug', $vars);
     }
     try {
