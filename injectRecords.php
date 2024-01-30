@@ -69,8 +69,8 @@ if (($handle = fopen($argv[1], "r")) !== FALSE) {
         $data[7] = parseDateDDMMAAAA($data[7]); // workDate
         if ($data[7]['year'] != '2024')
             continue;
-        echo "row: ".$row.PHP_EOL;
-        var_dump($data);
+        //DEBUG echo "row: ".$row.PHP_EOL;
+        //DEBUG var_dump($data);
         $details = [];
         foreach ([ 5, 8 ] as $column) {
             if ($data[$column] !== '')
