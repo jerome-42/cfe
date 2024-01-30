@@ -12,20 +12,28 @@ block content
       if $validated > 0
         .alert.alert-success Vous avez réalisé #{round($validated, 2)} heures de CFE
           small.text-muted &nbsp;(depuis le 1er janvier)
-      if $submited > 0
-        .alert.alert-info Il y a #{round($submited, 2)} heures en attente de validation
-          small.text-muted &nbsp;(les heures sont généralement validées tous les 2 ou 3 jours)
+
       $reste = $thecfetodo - $validated
       if $reste > 0
-        .alert.alert-warning Il vous reste #{round($reste, 2)} heures à faire
+        .alert.alert-warning
+          b Il vous reste #{round($reste, 2)} heures à faire
           small.text-muted &nbsp;(d'ici au 31 décembre)
       else
-        .alert.alert-success Vous n'êtes plus redevable d'heure de CFE
+        .alert.alert-success
+          span.h3
+            i.bi.bi-emoji-smile
+            b &nbsp;Vous n'êtes plus redevable d'heure de CFE&nbsp;
+            i.bi.bi-emoji-smile
+
       if $thecfetodo > 0
         p Sur cette année vous êtes redevable de
           b &nbsp;#{$thecfetodo}&nbsp;
           | heures de CFE.
           small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année), si vous êtes pilote-propriétaire vous avez un quota de CNB à réaliser.
+
+      if $submited > 0
+        .alert.alert-info Il y a #{round($submited, 2)} heures en attente de validation
+          small.text-muted &nbsp;(les heures sont généralement validées tous les 2 ou 3 jours)
 
     .row.d-block.d-sm-none.justify-content-md-center
       .btn-group-vertical(role="group")

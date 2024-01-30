@@ -68,10 +68,16 @@ class CFE {
     }
 
     public function getStats($givavNumber) {
-        return [ 'submited' => floatval($this->getLines('submitted', $givavNumber)),
+        $data = [ 'submited' => floatval($this->getLines('submitted', $givavNumber)),
                  'validated' => floatval($this->getLines('validated', $givavNumber)),
                  'rejected' => floatval($this->getLines('rejected', $givavNumber)),
-                 'thecfetodo' => floatval($this->getCFE_TODO($givavNumber))	];
+                 'thecfetodo' => floatval($this->getCFE_TODO($givavNumber)) ];
+
+        if ($data['validated'] >= $data['thecfetodo'])
+            $data['completed'] = true;
+        else
+            $data['completed'] = false;
+        return $data;
     }
 
     public function getValidated($givavNumber) {
