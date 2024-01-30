@@ -17,6 +17,10 @@ get('/', function($conn) {
     Phug::displayFile('view/index.pug', $vars);
 });
 
+get('/error', function($conn) {
+    throw new Exception("test d'erreur");
+});
+
 post('/changeAdmin', function($conn) {
     if (!isset($_SESSION['auth'])) {
         echo "vous n'êtes pas connecté";
