@@ -1,0 +1,8 @@
+{
+    "database": {
+	"host": "localhost",
+	"username": "cfe",
+	"password": "cfe",
+	"database": "cfe"
+    }
+}

@@ -26,14 +26,10 @@ function any($route, $fct) {
 function doRoute($fct,) {
     // connexion mysql
     try {
-        // TODO mettre les credentials dans un fichier de config
-        $servername = 'localhost';
-        $username = 'cfe';
-        $password = 'cfe';
-        $database = 'cfe';
-        $dsn = join(';', [ 'host='.$servername, 'dbname='.$database ]);
-        $conn = new PDO("mysql:".$dsn, $username, $password);
-        checkDatabase($conn, $database);
+        $config = json_decode(file_get_contents(__DIR__.'/config.json'), true);
+        $dsn = join(';', [ 'host='.$config['database']['host'], 'dbname='.$config['database']['database'] ]);
+        $conn = new PDO("mysql:".$dsn, $config['database']['username'], $config['database']['password']);
+        checkDatabase($conn, $config['database']['database']);
         $conn->beginTransaction();
     }
     catch (Exception $e) {
