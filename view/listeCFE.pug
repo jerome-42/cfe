@@ -22,6 +22,7 @@ block content
       table.table.table-striped#list
         thead
           tr
+            th Editer
             th Date
             th Statut
             th Bénéficiaire
@@ -33,6 +34,11 @@ block content
         tbody
           each line in $lines
             tr(x-validation=$line['status'])
+              td
+                if $isAdmin == true || $line['status'] == 'submitted'
+                  button.btn.btn-primary.edit(x-id=$line['id'])
+                    i.bi.bi-pencil
+                      span.d-none.d-sm-block2 &nbsp;Editer
               td.date #{$line['workDate']}
               td.status #{$line['status']}
               td #{$line['beneficiary']}
@@ -46,6 +52,7 @@ block content
                 td #{$line['rejectedCause']}
         tfoot
           tr
+            th Editer
             th Date
             th Statut
             th Bénéficiaire

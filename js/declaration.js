@@ -72,7 +72,16 @@ $(document).ready(function() {
 	$('.invalid-feedback').css({ 'display': 'initial' });
 	if ($('.invalid-feedback').length === 0) {
 	    // il n'y a pas d'erreur, on envoie le formulaire
-	    return nextWithPostData('/declaration', { dateCFE: (+date)/1000, duration: duration, type: $('#type').val(), beneficiary: $('#beneficiary').val(), details: $('#details').val() });
+	    var values = { dateCFE: (+date)/1000, duration: duration, type: $('#type').val(), beneficiary: $('#beneficiary').val(), details: $('#details').val() };
+	    if ($('form').attr('x-id') !== '')
+		values['id'] = $('form').attr('x-id');
+	    return nextWithPostData('/declaration', values);
 	}
+    });
+
+    [ $('#type'), $('#beneficiary') ].forEach(function(elem) {
+	var value = elem.attr('value');
+	if (value != '')
+	    elem.find('option[value="'+value+'"]').attr('selected', 'selected');
     });
 });

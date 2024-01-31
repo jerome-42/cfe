@@ -84,7 +84,38 @@ get('/declaration', function($conn) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
-    Phug::displayFile('view/declaration.pug', $_SESSION);
+    if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+        $vars = $_SESSION;
+        $cfe = new CFE($conn);
+        $line = $cfe->getLine(intval($_GET['id']));
+        if ($line === null) {
+            return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+        }
+        if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
+            // un non-admin ne peut éditer qu'une déclaration à lui et uniquement submitted
+            if ($line['who'] !== $_SESSION['givavNumber']) {
+                return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+            }
+            if ($line['status'] !== 'submitted') {
+                return Phug::displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
+            }
+        } else {
+            $vars['personne'] = Personne::load($conn, $line['who']);
+        }
+        $vars['line'] = $line;
+        return Phug::displayFile('view/declaration.pug', $vars);
+    }
+    $vars = $_SESSION;
+    $vars['line'] = [
+        'id' => '',
+        'who' => $_SESSION['givavNumber'],
+        'workDate' => '',
+        'workType' => '',
+        'beneficiary' => '',
+        'duration' => '',
+        'details' => '',
+    ];
+    Phug::displayFile('view/declaration.pug', $vars);
 });
 
 post('/declaration', function($conn) {
@@ -124,9 +155,38 @@ post('/declaration', function($conn) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "duree doit être entre 0 et 10" ]);
     }
+
+    if (isset($_POST['id']) && is_numeric($_POST['id'])) {
+        $cfe = new CFE($conn);
+        $line = $cfe->getLine(intval($_POST['id']));
+        if ($line === null) {
+            return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+        }
+        if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
+            // un non-admin ne peut éditer qu'une déclaration à lui et uniquement submitted
+            if ($line['who'] !== $_SESSION['givavNumber']) {
+                return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+            }
+            if ($line['status'] !== 'submitted') {
+                return Phug::displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
+            }
+        }
+        $query = "UPDATE cfe_records SET registerDate = NOW(), workDate = :workDate, workType = :workType, beneficiary = :beneficiary, duration = :duration, details = :details WHERE id = :id";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':id' => $line['id'],
+                        ':workDate' => $dateCFE->format('Y-m-d'),
+                        ':workType' => $_POST['type'],
+                        ':beneficiary' => $_POST['beneficiary'],
+                        ':duration' => $duration,
+                        ':details' => $_POST['details'],
+        ]);
+        $conn->commit();
+        return redirect("/declaration-complete");
+    }
+
     //DEBUG echo '<pre>';
     //DEBUG var_dump($_POST);
-    $query ="INSERT into cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details)";
+    $query ="INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details)";
     $sth = $conn->prepare($query);
     $sth->execute([ ':num' => $_SESSION['givavNumber'],
                     ':workDate' => $dateCFE->format('Y-m-d'),

@@ -8,6 +8,16 @@ class CFE {
         $this->conn = $conn;
     }
 
+    public function getLine($id) {
+        $query = 'SELECT * FROM cfe_records WHERE id = :id';
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ':id' => $id ]);
+        if ($sth->rowCount() !== 1)
+            return null;
+        $lines = $sth->fetchAll();
+        return $lines[0];
+    }
+
     private function getLines($status, $givavNumber, $year) {
         $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :status AND YEAR(workDate) = :year';
         $sth = $this->conn->prepare($query);

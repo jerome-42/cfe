@@ -37,6 +37,11 @@ $(document).ready(function() {
 	window.location = '/';
     });
 
+    $('.edit').click(function() {
+	var id = $(this).attr('x-id');
+	window.location = '/declaration?id='+id;
+    });
+
     $('.download').click(function() {
 	var csvContent = "data:text/csv;charset=utf-8,";
 	var row = $('#list > thead > tr > th').map(function() {
