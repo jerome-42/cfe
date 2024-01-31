@@ -17,6 +17,8 @@ block content
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
           input.form-control(type="text" placeholder="")#search
+  - $total = []
+  - $currentYear = 0
   .row
     .col-12
       table.table.table-striped#list
@@ -33,6 +35,24 @@ block content
               th Cause du rejet
         tbody
           each line in $lines
+            $year = $line['year']
+            if array_key_exists($year, $total) == false
+              - $total[$year] = 0
+            - $total[$year] += $line['duration']
+            if $line['year'] != $currentYear
+              if $currentYear != 0
+                tr.table-info(x-type="sum")
+                  td
+                  td Sur l'année #{$currentYear}
+                  td
+                  td
+                  td
+                  if $total[$currentYear] >= 2
+                    td Total #{$total[$currentYear]} heures
+                  else
+                    td Total #{$total[$currentYear]} heure
+                  td
+              $currentYear = $line['year']
             tr(x-validation=$line['status'])
               td
                 if $isAdmin == true || $line['status'] == 'submitted'
@@ -50,6 +70,18 @@ block content
               td #{$line['details']}
               if $displayRejectedColumn
                 td #{$line['rejectedCause']}
+          if $total[$currentYear] > 0
+            tr.table-info(x-type="sum")
+              td
+              td Sur l'année #{$currentYear}
+              td
+              td
+              td
+              if $total[$currentYear] >= 2
+                td Total #{$total[$currentYear]} heures
+              else
+                td Total #{$total[$currentYear]} heure
+              td
         tfoot
           tr
             th Editer

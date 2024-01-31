@@ -232,7 +232,7 @@ get('/detailsMembre', function($conn) {
     $vars['membre'] = Personne::load($conn, $num);
     $cfe = new CFE($conn);
     $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
-    $lines = $cfe->getRecords($num, getYear());
+    $lines = $cfe->getRecordsByYear($num, getYear());
     $vars['lines'] = $lines;
     Phug::displayFile('view/detailsMembre.pug', $vars);
 });
@@ -276,7 +276,7 @@ get('/listeCFE', function($conn) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
     $cfe = new CFE($conn);
-    $lines = $cfe->getRecords($_SESSION['givavNumber'], getYear());
+    $lines = $cfe->getRecords($_SESSION['givavNumber']);
     $vars = $_SESSION;
     $vars['lines'] = $lines;
     Phug::displayFile('view/listeCFE.pug', $vars);

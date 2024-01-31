@@ -43,7 +43,15 @@ class CFE {
         return $lines;
     }
 
-    public function getRecords($givavNumber, $year) {
+    public function getRecords($givavNumber) {
+        $query = 'SELECT *, YEAR(workDate) AS year FROM cfe_records WHERE who = :givavNumber ORDER BY workDate DESC';
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ':givavNumber' => $givavNumber ]);
+        $lines = $sth->fetchAll();
+        return $lines;
+    }
+
+    public function getRecordsByYear($givavNumber, $year) {
         $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':year' => $year, ':givavNumber' => $givavNumber ]);
