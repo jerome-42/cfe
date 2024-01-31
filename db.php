@@ -13,7 +13,8 @@ $tables = [
   `statusDate` datetime DEFAULT NULL,
   `statusWho` bigint unsigned DEFAULT NULL,
   `details` text,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `who`(`who`)
 ) ENGINE=InnoDB",
 
     'personnes' => "CREATE TABLE `personnes` (
