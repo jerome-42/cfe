@@ -1,0 +1,16 @@
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalRejected
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5 Rejeter une déclaration
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          p Veuillez saisir la cause du rejet de cette déclaration (la cause sera visible du membre):
+          p Vous pouvez aussi utiliser des réponses toutes faites, par exemple:
+          .btn-group.mb-2(role="group")
+            button.btn.btn-outline-primary.sampleResponse(type="button" x-cause="double") Double déclaration
+            button.btn.btn-outline-primary.sampleResponse(type="button" x-cause="false") Faux travail
+          textarea.form-control(rows="5" cols="80")#rejectedCause
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal")#rejectedCancel Annuler
+          button.btn.btn-primary(type="button")#rejectedConfirm Confirmer le rejet

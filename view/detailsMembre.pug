@@ -3,6 +3,7 @@ extends layout.pug
 block scripts
   title Détails membre
   script(src="js/detailsMembre.js")
+  script(src="js/rejected.js")
 
 block content
   .row
@@ -34,6 +35,7 @@ block content
             th Type
             th Durée
             th Détails
+            th Cause du rejet
         tbody
           each line in $lines
             tr(x-id=$line['id'] x-validation=$line['status'])
@@ -43,6 +45,7 @@ block content
               td #{$line['workType']}
               td #{$line['duration']}
               td #{$line['details']}
+              td #{$line['rejectedCause']}
         tfoot
           tr
             th Statut
@@ -51,6 +54,9 @@ block content
             th Type
             th Durée
             th Détails
+            th Cause du rejet
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
     button.btn.btn-primary.download(x-name=$membre['name']) Télécharger en CSV
+
+  include rejected.pug

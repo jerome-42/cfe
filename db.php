@@ -12,6 +12,7 @@ $tables = [
   `status` varchar(255) NOT NULL,
   `statusDate` datetime DEFAULT NULL,
   `statusWho` bigint unsigned DEFAULT NULL,
+  `rejectedCause` varchar(255) DEFAULT NULL,
   `details` text,
   PRIMARY KEY (`id`),
   INDEX `who`(`who`)

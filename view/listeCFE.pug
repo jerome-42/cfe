@@ -5,6 +5,10 @@ block scripts
   script(src="js/listeCFE.js")
 
 block content
+  $displayRejectedColumn = false
+  each line in $lines
+    if $line['rejectedCause'] != ''
+      $displayRejectedColumn = true
   .row
     h1 Mes déclarations (#{$name} - #{$givavNumber})
   .row
@@ -24,6 +28,8 @@ block content
             th Type
             th Durée
             th Détails
+            if $displayRejectedColumn
+              th Cause du rejet
         tbody
           each line in $lines
             tr(x-validation=$line['status'])
@@ -33,6 +39,8 @@ block content
               td #{$line['workType']}
               td #{$line['duration']}
               td #{$line['details']}
+              if $displayRejectedColumn
+                td #{$line['rejectedCause']}
         tfoot
           tr
             th Date
@@ -41,6 +49,8 @@ block content
             th Type
             th Durée
             th Détails
+            if $displayRejectedColumn
+              th Cause du rejet
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
     button.btn.btn-primary.download Télécharger en CSV

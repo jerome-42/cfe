@@ -291,13 +291,23 @@ post('/updateCFELine', function($conn) {
         echo "status est obligatoire";
         return http_response_code(500);
     }
-    $query = "UPDATE cfe_records SET status = :status, statusWho = :num, statusDate = NOW() WHERE id = :id";
-    $sth = $conn->prepare($query);
-    $sth->execute([
+    $query = "UPDATE cfe_records SET status = :status, statusWho = :num, statusDate = NOW(), rejectedCause = NULL WHERE id = :id";
+    $vars = [
         ':id' => $_POST['id'],
         ':status' => $_POST['status'],
         ':num' => $_SESSION['givavNumber'],
-    ]);
+    ];
+    if (isset($_POST['rejectedCause']) && $_POST['rejectedCause'] !== '') {
+        $query = "UPDATE cfe_records SET status = :status, statusWho = :num, statusDate = NOW(), rejectedCause = :rejectedCause WHERE id = :id";
+        $vars = [
+            ':id' => $_POST['id'],
+            ':status' => $_POST['status'],
+            ':rejectedCause' => $_POST['rejectedCause'],
+            ':num' => $_SESSION['givavNumber'],
+        ];
+    }
+    $sth = $conn->prepare($query);
+    $sth->execute($vars);
     echo "OK";
 });
 

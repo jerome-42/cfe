@@ -1,3 +1,5 @@
+var currentElem = null;
+
 String.prototype.replaceSpecialChars = function() {
     var newString = this;
     newString = newString
@@ -9,10 +11,10 @@ String.prototype.replaceSpecialChars = function() {
     return newString;
 };
 
-var changeStatus = function(elem, newStatus) {
+var changeStatus = function(elem, newStatus, rejectedCause) {
     var elem = elem.parents('td');
     var id = elem.parents('tr').attr('x-id');
-    updateLine(id, newStatus, function() {
+    updateLine(id, newStatus, rejectedCause, function() {
 	elem.parents('tr').attr('x-validation', newStatus);
 	setLineColor(elem.parents('tr'));
 	displayValidation(elem);
@@ -44,20 +46,6 @@ var setLineColor = function(tr) {
     }
 };
 
-var updateLine = function(id, status, cb) {
-    $.ajax({
-        url: '/updateCFELine',
-        data: { id: id, status: status },
-        type: 'POST',
-        error: function() {
-	    alert("Impossible");
-        },
-        success: function(res) {
-	    cb();
-        }
-    });
-};
-
 $(document).ready(function() {
     $('#list > tbody > tr').each(function() {
 	setLineColor($(this));
@@ -79,8 +67,13 @@ $(document).ready(function() {
     });
 
     $(document.body).on('click', '.refuse', function() {
-	changeStatus($(this), 'rejected');
+	$('#rejectedCause').val('');
+	$('.invalid-feedback').remove();
+	currentElem = $(this);
+	$('#modalRejected').modal('show');
     });
+
+    initRejectedModal();
 
     $('#search').on('keyup', function() {
 	var search = $(this).val().toLowerCase().replaceSpecialChars();

@@ -1,3 +1,5 @@
+var currentElem = null;
+
 String.prototype.replaceSpecialChars = function() {
     var newString = this;
     newString = newString
@@ -71,20 +73,6 @@ var updateDetails = function() {
     });
 };
 
-var updateLine = function(id, status, cb) {
-    $.ajax({
-        url: '/updateCFELine',
-        data: { id: id, status: status },
-        type: 'POST',
-        error: function() {
-	    alert("Impossible");
-        },
-        success: function(res) {
-	    cb();
-        }
-    });
-};
-
 $(document).ready(function() {
     $('#list > tbody > tr').each(function() {
 	setLineColor($(this));
@@ -120,8 +108,13 @@ $(document).ready(function() {
     });
 
     $(document.body).on('click', '.refuse', function() {
-	changeStatus($(this), 'rejected');
+	$('#rejectedCause').val('');
+	$('.invalid-feedback').remove();
+	currentElem = $(this);
+	$('#modalRejected').modal('show');
     });
+
+    initRejectedModal();
 
     $('.download').click(function() {
 	var csvContent = "data:text/csv;charset=utf-8,";

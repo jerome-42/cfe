@@ -3,10 +3,14 @@ extends layout.pug
 block scripts
   title Validation des CFE
   script(src="js/validation.js")
+  script(src="js/rejected.js")
 
 block content
   .row
     h1 Validation des CFE
+  .row
+    .col-md-1
+      button.btn.btn-danger.back Retour
   .row
     .col-md-3.offset-md-9
       .row
@@ -46,3 +50,5 @@ block content
             th Détails
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
+
+  include rejected.pug
