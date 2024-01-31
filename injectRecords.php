@@ -89,7 +89,9 @@ $conn->beginTransaction();
 $row = 0;
 if (($handle = fopen($argv[1], "r")) !== FALSE) {
     $query = "INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) VALUES (:who, :registerDate, :workDate, :workType, :beneficiary, :duration, :status, :details)";
-    $sth = $conn->prepare($query);
+    $sthSubmitted = $conn->prepare($query);
+    $query = "INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, statusDate, statusWho, details) VALUES (:who, :registerDate, :workDate, :workType, :beneficiary, :duration, 'validated', NOW(), :statusWho, :details)";
+    $sthValidated = $conn->prepare($query);
     while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
         $row++;
         if ($row == 1) // skip header
@@ -98,11 +100,8 @@ if (($handle = fopen($argv[1], "r")) !== FALSE) {
             $data[$i] = trim($data[$i]);
         $data[0] = parseDateMMDDAAAA($data[0]); // registerDate
         $data[7] = parseDateDDMMAAAA($data[7]); // workDate
-        // on prend toutes les dates
-        //if ($data[7]['year'] != '2024')
-        //    continue;
-        echo "row: ".$row.PHP_EOL;
-        var_dump($data);
+        //DEBUG echo "row: ".$row.PHP_EOL;
+        //DEBUG var_dump($data);
         $details = [];
         foreach ([ 5, 8 ] as $column) {
             if ($data[$column] !== '')
@@ -116,15 +115,27 @@ if (($handle = fopen($argv[1], "r")) !== FALSE) {
         $who = getGivavNumFromName($conn, implode(' ', $name));
         if ($who === -1) // le membre n'est pas inscrit
             continue;
-        $sth->execute([ ':who' => $who,
-                        ':registerDate' => toDate($data[0]),
-                        ':workDate' => toDate($data[7], false),
-                        ':workType' => $data[3],
-                        ':beneficiary' => $data[6],
-                        ':duration' => floatval($data[4]),
-                        ':status' => 'submitted',
-                        ':details' => implode(' ', $details),
-        ]);
+        if ($data[7]['year'] != '2024') {
+            $sthValidated->execute([ ':who' => $who,
+                                     ':registerDate' => toDate($data[0]),
+                                     ':workDate' => toDate($data[7], false),
+                                     ':workType' => $data[3],
+                                     ':beneficiary' => $data[6],
+                                     ':duration' => floatval($data[4]),
+                                     ':statusWho' => 695,
+                                     ':details' => implode(' ', $details),
+            ]);
+        } else {
+            $sthSubmitted->execute([ ':who' => $who,
+                                     ':registerDate' => toDate($data[0]),
+                                     ':workDate' => toDate($data[7], false),
+                                     ':workType' => $data[3],
+                                     ':beneficiary' => $data[6],
+                                     ':duration' => floatval($data[4]),
+                                     ':status' => 'submitted',
+                                     ':details' => implode(' ', $details),
+            ]);
+        }
     }
     fclose($handle);
 }
