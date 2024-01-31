@@ -44,7 +44,9 @@ $(document).ready(function() {
 	});
 	csvContent += row.get().toString() + "\r\n";
 	$('#list > tbody > tr').each(function() {
-	    var row = $(this).find('td').map(function() {
+	    var row = $(this).find('td').map(function(id) {
+		if ($(this).attr('x-value') !== undefined)
+		    return $(this).attr('x-value');
 		return $(this).text();
 	    });
 	    csvContent += row.get().toString() + "\r\n";

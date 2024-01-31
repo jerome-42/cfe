@@ -37,7 +37,10 @@ block content
               td.status #{$line['status']}
               td #{$line['beneficiary']}
               td #{$line['workType']}
-              td #{$line['duration']}
+              if $line['duration'] >= 2
+                td(x-value=$line['duration']) #{$line['duration']} heures
+              else
+                td(x-value=$line['duration']) #{$line['duration']} heure
               td #{$line['details']}
               if $displayRejectedColumn
                 td #{$line['rejectedCause']}
