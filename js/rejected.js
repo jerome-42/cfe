@@ -1,6 +1,6 @@
 var sampleCauses = {
     "double": "cette déclaration est une copie d'une déclaration déjà vue",
-    "false": "fausse déclaration, elle est donc rejettée",
+    "false": "fausse déclaration, elle est donc rejetée",
 };
 
 var updateLine = function(id, status, rejectedCause, cb) {

@@ -50,6 +50,7 @@ function exportAllData_getRecords($conn) {
                  [ 'beneficiary', 'beneficiaire' ], [ 'duration', 'durée' ],
                  [ 'details', 'détails' ],
                  [ 'status', 'statut' ], [ 'statusDate', 'date de validation' ],
+                 [ 'rejectedCause', 'rejet' ],
                  [ 'statusWho', 'validation par' ] ];
     $headers = array_map(function($i) {
         return $i[1];
