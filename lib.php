@@ -17,6 +17,10 @@ Phug::setFilter('suffix-heure', function($text, $options) {
     return $text." heure";
 });
 
+function getYear() {
+    return intval(date('Y'));
+}
+
 function exportAllData_getPersonnes($conn) {
     $fd = fopen('php://temp/maxmemory:1048576', 'w');
     if ($fd === false) {

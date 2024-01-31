@@ -11,7 +11,7 @@ block content
   .row
     label.col-form-label(for="cfeTODO") Nombre d'heures de CFE à réaliser pour #{$membre['name']}&nbsp;:
     .col-6.col-xl-1
-      input.form-control(type="number" min="0" max="100" placeholder=$defaultCFE_TODO value=$membre['cfeTODO'])#cfeTODO
+      input.form-control(type="number" min="0" max="100" placeholder=$defaultCFE_TODO value=$membre['todo'])#cfeTODO
     .col-6.col-xl-1
       button.btn-primary#updateCFE_TODO Mettre à jour
   .row.mb-4

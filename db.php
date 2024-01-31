@@ -23,10 +23,18 @@ $tables = [
   `name` varchar(255) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
   `givavNumber` bigint unsigned NOT NULL,
-  `cfeTODO` int DEFAULT NULL,
   `isAdmin` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `givavNumber` (`givavNumber`)
+) ENGINE=InnoDB",
+
+    'cfe_todo' => "CREATE TABLE `cfe_todo` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `who` bigint unsigned NOT NULL,
+  `year` int unsigned NOT NULL,
+  `todo` int unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `who` (`who`)
 ) ENGINE=InnoDB",
 
     'settings' => [ "CREATE TABLE `settings` (
@@ -35,7 +43,12 @@ $tables = [
   `value` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `what` (`what`)
-) ENGINE=InnoDB", "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO', 16)" ],
+) ENGINE=InnoDB",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2023', 16)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2024', 16)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2025', 16)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2026', 16)",
+    ],
 ];
 
 function checkDatabase($conn, $databaseName) {

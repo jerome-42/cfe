@@ -20,7 +20,7 @@ class Personne {
     }
 
     static public function load($conn, $num) {
-        $query = "SELECT * FROM personnes WHERE givavNumber = :num";
+        $query = "SELECT * FROM personnes LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber WHERE givavNumber = :num";
         $sth = $conn->prepare($query);
         $sth->execute([ ':num' => $num ]);
         if ($sth->rowCount() !== 1)
@@ -28,10 +28,10 @@ class Personne {
         return $sth->fetchAll()[0];
     }
 
-    static public function getAll($conn) {
-        $query = "SELECT *, COALESCE(personnes.cfeTODO, settings.value) AS cfeTODO FROM personnes JOIN settings ON settings.what = 'defaultCFE_TODO' ORDER BY givavNumber";
+    static public function getAll($conn, $year) {
+        $query = "SELECT *, COALESCE(cfe_todo.todo, settings.value) AS cfeTODO FROM personnes LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber JOIN settings ON what = :what WHERE cfe_todo.year IS NULL OR cfe_todo.year = :year";
         $sth = $conn->prepare($query);
-        $sth->execute();
+        $sth->execute([ ':what' => 'defaultCFE_TODO_'.$year, ':year' => $year ]);
         return $sth->fetchAll();
     }
 

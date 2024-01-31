@@ -8,10 +8,11 @@ class CFE {
         $this->conn = $conn;
     }
 
-    private function getLines($validation, $givavNumber) {
-        $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :statut'; // TODO WHERE année
+    private function getLines($status, $givavNumber, $year) {
+        $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :status AND YEAR(workDate) = :year';
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':givavNumber' => $givavNumber, ':statut' => $validation ]);
+        $sth->execute([ ':givavNumber' => $givavNumber, ':status' => $status,
+                        ':year' => $year ]);
         $lines = $sth->fetchAll();
         return $lines[0]['total'];
     }
@@ -24,38 +25,46 @@ class CFE {
         return $lines;
     }
 
-    public function getAllRecords() {
-        $query = 'SELECT * FROM cfe_records ORDER BY workDate DESC';
+    public function getAllRecords($year) {
+        $query = 'SELECT * FROM cfe_records WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([]);
         $lines = $sth->fetchAll();
         return $lines;
     }
 
-    public function getRecords($givavNumber) {
-        $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber ORDER BY workDate DESC'; // TODO WHERE année
+    public function getRecords($givavNumber, $year) {
+        $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':givavNumber' => $givavNumber ]);
+        $sth->execute([ ':year' => $year, ':givavNumber' => $givavNumber ]);
         $lines = $sth->fetchAll();
         return $lines;
     }
 
-    private function getCFE_TODO($givavNumber) {
-        $query = "SELECT COALESCE(cfeTODO, settings.value) AS cfeTODO FROM personnes JOIN settings ON settings.what = 'defaultCFE_TODO' WHERE givavNumber = :num";
+    private function getCFE_TODO($givavNumber, $year) {
+        if (!is_numeric($year))
+            throw new Exception("l'année doit être un nombre");
+        $query = "SELECT todo FROM cfe_todo WHERE who = :who AND year = :year";
         $sth = $this->conn->prepare($query);
-        $sth->execute([ ':num' => $givavNumber ]);
+        $sth->execute([ 'year' => $year, ':who' => $givavNumber ]);
+        if ($sth->rowCount() === 1)
+            return $sth->fetchAll()[0]['todo'];
+        // pas de ligne dans cfe_todo, donc on prend la ligne par défaut dans settings
+        $query = "SELECT value FROM settings WHERE settings.what = :what";
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ':what' => 'defaultCFE_TODO_'.$year ]);
         if ($sth->rowCount() !== 1)
-            throw new Exception("pas de ligne dans personnes pour cet utilisateur");
+            throw new Exception("pas de ligne concernant le nombre d'heure par défaut dans settings pour l'année ".$year);
         $lines = $sth->fetchAll();
-        return $lines[0]['cfeTODO'];
+        return $lines[0]['value'];
     }
 
-    public function getDefaultCFE_TODO() {
-        $query = "SELECT value FROM settings WHERE what = 'defaultCFE_TODO'";
+    public function getDefaultCFE_TODO($year) {
+        $query = "SELECT value FROM settings WHERE what = :what";
         $sth = $this->conn->prepare($query);
-        $sth->execute([]);
+        $sth->execute([ ':what' => 'defaultCFE_TODO_'.$year ]);
         if ($sth->rowCount() !== 1)
-            throw new Exception("pas de settings defaultCPE_TODO");
+            throw new Exception("pas de settings defaultCPE_TODO pour l'année ".$year);
         $lines = $sth->fetchAll();
         return $lines[0]['value'];
     }
@@ -67,11 +76,11 @@ class CFE {
             return 0;
     }
 
-    public function getStats($givavNumber) {
-        $data = [ 'submited' => floatval($this->getLines('submitted', $givavNumber)),
-                 'validated' => floatval($this->getLines('validated', $givavNumber)),
-                 'rejected' => floatval($this->getLines('rejected', $givavNumber)),
-                 'thecfetodo' => floatval($this->getCFE_TODO($givavNumber)) ];
+    public function getStats($givavNumber, $year) {
+        $data = [ 'submited' => floatval($this->getLines('submitted', $givavNumber, $year)),
+                  'validated' => floatval($this->getLines('validated', $givavNumber, $year)),
+                  'rejected' => floatval($this->getLines('rejected', $givavNumber, $year)),
+                  'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)) ];
 
         if ($data['validated'] >= $data['thecfetodo'])
             $data['completed'] = true;
@@ -80,7 +89,7 @@ class CFE {
         return $data;
     }
 
-    public function getValidated($givavNumber) {
-        return floatval($this->getLines('validated', $givavNumber));
+    public function getValidated($givavNumber, $year) {
+        return floatval($this->getLines('validated', $givavNumber, $year));
     }
 }
