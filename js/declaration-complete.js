@@ -1,6 +1,6 @@
 $(document).ready(function() {
-    $('.index').click(function() {
-        window.location = '/';
+    $('.back').click(function() {
+        history.back(2);
     });
     $(".declaration").click(function() {
         window.location = "/declaration";

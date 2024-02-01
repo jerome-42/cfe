@@ -38,7 +38,8 @@ block content
             $year = $line['year']
             if array_key_exists($year, $total) == false
               - $total[$year] = 0
-            - $total[$year] += $line['duration']
+            if $line['status'] == 'validated'
+              - $total[$year] += $line['duration']
             if $line['year'] != $currentYear
               if $currentYear != 0
                 tr.table-info(x-type="sum")
