@@ -47,7 +47,6 @@ function doRoute($fct,) {
     catch (Exception $e) {
         $conn->rollBack();
         http_response_code(500);
-        throw $e;
         $stack = [];
         $rawBacktrace = debug_backtrace();
         for ($i = 0; $i < count($rawBacktrace); $i++) {
