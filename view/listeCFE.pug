@@ -71,18 +71,31 @@ block content
               td #{$line['details']}
               if $displayRejectedColumn
                 td #{$line['rejectedCause']}
-          if $total[$currentYear] > 0
+          if array_key_exists($currentYear, $total) == true
+            if $total[$currentYear] > 0
+              tr.table-info(x-type="sum")
+                td
+                td Heures validées sur l'année #{$currentYear}
+                td
+                td
+                td
+                if $total[$currentYear] >= 2
+                  td Total #{$total[$currentYear]} heures
+                else
+                  td Total #{$total[$currentYear]} heure
+                td
+          else
+            if $currentYear == 0
+              $currentYear = date('Y')
             tr.table-info(x-type="sum")
               td
-              td Heures validées sur l'année #{$currentYear}
+              td Aucune heure validée sur l'année #{$currentYear}
               td
               td
               td
-              if $total[$currentYear] >= 2
-                td Total #{$total[$currentYear]} heures
-              else
-                td Total #{$total[$currentYear]} heure
               td
+              td
+
         tfoot
           tr
             th Editer
