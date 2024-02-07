@@ -46,22 +46,22 @@ post('/changeAdmin', function($conn) {
     Personne::modifieStatutAdmin($conn, intval($_POST['num']), $status);
 });
 
-get('/connexion', function() {
+get('/connexion', function($conn, $pug) {
     if (isset($_SESSION['auth'])) {
         return redirect('/');
     }
-    Phug::displayFile('view/connexion.pug');
+    $pug->displayFile('view/connexion.pug');
 });
 
-post('/connexion', function($conn) {
+post('/connexion', function($conn, $pug) {
     $vars = [];
     if (!isset($_POST['login']) || $_POST['login'] === '') {
         $vars['error'] = "Veuillez saisir votre n°nationnal ou courriel";
-	return Phug::displayFile('view/connexion.pug', $vars);
+	return $pug->displayFile('view/connexion.pug', $vars);
     }
     if (!isset($_POST['pass']) || $_POST['pass'] === '') {
         $vars['error'] = "Veuillez saisir votre mot de passe";
-        return Phug::displayFile('view/connexion.pug', $vars);
+        return $pug->displayFile('view/connexion.pug', $vars);
     }
     try {
         $user = Givav::auth($_POST['login'], $_POST['pass']);
@@ -74,13 +74,13 @@ post('/connexion', function($conn) {
     }
     catch (Exception $e) {
         $vars['error'] = $e->getMessage();
-        return Phug::displayFile('view/connexion.pug', $vars);
+        return $pug->displayFile('view/connexion.pug', $vars);
     }
     $vars['error'] = "Pilote inconnu du GIVAV";
-    Phug::displayFile('view/connexion.pug', $vars);
+    $pug->displayFile('view/connexion.pug', $vars);
 });
 
-get('/declaration', function($conn) {
+get('/declaration', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
@@ -89,15 +89,15 @@ get('/declaration', function($conn) {
         $cfe = new CFE($conn);
         $line = $cfe->getLine(intval($_GET['id']));
         if ($line === null) {
-            return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+            return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
         }
         if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
             // un non-admin ne peut éditer qu'une déclaration à lui et uniquement submitted
             if ($line['who'] !== $_SESSION['givavNumber']) {
-                return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+                return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
             }
             if ($line['status'] !== 'submitted') {
-                return Phug::displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
+                return $pug->displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
             }
         } else {
             $vars['personne'] = Personne::load($conn, $line['who']);
@@ -105,7 +105,7 @@ get('/declaration', function($conn) {
         $line['durationHour'] = round($line['duration'] / 60);
         $line['durationMinute'] = round($line['duration'] % 60);
         $vars['line'] = $line;
-        return Phug::displayFile('view/declaration.pug', $vars);
+        return $pug->displayFile('view/declaration.pug', $vars);
     }
     $vars = $_SESSION;
     $vars['line'] = [
@@ -114,14 +114,14 @@ get('/declaration', function($conn) {
         'workDate' => '',
         'workType' => '',
         'beneficiary' => '',
-        'durationHour' => '',
+        'durationHour' => 0,
         'durationMinute' => 0,
         'details' => '',
     ];
-    Phug::displayFile('view/declaration.pug', $vars);
+    $pug->displayFile('view/declaration.pug', $vars);
 });
 
-post('/declaration', function($conn) {
+post('/declaration', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
@@ -129,48 +129,48 @@ post('/declaration', function($conn) {
     foreach ([ 'dateCFE', 'type', 'beneficiary', 'durationHour', 'durationMinute' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
             http_response_code(500);
-            return Phug::displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
+            return $pug->displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
         }
     }
     // vérification que dateCFE est entre le 1er janvier et le 31 décembre de cette année
     if (!is_numeric($_POST['dateCFE'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "dateCFE n'est pas un entier" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "dateCFE n'est pas un entier" ]);
     }
     $now = new DateTime();
     $dateCFE = new DateTime();
     $dateCFE->setTimestamp(intval($_POST['dateCFE']));
     if ($dateCFE->format('Y') !== $now->format('Y')) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
     }
     if ($dateCFE > $now) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
     }
     // vérification heure
     if (!is_numeric($_POST['durationHour'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Le nomnbre d'heure n'est pas un nombre" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Le nomnbre d'heure n'est pas un nombre" ]);
     }
     $durationHour = intval($_POST['durationHour']);
     if ($durationHour < 0 || $durationHour > 10) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Le nombre d'heure doit être entre 0 et 10" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Le nombre d'heure doit être entre 0 et 10" ]);
     }
     // vérification minute
     if (!is_numeric($_POST['durationMinute'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Le nomnbre de minute n'est pas un nombre" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Le nomnbre de minute n'est pas un nombre" ]);
     }
     $durationMinute = intval($_POST['durationMinute']);
     if ($durationMinute < 0 || $durationMinute >= 60) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Le nombre de minute doit être entre 0 et 10" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Le nombre de minute doit être entre 0 et 10" ]);
     }
     if ($durationHour === 0 && $durationMinute === 0) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "La durée ne peut être nulle" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "La durée ne peut être nulle" ]);
     }
 
     $duration = $durationHour * 60 + $durationMinute;
@@ -178,15 +178,15 @@ post('/declaration', function($conn) {
         $cfe = new CFE($conn);
         $line = $cfe->getLine(intval($_POST['id']));
         if ($line === null) {
-            return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+            return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
         }
         if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
             // un non-admin ne peut éditer qu'une déclaration à lui et uniquement submitted
             if ($line['who'] !== $_SESSION['givavNumber']) {
-                return Phug::displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+                return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
             }
             if ($line['status'] !== 'submitted') {
-                return Phug::displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
+                return $pug->displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
             }
         }
         $query = "UPDATE cfe_records SET registerDate = NOW(), workDate = :workDate, workType = :workType, beneficiary = :beneficiary, duration = :duration, details = :details WHERE id = :id";
@@ -217,11 +217,11 @@ post('/declaration', function($conn) {
     redirect("/declaration-complete");
 });
 
-get('/declaration-complete', function() {
+get('/declaration-complete', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
-    Phug::displayFile('view/declaration-complete.pug');
+    $pug->displayFile('view/declaration-complete.pug');
 });
 
 get('/deconnexion', function($conn) {
@@ -257,12 +257,12 @@ get('/detailsMembre', function($conn, $pug) {
     $pug->displayFile('view/detailsMembre.pug', $vars);
 });
 
-post('/detailsMembreStats', function($conn) {
+post('/detailsMembreStats', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (!isset($_POST['num']) || !is_numeric($_POST['num'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
     }
     $num = intval($_POST['num']);
     $cfe = new CFE($conn);
@@ -392,16 +392,16 @@ post('/updateCFELine', function($conn) {
     echo "OK";
 });
 
-get('/sudo', function($conn) {
+get('/sudo', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (isset($_SESSION['inSudo'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Veuillez vous déconnecter avant de tenter à nouveau un sudo" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Veuillez vous déconnecter avant de tenter à nouveau un sudo" ]);
     }
     if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "Numéro attendu" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Numéro attendu" ]);
     }
     $_SESSION['inSudo'] = true;
     $_SESSION['previousGivavNumber'] = $_SESSION['givavNumber'];
