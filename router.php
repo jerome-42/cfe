@@ -28,6 +28,8 @@ function initPug() {
     $pug->share('durationToHuman', function($text) {
         $hours = round(intval($text) / 60);
         $minutes = intval($text) % 60;
+        if ($hours == 0 && $minutes == 0)
+            return "0 minute";
         $ret = [];
         if ($hours >= 2)
             $ret[] = $hours." heures";

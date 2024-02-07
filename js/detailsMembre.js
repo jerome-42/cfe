@@ -47,6 +47,27 @@ var setLineColor = function(tr) {
     }
 };
 
+var durationToHuman = function(d) {
+    var hours = Math.round(parseInt(d) / 60);
+    var minutes = parseInt(d) % 60;
+    var ret = [];
+    if (hours >= 2)
+        ret.push(hours+" heures");
+    else if (hours == 1)
+        ret.push("1 heure");
+    if (minutes > 1)
+        ret.push(minutes+" minutes");
+    else if (minutes == 1)
+        ret.push("1 minute");
+    return ret.join(' ');
+};
+
+var pluralize = function(v, noun) {
+    if (v > 1)
+	return v+" "+noun+"s";
+    return v+" "+noun;
+};
+
 var updateDetails = function() {
     $.ajax({
         url: '/detailsMembreStats',
@@ -59,16 +80,16 @@ var updateDetails = function() {
         success: function(res) {
 	    var data = [];
 	    if (res.thecfetodo > 0)
-		data.push(res.thecfetodo+" heures à réaliser");
+		data.push(durationToHuman(res.thecfetodo)+" à réaliser");
 	    else
 		data.push("pas de CFE à réaliser");
 	    if (res.validated > 0)
-		data.push(res.validated+" heure(s) validée(s)");
+		data.push(pluralize(durationToHuman(res.validated), " validée"));
 	    if (res.submited === 0)
 		data.push("pas de CFE en attente de validation");
 	    else
-		data.push(res.submited+" heure(s) en attente de validation");
-	    $('#details').html(data.toString());
+		data.push(pluralize(durationToHuman(res.submited), "heure")+" en attente de validation");
+	    $('#details').html(data.join(", "));
         }
     });
 };

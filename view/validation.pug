@@ -37,10 +37,7 @@ block content
               td #{$line['workDate']}
               td #{$line['beneficiary']}
               td #{$line['workType']}
-              if $line['duration'] >= 2
-                td(x-value=$line['duration']) #{$line['duration']} heures
-              else
-                td(x-value=$line['duration']) #{$line['duration']} heure
+              td(x-value=$line['duration'])= durationToHuman($line['duration'])
               td #{$line['details']}
         tfoot
           tr

@@ -48,8 +48,11 @@ block content
                     span.d-none.d-sm-block2 Endosser
               td #{$membre['givavNumber']}
               td #{$membre['name']}
-              td #{$membre['cfeValidated']}
-              td #{$membre['cfeTODO']}
+              td= durationToHuman($membre['cfeValidated'])
+              if $membre['cfeTODO'] == 0
+                td aucun
+              else
+                td= durationToHuman($membre['cfeTODO'])
               td
                 button.btn.btn-primary.displayDetails
                   i.bi.bi-eye

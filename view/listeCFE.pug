@@ -39,19 +39,20 @@ block content
             if array_key_exists($year, $total) == false
               - $total[$year] = 0
             if $line['status'] == 'validated'
-              - $total[$year] += $line['duration']
+              - $total[$year] = $total[$year] + $line['duration']
             if $line['year'] != $currentYear
               if $currentYear != 0
                 tr.table-info(x-type="sum")
                   td
-                  td Heures validées sur l'année #{$currentYear}
+                  td Total des CFE
+                    b  validées
+                    |  sur l'année 
+                    b= $currentYear
                   td
                   td
                   td
-                  if $total[$currentYear] >= 2
-                    td Total #{$total[$currentYear]} heures
-                  else
-                    td Total #{$total[$currentYear]} heure
+                  td
+                    b= durationToHuman($total[$currentYear])
                   td
               $currentYear = $line['year']
             tr(x-validation=$line['status'])
@@ -64,10 +65,7 @@ block content
               td.status #{$line['status']}
               td #{$line['beneficiary']}
               td #{$line['workType']}
-              if $line['duration'] >= 2
-                td(x-value=$line['duration']) #{$line['duration']} heures
-              else
-                td(x-value=$line['duration']) #{$line['duration']} heure
+              td(x-value=$line['duration'])= durationToHuman($line['duration'])
               td #{$line['details']}
               if $displayRejectedColumn
                 td #{$line['rejectedCause']}
@@ -75,14 +73,15 @@ block content
             if $total[$currentYear] > 0
               tr.table-info(x-type="sum")
                 td
-                td Heures validées sur l'année #{$currentYear}
+                td Total des CFE
+                  b  validées
+                  |  sur l'année 
+                  b= $currentYear
                 td
                 td
                 td
-                if $total[$currentYear] >= 2
-                  td Total #{$total[$currentYear]} heures
-                else
-                  td Total #{$total[$currentYear]} heure
+                td
+                  b= durationToHuman($total[$currentYear])
                 td
           else
             if $currentYear == 0

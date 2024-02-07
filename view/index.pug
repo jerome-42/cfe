@@ -16,7 +16,7 @@ block content
       $reste = $thecfetodo - $validated
       if $reste > 0
         .alert.alert-warning
-          b Il vous reste #{round($reste, 2)} heures à faire
+          b Il vous reste #{$durationToHuman($reste)} à faire
           small.text-muted &nbsp;(d'ici au 31 décembre)
       else if $thecfetodo == 0
         .alert.alert-success
@@ -33,12 +33,12 @@ block content
 
       if $thecfetodo > 0
         p Sur cette année vous êtes redevable de
-          b &nbsp;#{$thecfetodo}&nbsp;
+          b &nbsp;#{durationToHuman($thecfetodo)}&nbsp;
           | heures de CFE.
           small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année), si vous êtes pilote-propriétaire vous avez un quota de CNB à réaliser.
 
       if $submited > 0
-        .alert.alert-info Il y a #{round($submited, 2)} heures en attente de validation
+        .alert.alert-info #{durationToHuman($submited)} en attente de validation
           small.text-muted &nbsp;(les heures sont généralement validées tous les 2 ou 3 jours)
 
     .row.d-block.d-sm-none.justify-content-md-center

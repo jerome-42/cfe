@@ -238,21 +238,23 @@ get('/deconnexion', function($conn) {
     redirect('/');
 });
 
-get('/detailsMembre', function($conn) {
+get('/detailsMembre', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
+        return $pug->displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
     }
     $num = intval($_GET['numero']);
     $vars = $_SESSION;
     $vars['membre'] = Personne::load($conn, $num);
+    $vars['membre']['todoHour'] = round($vars['membre']['todo'] / 60);
     $cfe = new CFE($conn);
     $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
+    $vars['defaultCFE_TODOHour'] = round($vars['defaultCFE_TODO'] / 60);
     $lines = $cfe->getRecordsByYear($num, getYear());
     $vars['lines'] = $lines;
-    Phug::displayFile('view/detailsMembre.pug', $vars);
+    $pug->displayFile('view/detailsMembre.pug', $vars);
 });
 
 post('/detailsMembreStats', function($conn) {
@@ -290,17 +292,17 @@ get('/exportAllData', function($conn) {
     $zip->finish();
 });
 
-get('/listeCFE', function($conn) {
+get('/listeCFE', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
     $cfe = new CFE($conn);
     $lines = $cfe->getRecords($_SESSION['givavNumber']);
     $vars = $_SESSION;
     $vars['lines'] = $lines;
-    Phug::displayFile('view/listeCFE.pug', $vars);
+    $pug->displayFile('view/listeCFE.pug', $vars);
 });
 
-get('/listeMembres', function($conn) {
+get('/listeMembres', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $membres = Personne::getAll($conn, getYear());
@@ -310,19 +312,19 @@ get('/listeMembres', function($conn) {
         $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], getYear());
         $membre['cfeCompleted'] = $cfe->isCompleted($membre);
     }
-    Phug::displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
+    $pug->displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
                                                  'inSudo' => isset($_SESSION['inSudo']),
                                                  'membres' => $membres,
                                                  'defaultCFE_TODO' => $defaultCFE_TODO,
     ]);
 });
 
-get('/validation', function($conn) {
+get('/validation', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $cfe = new CFE($conn);
     $lines = $cfe->getLinesToValidate();
-    Phug::displayFile('view/validation.pug', [ 'lines' => $lines ]);
+    $pug->displayFile('view/validation.pug', [ 'lines' => $lines ]);
 });
 
 post('/updateCFE_TODO', function($conn) {
@@ -344,8 +346,8 @@ post('/updateCFE_TODO', function($conn) {
         ]);
     } else {
         if (!is_numeric($_POST['cfeTODO']) ||
-            intval($_POST['cfeTODO']) < 0 || intval($_POST['cfeTODO']) > 100) {
-            echo "cfeTODO doit être entre 0 et 100";
+            intval($_POST['cfeTODO']) < 0 || intval($_POST['cfeTODO']) > 200) {
+            echo "cfeTODO doit être entre 0 et 200";
             return http_response_code(500);
         }
         $query = "INSERT INTO cfe_todo (who, year, todo) VALUES (:who, :year, :todo) ON DUPLICATE KEY UPDATE todo = :todo";
@@ -353,7 +355,7 @@ post('/updateCFE_TODO', function($conn) {
         $sth->execute([
             ':who' => intval($_POST['num']),
             ':year' => getYear(),
-            ':todo' => intval($_POST['cfeTODO']),
+            ':todo' => intval($_POST['cfeTODO']) * 60,
         ]);
     }
     echo "OK";
