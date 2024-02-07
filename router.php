@@ -24,7 +24,11 @@ function any($route, $fct) {
 }
 
 function initPug() {
-    $pug = new Pug([]);
+    $pug = new Pug([
+        //'cache' => __DIR__.'/cache/',
+        'debug' => true,
+        'pretty' => true,
+    ]);
     $pug->share('durationToHuman', function($text) {
         $hours = round(intval($text) / 60);
         $minutes = intval($text) % 60;
@@ -70,10 +74,16 @@ function doRoute($fct,) {
     catch (Exception $e) {
         $conn->rollBack();
         http_response_code(500);
+        $session = getClientIP();
+        if (isset($_SESSION['givavNumber']))
+            $session .= " ".$_SESSION['givavNumber'];
+        syslog(LOG_ERR, $session." exception ".$e->getMessage());
         $stack = [];
         $rawBacktrace = debug_backtrace();
         for ($i = 0; $i < count($rawBacktrace); $i++) {
-            $stack[] = 'in '.$rawBacktrace[$i]['function'].' on '.$rawBacktrace[$i]['file'].' at line '.$rawBacktrace[$i]['line'];
+            $line = 'in '.$rawBacktrace[$i]['function'].' on '.$rawBacktrace[$i]['file'].' at line '.$rawBacktrace[$i]['line'];
+            syslog(LOG_ERR, $session." ".$line);
+            $stack[] = $line;
         }
         $vars = [ 'message' => "Exception ".$e->getMessage(), 'stack' => implode("\n", $stack) ];
         return $pug->displayFile('view/error.pug', $vars);

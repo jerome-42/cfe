@@ -57,7 +57,7 @@ post('/connexion', function($conn, $pug) {
     $vars = [];
     if (!isset($_POST['login']) || $_POST['login'] === '') {
         $vars['error'] = "Veuillez saisir votre n°nationnal ou courriel";
-	return $pug->displayFile('view/connexion.pug', $vars);
+        return $pug->displayFile('view/connexion.pug', $vars);
     }
     if (!isset($_POST['pass']) || $_POST['pass'] === '') {
         $vars['error'] = "Veuillez saisir votre mot de passe";
@@ -70,6 +70,7 @@ post('/connexion', function($conn, $pug) {
         $_SESSION['givavNumber'] = $user['number'];
         $_SESSION['name'] = $user['name'];
         $_SESSION['mail'] = $user['mail'];
+        syslog(LOG_INFO, getClientIP()." ".$user['number']." ".$user['name']." logged");
         return redirect('/');
     }
     catch (Exception $e) {
@@ -214,6 +215,7 @@ post('/declaration', function($conn, $pug) {
                     ':details' => $_POST['details'],
     ]);
     $conn->commit();
+    syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare ".$dateCFE->format('d-m-Y')." ".$_POST['type']." ".$_POST['beneficiary']." ".$duration." ".$_POST['details']);
     redirect("/declaration-complete");
 });
 
