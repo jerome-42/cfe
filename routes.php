@@ -199,7 +199,7 @@ post('/declaration', function($conn, $pug) {
                         ':duration' => $duration,
                         ':details' => $_POST['details'],
         ]);
-        $conn->commit();
+        syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." edit declaration cfe_records.id=".$line['id']);
         return redirect("/declaration-complete");
     }
 
@@ -214,8 +214,11 @@ post('/declaration', function($conn, $pug) {
                     ':duration' => $duration,
                     ':details' => $_POST['details'],
     ]);
-    $conn->commit();
-    syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare ".$dateCFE->format('d-m-Y')." ".$_POST['type']." ".$_POST['beneficiary']." ".$duration." ".$_POST['details']);
+    $sth = $conn->query("SELECT LAST_INSERT_ID() AS id");
+    if ($sth->rowCount() === 1) {
+        $id = $sth->fetchAll()[0]['id'];
+        syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare cfe_records.id=".$id);
+    }
     redirect("/declaration-complete");
 });
 
