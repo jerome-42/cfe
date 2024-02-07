@@ -25,7 +25,7 @@ function any($route, $fct) {
 
 function initPug() {
     $pug = new Pug([
-        //'cache' => __DIR__.'/cache/',
+        'cache' => __DIR__.'/../cache/',
         'debug' => true,
         'pretty' => true,
     ]);
@@ -77,7 +77,7 @@ function doRoute($fct,) {
         $session = getClientIP();
         if (isset($_SESSION['givavNumber']))
             $session .= " ".$_SESSION['givavNumber'];
-        syslog(LOG_ERR, $session." exception ".$e->getMessage());
+        syslog(LOG_ERR, $session." exception at ".$e->getFile().":".$e->getLine()." ".$e->getMessage());
         $stack = [];
         $rawBacktrace = debug_backtrace();
         for ($i = 0; $i < count($rawBacktrace); $i++) {
@@ -85,7 +85,7 @@ function doRoute($fct,) {
             syslog(LOG_ERR, $session." ".$line);
             $stack[] = $line;
         }
-        $vars = [ 'message' => "Exception ".$e->getMessage(), 'stack' => implode("\n", $stack) ];
+        $vars = [ 'message' => "Exception at ".$e->getFile().":".$e->getLine()." ".$e->getMessage(), 'stack' => implode("\n", $stack) ];
         return $pug->displayFile('view/error.pug', $vars);
     }
 }
