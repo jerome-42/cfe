@@ -44,10 +44,10 @@ $tables = [
   PRIMARY KEY (`id`),
   UNIQUE KEY `what` (`what`)
 ) ENGINE=InnoDB",
-                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2023', 16)",
-                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2024', 16)",
-                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2025', 16)",
-                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2026', 16)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2023', 16*60)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2024', 16*60)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2025', 16*60)",
+                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2026', 16*60)",
     ],
 ];
 
