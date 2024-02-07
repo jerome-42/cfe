@@ -10,7 +10,7 @@ block content
         small.text-muted &nbsp; (numéro GIVAV : #{$givavNumber})
     .row
       if $validated > 0
-        .alert.alert-success Vous avez réalisé #{round($validated, 2)} heures de CFE
+        .alert.alert-success Vous avez réalisé #{$durationToHuman($validated)} de CFE
           small.text-muted &nbsp;(depuis le 1er janvier)
 
       $reste = $thecfetodo - $validated

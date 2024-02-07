@@ -22,7 +22,7 @@ var nextWithPostData = function(url, params) {
 $(document).ready(function() {
     $('#dateCFE').focus();
     $("#abandon").click(function(event) {
-	history.back();
+	window.location = '/';
 	return event.preventDefault();
     });
     $('form').on('submit', function(event) {
@@ -47,21 +47,30 @@ $(document).ready(function() {
 	    }
 	}
 
-	// DUREE
-	// on remplace les virgules par des . (notation française versus anglaise)
-	var duration = $('#duration').val().replace(',', '.');
-	$('#duration').val(duration);
+	// heure
 	// on vérifie que la durée est bonne
-	if ($('#duration').val() === '') {
-	    $('#duration').after($('<div class="invalid-feedback">').text('Type obligatoire'));
-	} else if (isNaN(parseFloat($('#duration').val()))) {
-	    $('#duration').after($('<div class="invalid-feedback">').text('Un nombre est attendu').css('display', ''));
-	} else if (parseFloat($('#duration').val()) <= 0) {
-	    $('#duration').after($('<div class="invalid-feedback">').text('Un nombre positif est attendu').css('display', ''));
-	} else if (parseFloat($('#duration').val()) > 10) {
-	    $('#duration').after($('<div class="invalid-feedback">').text('Impossible de saisir plus de 10 heures').css('display', ''));
+	if ($('#durationHour').val() === '') {
+	    $('#durationError').append($('<div class="invalid-feedback">').text("Le nombre d'heure est attendu"));
+	} else if (isNaN(parseInt($('#durationHour').val()))) {
+	    $('#durationError').append($('<div class="invalid-feedback">').text("Le nombre d'heure doit être un chiffre").css('display', ''));
+	} else if (parseInt($('#durationHour').val()) < 0) {
+	    $('#durationError').append($('<div class="invalid-feedback">').text("Le nombre d'heure doit être chiffre positif").css('display', ''));
+	} else if (parseInt($('#durationHour').val()) > 10) {
+	    $('#durationError').append($('<div class="invalid-feedback">').text('Impossible de saisir plus de 10 heures').css('display', ''));
+	} else { // /heure
+	    if ($('#durationMinute').val() === '') {
+		$('#durationError').append($('<div class="invalid-feedback">').text("Le nombre de minutes est obligatoire"));
+	    } else if (isNaN(parseInt($('#durationMinute').val()))) {
+		$('#durationError').append($('<div class="invalid-feedback">').text('Le nombre de minute doit être un nombre').css('display', ''));
+	    } else if (parseInt($('#durationMinute').val()) < 0) {
+		$('#durationError').append($('<div class="invalid-feedback">').text("Le nombre de minute doit être un nombre positif").css('display', ''));
+	    } else if (parseInt($('#durationMinute').val()) >= 60) {
+		$('#durationError').append($('<div class="invalid-feedback">').text('Le nombre de minute doit être un nombre entre 0 et 59').css('display', ''));
+	    } else { // /minutes
+		if (parseInt($('#durationHour').val()) == 0 && parseInt($('#durationMinute').val()) == 0) {
+		    $('#durationError').append($('<div class="invalid-feedback">').text('La durée ne peut être nulle').css('display', ''));
+		}}
 	}
-	// /DUREE
 
 	if ($('#details').val() === '')
 	    $('#details').after($('<div class="invalid-feedback">').text("Il faut le détail du travail effectué pour l'évaluation du travail effectué"));
@@ -72,7 +81,13 @@ $(document).ready(function() {
 	$('.invalid-feedback').css({ 'display': 'initial' });
 	if ($('.invalid-feedback').length === 0) {
 	    // il n'y a pas d'erreur, on envoie le formulaire
-	    var values = { dateCFE: (+date)/1000, duration: duration, type: $('#type').val(), beneficiary: $('#beneficiary').val(), details: $('#details').val() };
+	    var values = { dateCFE: (+date)/1000,
+			   durationHour: parseInt($('#durationHour').val()),
+			   durationMinute: parseInt($('#durationMinute').val()),
+			   type: $('#type').val(),
+			   beneficiary: $('#beneficiary').val(),
+			   details: $('#details').val()
+			 };
 	    if ($('form').attr('x-id') !== '')
 		values['id'] = $('form').attr('x-id');
 	    return nextWithPostData('/declaration', values);

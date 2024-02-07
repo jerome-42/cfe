@@ -23,6 +23,25 @@ function any($route, $fct) {
     route($route, $fct);
 }
 
+function initPug() {
+    $pug = new Pug([]);
+    $pug->share('durationToHuman', function($text) {
+        $hours = round(intval($text) / 60);
+        $minutes = intval($text) % 60;
+        $ret = [];
+        if ($hours >= 2)
+            $ret[] = $hours." heures";
+        else if ($hours == 1)
+            $ret[] = "1 heure";
+        if ($minutes > 1)
+            $ret[] = $minutes." minutes";
+        else if ($minutes == 1)
+            $ret[] = "1 minute";
+        return join(' ', $ret);
+    });
+    return $pug;
+}
+
 function doRoute($fct,) {
     // connexion mysql
     try {
@@ -37,11 +56,13 @@ function doRoute($fct,) {
         $vars = [ 'message' => 'Impossible de se connecter à la base de données: '.$e->getMessage() ];
         return Phug::displayFile('view/error.pug', $vars);
     }
+    $pug = initPug();
+
     try {
         // on met à jour admin
         if (isset($_SESSION['auth']))
             $_SESSION['isAdmin'] = Personne::estAdmin($conn, $_SESSION['givavNumber']);
-        $fct($conn);
+        $fct($conn, $pug);
         $conn->commit();
     }
     catch (Exception $e) {
@@ -53,7 +74,7 @@ function doRoute($fct,) {
             $stack[] = 'in '.$rawBacktrace[$i]['function'].' on '.$rawBacktrace[$i]['file'].' at line '.$rawBacktrace[$i]['line'];
         }
         $vars = [ 'message' => "Exception ".$e->getMessage(), 'stack' => implode("\n", $stack) ];
-        return Phug::displayFile('view/error.pug', $vars);
+        return $pug->displayFile('view/error.pug', $vars);
     }
 }
 

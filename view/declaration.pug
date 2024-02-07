@@ -43,10 +43,15 @@ block content
             option(value='Section Cormeilles') Section Cormeilles
             option(value='Privé') Privé
             option(value='Autre') Autre
-        .mb-3
-          label.form-label(for="duration") Durée
-          input.form-control#duration.form-control(type="text" name="duration" placeholder="heures" value=$line['duration'])
-        .mb-3
+        div
+          label.form-label(for="durationHour") Durée
+        .input-group
+          input.form-control#durationHour.form-control(type="text" name="hour" placeholder="heures" value=$line['durationHour'])
+          span.input-group-text Heure(s)
+          input.form-control#durationMinute.form-control(type="text" name="minute" placeholder="heures" value=$line['durationMinute'])
+          span.input-group-text Minute(s)
+        div#durationError
+        .mt-3.mb-3
           label.form-label(for='details') Détails
           textarea.form-control#details(name='details' rows='2' cols='50') #{$line['details']}
         .hstack.gap-4.mb-3

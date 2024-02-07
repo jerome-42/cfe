@@ -8,13 +8,13 @@ include_once __DIR__ . '/givav.php';
 include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
 
-get('/', function($conn) {
+get('/', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
     $cfe = new CFE($conn);
     $vars = array_merge($_SESSION, $cfe->getStats($_SESSION['givavNumber'], getYear()));
-    Phug::displayFile('view/index.pug', $vars);
+    $pug->displayFile('view/index.pug', $vars);
 });
 
 get('/error', function($conn) {
@@ -102,6 +102,8 @@ get('/declaration', function($conn) {
         } else {
             $vars['personne'] = Personne::load($conn, $line['who']);
         }
+        $line['durationHour'] = round($line['duration'] / 60);
+        $line['durationMinute'] = round($line['duration'] % 60);
         $vars['line'] = $line;
         return Phug::displayFile('view/declaration.pug', $vars);
     }
@@ -112,7 +114,8 @@ get('/declaration', function($conn) {
         'workDate' => '',
         'workType' => '',
         'beneficiary' => '',
-        'duration' => '',
+        'durationHour' => '',
+        'durationMinute' => 0,
         'details' => '',
     ];
     Phug::displayFile('view/declaration.pug', $vars);
@@ -123,7 +126,7 @@ post('/declaration', function($conn) {
         return redirect('/connexion');
     }
     // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
-    foreach ([ 'dateCFE', 'type', 'beneficiary', 'duration' ] as $elem) {
+    foreach ([ 'dateCFE', 'type', 'beneficiary', 'durationHour', 'durationMinute' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
             http_response_code(500);
             return Phug::displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
@@ -145,17 +148,32 @@ post('/declaration', function($conn) {
         http_response_code(500);
         return Phug::displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
     }
-    // vérification duration est > 0 et <= 10
-    if (!is_numeric($_POST['duration'])) {
+    // vérification heure
+    if (!is_numeric($_POST['durationHour'])) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "duree n'est pas un nombre" ]);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Le nomnbre d'heure n'est pas un nombre" ]);
     }
-    $duration = floatval($_POST['duration']);
-    if ($duration <= 0 || $duration > 10) {
+    $durationHour = intval($_POST['durationHour']);
+    if ($durationHour < 0 || $durationHour > 10) {
         http_response_code(500);
-        return Phug::displayFile('view/error.pug', [ 'message' => "duree doit être entre 0 et 10" ]);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Le nombre d'heure doit être entre 0 et 10" ]);
+    }
+    // vérification minute
+    if (!is_numeric($_POST['durationMinute'])) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Le nomnbre de minute n'est pas un nombre" ]);
+    }
+    $durationMinute = intval($_POST['durationMinute']);
+    if ($durationMinute < 0 || $durationMinute >= 60) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "Le nombre de minute doit être entre 0 et 10" ]);
+    }
+    if ($durationHour === 0 && $durationMinute === 0) {
+        http_response_code(500);
+        return Phug::displayFile('view/error.pug', [ 'message' => "La durée ne peut être nulle" ]);
     }
 
+    $duration = $durationHour * 60 + $durationMinute;
     if (isset($_POST['id']) && is_numeric($_POST['id'])) {
         $cfe = new CFE($conn);
         $line = $cfe->getLine(intval($_POST['id']));

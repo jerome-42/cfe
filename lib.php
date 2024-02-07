@@ -11,12 +11,6 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
 
-Phug::setFilter('suffix-heure', function($text, $options) {
-    if (floatval($text) >= 2)
-        return $text." heures";
-    return $text." heure";
-});
-
 function getYear() {
     return intval(date('Y'));
 }
