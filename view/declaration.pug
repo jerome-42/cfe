@@ -19,7 +19,7 @@ block content
           if $isAdmin == false || $line['who'] == $givavNumber
             h3= "Vous déclarez en tant que " . $name . " (" .  $givavNumber.")"
           else
-            h3= "Vous éditez une ligne de " . $personne['name']
+            h3 Vous éditez une ligne de #{$personne['name']}
       form(method="POST" x-id=$line['id'])
         .mb-3
           label.form-label(for='dateCFE') Date de r&eacute;alisation des heures de CFE:
@@ -46,9 +46,9 @@ block content
         div
           label.form-label(for="durationHour") Durée
         .input-group
-          input.form-control#durationHour.form-control(type="text" name="hour" placeholder="heures" value=$line['durationHour'])
+          input.form-control#durationHour.form-control(type="number" name="hour" min="0" max="10" placeholder="heures" value=$line['durationHour'])
           span.input-group-text Heure(s)
-          input.form-control#durationMinute.form-control(type="text" name="minute" placeholder="heures" value=$line['durationMinute'])
+          input.form-control#durationMinute.form-control(type="number" name="minute" min="0" max="59"  placeholder="heures" value=$line['durationMinute'])
           span.input-group-text Minute(s)
         div#durationError
         .mt-3.mb-3
