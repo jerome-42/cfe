@@ -332,16 +332,18 @@ get('/validation', function($conn, $pug) {
     $pug->displayFile('view/validation.pug', [ 'lines' => $lines ]);
 });
 
-post('/updateCFE_TODO', function($conn) {
+post('/updateMembreParams', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (!isset($_POST['num']) || !is_numeric($_POST['num'])) {
         echo "num doit être un nombre";
         return http_response_code(500);
     }
-    if (!isset($_POST['cfeTODO'])) {
-        echo "cfeTODO est obligatoire";
-        return http_response_code(500);
+    foreach ([ 'cfeTODO', 'enableMultiDateDeclaration' ] as $v) {
+        if (!isset($_POST[$v])) {
+            echo $v." est obligatoire";
+            return http_response_code(500);
+        }
     }
     if ($_POST['cfeTODO'] === '') {
         $query = "DELETE FROM cfe_todo WHERE who = :num";
@@ -363,6 +365,15 @@ post('/updateCFE_TODO', function($conn) {
             ':todo' => intval($_POST['cfeTODO']) * 60,
         ]);
     }
+    $enableMultiDateDeclaration = 0;
+    if ($_POST['enableMultiDateDeclaration'] === '1')
+        $enableMultiDateDeclaration = 1;
+    $query = "UPDATE personnes SET enableMultiDateDeclaration = :v WHERE givavNumber = :who";
+    $sth = $conn->prepare($query);
+        $sth->execute([
+            ':who' => intval($_POST['num']),
+            ':v' => $enableMultiDateDeclaration,
+        ]);
     echo "OK";
 });
 

@@ -106,10 +106,17 @@ $(document).ready(function() {
 	history.back();
     });
 
-    $('#updateCFE_TODO').click(function() {
+    $('#updateParams').click(function() {
+	var enableMultiDateDeclaration = 0;
+	if ($('#enableMultiDateDeclaration').is(':checked'))
+	    enableMultiDateDeclaration = 1;
 	$.ajax({
-            url: '/updateCFE_TODO',
-            data: { num: $('#list').attr('x-numero'), cfeTODO: $('#cfeTODO').val() },
+            url: '/updateMembreParams',
+            data: {
+		num: $('#list').attr('x-numero'),
+		cfeTODO: $('#cfeTODO').val(),
+		enableMultiDateDeclaration: enableMultiDateDeclaration,
+	    },
             type: 'POST',
             error: function() {
 		alert("Impossible");

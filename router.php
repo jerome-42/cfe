@@ -66,8 +66,11 @@ function doRoute($fct,) {
 
     try {
         // on met à jour admin
-        if (isset($_SESSION['auth']))
-            $_SESSION['isAdmin'] = Personne::estAdmin($conn, $_SESSION['givavNumber']);
+        if (isset($_SESSION['auth']) && isset($_SESSION['givavNumber'])) {
+            $data = Personne::load($conn, $_SESSION['givavNumber']);
+            $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
+            $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
+        }
         $fct($conn, $pug);
         $conn->commit();
     }

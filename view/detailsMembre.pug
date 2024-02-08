@@ -12,12 +12,20 @@ block content
     label.col-form-label(for="cfeTODO") Nombre d'heures de CFE à réaliser pour #{$membre['name']}&nbsp;:
     .col-6.col-xl-1
       input.form-control(type="number" min="0" max="200" placeholder=$defaultCFE_TODOHour value=$membre['todoHour'])#cfeTODO
-    .col-6.col-xl-1
-      button.btn-primary#updateCFE_TODO Mettre à jour
-  .row.mb-4
+  .row.mb-1
     i * Laissez vide pour prendre le nombre d'heure par défaut qui est de #{$defaultCFE_TODOHour}
+  .row.mb-2
+    .col-6
+      .form-check
+        input.form-check-input(type="checkbox" checked=$membre['enableMultiDateDeclaration'] == 1)#enableMultiDateDeclaration
+        label.form-label(for="enableMultiDateDeclaration") Saisie multi-date
+  .row.mb-4
+    .col-6.col-xl-1
+      button.btn-primary#updateParams Mettre à jour
   .row
-    div#details
+    span
+      b Statut actuel:&nbsp;
+      span#details
   .row
     .col-md-3.offset-md-9
       .row
