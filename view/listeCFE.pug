@@ -58,9 +58,12 @@ block content
             tr(x-validation=$line['status'])
               td
                 if $isAdmin == true || $line['status'] == 'submitted'
-                  button.btn.btn-primary.edit(x-id=$line['id'])
+                  button.btn.btn-primary.me-2.edit(x-id=$line['id'])
                     i.bi.bi-pencil
                       span.d-none.d-sm-block2 &nbsp;Editer
+                  button.btn.btn-danger.delete(x-id=$line['id'])
+                    i.bi.bi-trash
+                      span.d-none.d-sm-block2 &nbsp;Supprimer
               td.date #{$line['workDate']}
               td.status #{$line['status']}
               td #{$line['beneficiary']}
@@ -109,3 +112,15 @@ block content
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
     button.btn.btn-primary.download Télécharger en CSV
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalConfirm
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5 Supprimer la déclaration
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          p Êtes-vous sûr de vouloir supprimer cette déclaration ?
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-primary(type="button")#deletionConfirm Oui, je supprime

@@ -37,6 +37,28 @@ $(document).ready(function() {
 	window.location = '/';
     });
 
+
+    $('.delete').click(function() {
+	$('#modalConfirm').attr('x-id', $(this).attr('x-id'));
+	$('#modalConfirm').modal('show');
+    });
+
+    $('#deletionConfirm').click(function() {
+	$.ajax({
+            url: '/deleteCFELine',
+            data: { id:
+		    $('#modalConfirm').attr('x-id'),
+		  },
+            type: 'POST',
+            error: function() {
+		alert("Impossible");
+            },
+            success: function(res) {
+		window.location.reload();
+            }
+	});
+    });
+
     $('.edit').click(function() {
 	var id = $(this).attr('x-id');
 	window.location = '/declaration?id='+id;

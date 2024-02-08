@@ -270,6 +270,44 @@ get('/deconnexion', function($conn) {
     redirect('/');
 });
 
+post('/deleteCFELine', function($conn, $pug) {
+    if (!isset($_SESSION['auth'])) {
+        http_response_code(500);
+        echo "not authenticated";
+        return;
+    }
+    if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
+        http_response_code(500);
+        echo "id obligatoire";
+        return;
+    }
+    $cfe = new CFE($conn);
+    $line = $cfe->getLine(intval($_POST['id']));
+    if ($line === null) {
+        http_response_code(500);
+        echo "déclaration inconnue";
+        return;
+    }
+    if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
+        // un non-admin ne peut supprimer qu'une déclaration à lui et uniquement submitted
+        if ($line['who'] !== $_SESSION['givavNumber']) {
+            http_response_code(500);
+            echo "déclaration inconnue";
+            return;
+        }
+        if ($line['status'] !== 'submitted') {
+            http_response_code(500);
+            echo "impossible de supprimer une déclaration qui n'est plus soumise";
+            return;
+        }
+    }
+    $query = "DELETE FROM cfe_records WHERE id = :id";
+    $sth = $conn->prepare($query);
+    $sth->execute([ ':id' => $_POST['id'] ]);
+    syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." delete declaration cfe_records.id=".$_POST['id'].": ".json_encode($line));
+    echo "OK";
+});
+
 get('/detailsMembre', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
