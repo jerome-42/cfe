@@ -55,6 +55,7 @@ function doRoute($fct,) {
         $dsn = join(';', [ 'host='.$config['database']['host'], 'dbname='.$config['database']['database'] ]);
         $conn = new PDO("mysql:".$dsn, $config['database']['username'], $config['database']['password']);
         checkDatabase($conn, $config['database']['database']);
+        $conn->query("SET time_zone = 'Europe/Paris'");
         $conn->beginTransaction();
     }
     catch (Exception $e) {
