@@ -69,7 +69,7 @@ class Givav {
             // j'ai le numéro GIVAV dans $matches[0]
             $givavNumber = intval($matches[1][0]);
         }
-        if (preg_match_all('/<div class="ui-body ui-body-a">\s+<p>\s+([\w\s]+)<br \/>/m', $response, $matches) == 1) {
+        if (preg_match_all('/<div class="ui-body ui-body-a">\s+<p>\s+([\w\s\-_]+)<br \/>/m', $response, $matches) == 1) {
             $name = $matches[1][0];
         }
         if (preg_match_all('/Courriel\s+:\s+<a href="mailto:([\w\.-_@]+)"/m', $response, $matches) == 1) {
