@@ -112,7 +112,7 @@ get('/declaration', function($conn, $pug) {
     $vars['line'] = [
         'id' => '',
         'who' => $_SESSION['givavNumber'],
-        'workDate' => '',
+        'workDate' => date('Y-m-d'), // par défaut c'est la date du jour
         'workType' => '',
         'beneficiary' => '',
         'durationHour' => 0,
