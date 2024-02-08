@@ -127,28 +127,45 @@ post('/declaration', function($conn, $pug) {
         return redirect('/connexion');
     }
     // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
-    foreach ([ 'dateCFE', 'type', 'beneficiary', 'durationHour', 'durationMinute' ] as $elem) {
+    foreach ([ 'startDateCFE', 'stopDateCFE', 'type', 'beneficiary', 'durationHour', 'durationMinute' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
             http_response_code(500);
             return $pug->displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
         }
     }
-    // vérification que dateCFE est entre le 1er janvier et le 31 décembre de cette année
-    if (!is_numeric($_POST['dateCFE'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "dateCFE n'est pas un entier" ]);
-    }
+    $startDate = new DateTime();
+    $stopDate = new DateTime();
     $now = new DateTime();
-    $dateCFE = new DateTime();
-    $dateCFE->setTimestamp(intval($_POST['dateCFE']));
-    if ($dateCFE->format('Y') !== $now->format('Y')) {
+    // start
+    $startDate->setTimestamp(intval($_POST['startDateCFE']));
+    if ($startDate->format('Y') !== $now->format('Y')) {
         http_response_code(500);
         return $pug->displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
     }
-    if ($dateCFE > $now) {
+    if ($startDate > $now) {
         http_response_code(500);
         return $pug->displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
     }
+    // stop
+    $stopDate->setTimestamp(intval($_POST['stopDateCFE']));
+    if ($stopDate->format('Y') !== $now->format('Y')) {
+        http_response_code(500);
+        return $pug->displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
+    }
+    if ($stopDate > $now) {
+        http_response_code(500);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
+    }
+    // start vs stop
+    if ($startDate > $stopDate) {
+        http_response_code(500);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Date de fin postérieure à la date de début" ]);
+    }
+    if ($startDate != $stopDate && $_SESSION['enableMultiDateDeclaration'] === false) {
+        http_response_code(500);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Vous n'avez pas le droit de déclarer plusieurs dates (enableMultiDateDeclaration)" ]);
+    }
+
     // vérification heure
     if (!is_numeric($_POST['durationHour'])) {
         http_response_code(500);
@@ -193,7 +210,7 @@ post('/declaration', function($conn, $pug) {
         $query = "UPDATE cfe_records SET registerDate = NOW(), workDate = :workDate, workType = :workType, beneficiary = :beneficiary, duration = :duration, details = :details WHERE id = :id";
         $sth = $conn->prepare($query);
         $sth->execute([ ':id' => $line['id'],
-                        ':workDate' => $dateCFE->format('Y-m-d'),
+                        ':workDate' => $startDate->format('Y-m-d'),
                         ':workType' => $_POST['type'],
                         ':beneficiary' => $_POST['beneficiary'],
                         ':duration' => $duration,
@@ -203,21 +220,31 @@ post('/declaration', function($conn, $pug) {
         return redirect("/declaration-complete");
     }
 
-    //DEBUG echo '<pre>';
-    //DEBUG var_dump($_POST);
     $query ="INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details)";
     $sth = $conn->prepare($query);
-    $sth->execute([ ':num' => $_SESSION['givavNumber'],
-                    ':workDate' => $dateCFE->format('Y-m-d'),
-                    ':workType' => $_POST['type'],
-                    ':beneficiary' => $_POST['beneficiary'],
-                    ':duration' => $duration,
-                    ':details' => $_POST['details'],
-    ]);
-    $sth = $conn->query("SELECT LAST_INSERT_ID() AS id");
-    if ($sth->rowCount() === 1) {
-        $id = $sth->fetchAll()[0]['id'];
-        syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare cfe_records.id=".$id);
+    $interval = DateInterval::createFromDateString('1 day');
+    // DatePeriod::INCLUDE_END_DATE n'existe pas en PHP 8.1
+    if (version_compare(phpversion(), '8.2', '>=')) {
+        $period = new DatePeriod($startDate, $interval, $stopDate, DatePeriod::INCLUDE_END_DATE);
+    } else {
+        $stopDate->add($interval);
+        $period = new DatePeriod($startDate, $interval, $stopDate);
+    }
+    foreach ($period as $dt) {
+        //DEBUG echo '<pre>';
+        //DEBUG var_dump($_POST);
+        $sth->execute([ ':num' => $_SESSION['givavNumber'],
+                        ':workDate' => $dt->format('Y-m-d'),
+                        ':workType' => $_POST['type'],
+                        ':beneficiary' => $_POST['beneficiary'],
+                        ':duration' => $duration,
+                        ':details' => $_POST['details'],
+        ]);
+        $sth2 = $conn->query("SELECT LAST_INSERT_ID() AS id");
+        if ($sth2->rowCount() === 1) {
+            $id = $sth2->fetchAll()[0]['id'];
+            syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare cfe_records.id=".$id);
+        }
     }
     redirect("/declaration-complete");
 });

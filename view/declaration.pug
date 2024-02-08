@@ -21,11 +21,21 @@ block content
           else
             h3 Vous éditez une ligne de #{$personne['name']}
       form(method="POST" x-id=$line['id'])
-        .mb-3
-          label.form-label(for='dateCFE') Date de r&eacute;alisation des heures de CFE:
-          - $minDate=date('Y')."-01-01"
-          - $maxDate=date('Y')."-12-31"
-          input.form-control#dateCFE(type='date' name='dateCFE' min=$minDate max=$maxDate value=$line['workDate'])
+        - $minDate=date('Y')."-01-01"
+        - $maxDate=date('Y')."-12-31"
+        .row
+          if $enableMultiDateDeclaration && $line['id'] == ''
+            .col-6
+              label.form-label(for='startDateCFE') Date de début de r&eacute;alisation des heures de CFE:
+              input.form-control#startDateCFE(type='date' min=$minDate max=$maxDate)
+            .col-6
+              label.form-label(for='stopDateCFE') Date de fin de r&eacute;alisation des heures de CFE:
+              input.form-control#stopDateCFE(type='date' min=$minDate max=$maxDate)
+          else
+            .mb-3
+              label.form-label(for='dateCFE') Date de r&eacute;alisation des heures de CFE:
+              input.form-control#dateCFE(type='date' name='dateCFE' min=$minDate max=$maxDate value=$line['workDate'])
+
         .mb-3
           label.form-label(for='type') Type de travaux réalisés
           select.form-select#type(name="type" placeholder='Choisir...' value=$line['workType'])

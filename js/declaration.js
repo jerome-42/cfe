@@ -33,17 +33,54 @@ $(document).ready(function() {
 
 	$('.invalid-feedback').remove();
 
+	var startDate = null;
+	var stopDate = null;
 	// check date
-	var date = $('#dateCFE').val();
-	if (date === '') {
-	    $('#dateCFE').after($('<div class="invalid-feedback">').text('Date obligatoire'));
+	if ($('#dateCFE').length === 1) {
+	    var date = $('#dateCFE').val();
+	    if (date === '') {
+		$('#dateCFE').after($('<div class="invalid-feedback">').text('Date obligatoire'));
+	    } else {
+		var now = new Date();
+		date = new Date(date);
+		if (date.getFullYear() != now.getFullYear()) { // l'année doit être l'année en cours
+		    $('#dateCFE').after($('<div class="invalid-feedback">').text(date.getFullYear()+" n'est pas une année correcte"));
+		} else if (date.getTime() > now.getTime()) { // la date saisie est après aujourd'hui !
+		    $('#dateCFE').after($('<div class="invalid-feedback">').text("Impossible de pré-déclarer !"));
+		}
+	    }
+	    startDate = date;
+	    stopDate = date;
 	} else {
-	    var now = new Date();
-	    date = new Date(date);
-	    if (date.getFullYear() != now.getFullYear()) { // l'année doit être l'année en cours
-		$('#dateCFE').after($('<div class="invalid-feedback">').text(date.getFullYear()+" n'est pas une année correcte"));
-	    } else if (date.getTime() > now.getTime()) { // la date saisie est après aujourd'hui !
-		$('#dateCFE').after($('<div class="invalid-feedback">').text("Impossible de pré-déclarer !"));
+	    // start
+	    startDate = $('#startDateCFE').val();
+	    if (startDate === '') {
+		$('#startDateCFE').parents('.row').after($('<div class="invalid-feedback">').text('Date obligatoire'));
+	    } else {
+		var now = new Date();
+		startDate = new Date(startDate);
+		if (startDate.getFullYear() != now.getFullYear()) { // l'année doit être l'année en cours
+		    $('#startDateCFE').parents('.row').after($('<div class="invalid-feedback">').text(startDate.getFullYear()+" n'est pas une année correcte"));
+		} else if (startDate.getTime() > now.getTime()) { // la date saisie est après aujourd'hui !
+		    $('#startDateCFE').parents('.row').after($('<div class="invalid-feedback">').text("Impossible de pré-déclarer !"));
+		}
+	    }
+	    // stop
+	    stopDate = $('#stopDateCFE').val();
+	    if (stopDate === '') {
+		$('#stopDateCFE').parents('.row').after($('<div class="invalid-feedback">').text('Date obligatoire'));
+	    } else {
+		var now = new Date();
+		stopDate = new Date(stopDate);
+		if (stopDate.getFullYear() != now.getFullYear()) { // l'année doit être l'année en cours
+		    $('#stopDateCFE').parents('.row').after($('<div class="invalid-feedback">').text(stopDate.getFullYear()+" n'est pas une année correcte"));
+		} else if (stopDate.getTime() > now.getTime()) { // la date saisie est après aujourd'hui !
+		    $('#stopDateCFE').parents('.row').after($('<div class="invalid-feedback">').text("Impossible de pré-déclarer !"));
+		}
+	    }
+	    // start vs stop
+	    if (startDate instanceof Date && stopDateCFE instanceof Date && startDate.getTime() > stopDate.getTime()) {
+		$('#startDateCFE').parents('.row').after($('<div class="invalid-feedback">').text("la date de fin doit être postérieure à la date de début"));
 	    }
 	}
 
@@ -81,7 +118,8 @@ $(document).ready(function() {
 	$('.invalid-feedback').css({ 'display': 'initial' });
 	if ($('.invalid-feedback').length === 0) {
 	    // il n'y a pas d'erreur, on envoie le formulaire
-	    var values = { dateCFE: (+date)/1000,
+	    var values = { startDateCFE: (+startDate)/1000,
+			   stopDateCFE: (+stopDate)/1000,
 			   durationHour: parseInt($('#durationHour').val()),
 			   durationMinute: parseInt($('#durationMinute').val()),
 			   type: $('#type').val(),
