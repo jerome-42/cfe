@@ -21,6 +21,10 @@ var nextWithPostData = function(url, params) {
 
 $(document).ready(function() {
     $('#dateCFE').focus();
+    $(".abandon").click(function(event) {
+	window.location = '/';
+	return event.preventDefault();
+    });
     $("#abandon").click(function(event) {
 	window.location = '/';
 	return event.preventDefault();
@@ -29,6 +33,9 @@ $(document).ready(function() {
 	event.preventDefault();
     });
     $('#doRecord').click(function() {
+	$('.doRecord').trigger('click');
+    });
+    $('.doRecord').click(function() {
 	// on vérifie ici les entrées de l'utilisateur avant d'envoyer le formulaire au serveur
 
 	$('.invalid-feedback').remove();
@@ -136,5 +143,9 @@ $(document).ready(function() {
 	var value = elem.attr('value');
 	if (value != '')
 	    elem.find('option[value="'+value+'"]').attr('selected', 'selected');
+    });
+
+    $('.importCSV').click(function() {
+	window.location = '/importCSV';
     });
 });

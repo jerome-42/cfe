@@ -362,6 +362,21 @@ get('/exportAllData', function($conn) {
     $zip->finish();
 });
 
+get('/importCSV', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    $pug->displayFile('view/importCSV.pug', $_SESSION);
+});
+
+get('/importCSV-exemple', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    header('Content-Disposition: attachment; filename="modele-import-cfe.csv"');
+    header('Content-Type: text/csv');
+    echo implode(',', [ 'date JJ/MM/AAAA', 'type de travaux', 'bénéficiaire', 'durée heure', 'durée minute', 'détails' ])."\r\n";
+    echo implode(',', [ date('d/m/Y'), 'Atelier planeur', 'AAVO', '2', '30', 'Visite annuelle FI' ])."\r\n";
+});
+
 get('/listeCFE', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
