@@ -103,8 +103,8 @@ get('/declaration', function($conn, $pug) {
         } else {
             $vars['personne'] = Personne::load($conn, $line['who']);
         }
-        $line['durationHour'] = round($line['duration'] / 60);
-        $line['durationMinute'] = round($line['duration'] % 60);
+        $line['durationHour'] = floor(intval($line['duration']) / 60);
+        $line['durationMinute'] = intval($line['duration']) % 60.0;
         $vars['line'] = $line;
         return $pug->displayFile('view/declaration.pug', $vars);
     }
