@@ -317,11 +317,13 @@ get('/detailsMembre', function($conn, $pug) {
     }
     $num = intval($_GET['numero']);
     $vars = $_SESSION;
+    $cfe = new CFE($conn);
+    $vars['defaultCFE_TODO'] = floatval($cfe->getDefaultCFE_TODO(getYear()));
+    $vars['defaultCFE_TODOHour'] = $vars['defaultCFE_TODO'];
     $vars['membre'] = Personne::load($conn, $num);
     $vars['membre']['todoHour'] = round($vars['membre']['todo'] / 60);
-    $cfe = new CFE($conn);
-    $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
-    $vars['defaultCFE_TODOHour'] = round($vars['defaultCFE_TODO'] / 60);
+    if ($vars['membre']['todo'] === null || $vars['membre']['todoHour'] == $vars['defaultCFE_TODOHour'])
+        $vars['membre']['todoHour'] = '';
     $lines = $cfe->getRecordsByYear($num, getYear());
     $vars['lines'] = $lines;
     $pug->displayFile('view/detailsMembre.pug', $vars);
