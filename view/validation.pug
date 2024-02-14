@@ -33,7 +33,7 @@ block content
           each line in $lines
             tr(x-id=$line['id'] x-validation=$line['status'])
               td.validation #{$line['status']}
-              td #{$line['name']}
+              td #{$line['name']}  (#{$line['givavNumber']})
               td #{$line['workDate']}
               td #{$line['beneficiary']}
               td #{$line['workType']}

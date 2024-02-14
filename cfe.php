@@ -28,7 +28,7 @@ class CFE {
     }
 
     public function getLinesToValidate() {
-        $query = "SELECT cfe_records.*, personnes.name FROM cfe_records JOIN personnes ON cfe_records.who = personnes.givavNumber WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
+        $query = "SELECT cfe_records.*, personnes.name, personnes.givavNumber FROM cfe_records JOIN personnes ON cfe_records.who = personnes.givavNumber WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
         $sth = $this->conn->prepare($query);
         $sth->execute([]);
         $lines = $sth->fetchAll();
