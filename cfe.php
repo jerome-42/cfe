@@ -19,7 +19,7 @@ class CFE {
     }
 
     public function getLastRecords() {
-        $query = 'SELECT * FROM cfe_records JOIN personnes ON personnes.givavNumber = cfe_records.who WHERE YEAR(workDate) = YEAR(NOW()) ORDER BY workDate DESC LIMIT 200';
+        $query = 'SELECT cfe_records.*, personnes.name, personnes.givavNumber, validated.name as validatedName FROM cfe_records JOIN personnes ON personnes.givavNumber = cfe_records.who LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE YEAR(workDate) = YEAR(NOW()) ORDER BY workDate DESC LIMIT 200';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ]);
         $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
