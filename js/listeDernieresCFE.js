@@ -13,11 +13,13 @@ $(document).ready(function() {
     $('#list > tbody > tr').each(function() {
 	switch ($(this).attr('x-validation')) {
 	case 'validated':
-	    $(this).find('.status').text('Validé');
+	    var by = $(this).find('.status').attr('x-validated-by');
+	    $(this).find('.status').text('Validé ('+by+')');
 	    $(this).addClass('table-success');
 	    break;
 	case 'rejected':
-	    $(this).find('.status').text('Rejeté');
+	    var by = $(this).find('.status').attr('x-validated-by');
+	    $(this).find('.status').text('Rejeté ('+by+')');
 	    $(this).addClass('table-danger');
 	    break;
 	case 'submitted':

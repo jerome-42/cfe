@@ -60,7 +60,7 @@ class CFE {
     }
 
     public function getRecordsByYear($givavNumber, $year) {
-        $query = 'SELECT * FROM cfe_records WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
+        $query = 'SELECT *, validated.name as validatedName FROM cfe_records LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':year' => $year, ':givavNumber' => $givavNumber ]);
         $lines = $sth->fetchAll();

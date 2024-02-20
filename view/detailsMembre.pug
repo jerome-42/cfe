@@ -47,13 +47,13 @@ block content
         tbody
           each line in $lines
             tr(x-id=$line['id'] x-validation=$line['status'])
-              td.validation #{$line['status']}
-              td #{$line['workDate']}
-              td #{$line['beneficiary']}
-              td #{$line['workType']}
+              td.validation(x-validated-by=$line['validatedName'])= $line['status']
+              td= $line['workDate']
+              td= $line['beneficiary']
+              td= $line['workType']
               td(x-value=$line['duration'])= $durationToHuman($line['duration'])
-              td #{$line['details']}
-              td #{$line['rejectedCause']}
+              td= $line['details']
+              td= $line['rejectedCause']
         tfoot
           tr
             th Statut

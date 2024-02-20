@@ -23,23 +23,23 @@ block content
           tr
             th Date
             th(width="20%") Par
-            th Statut
+            th(width="10%") Statut
             th(width="10%") Bénéficiaire
             th(width="10%") Type
             th(width="10%") Durée
             th Détails
-            th(width="20%") Cause du rejet
+            th(width="10%") Cause du rejet
         tbody
           each line in $lines
             tr(x-validation=$line['status'])
-              td.date #{$line['workDate']}
+              td.date= $line['workDate']
               td #{$line['name']} (#{$line['givavNumber']})
-              td.status #{$line['status']}
-              td #{$line['beneficiary']}
-              td #{$line['workType']}
+              td.status(x-validated-by=$line['validatedName'])= $line['status']
+              td= $line['beneficiary']
+              td= $line['workType']
               td= durationToHuman($line['duration'])
-              td #{$line['details']}
-              td #{$line['rejectedCause']}
+              td.small= $line['details']
+              td.small= $line['rejectedCause']
         tfoot
           tr
             th Date
