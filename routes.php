@@ -488,6 +488,16 @@ get('/importCSV-exemple', function($conn, $pug) {
     echo implode(',', [ date('d/m/Y'), 'Atelier planeur', 'AAVO', '2', '30', 'Visite annuelle FI' ])."\r\n";
 });
 
+get('/listeDernieresCFE', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $cfe = new CFE($conn);
+    $lines = $cfe->getLastRecords();
+    $vars = $_SESSION;
+    $vars['lines'] = $lines;
+    $pug->displayFile('view/listeDernieresCFE.pug', $vars);
+});
+
 get('/listeCFE', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');

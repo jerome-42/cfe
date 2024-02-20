@@ -55,7 +55,11 @@ $(document).ready(function() {
     });
 
     $('.back').click(function() {
-	history.back();
+	window.location = '/';
+    });
+
+    $('.lastCFE').click(function() {
+	window.location = '/listeDernieresCFE';
     });
 
     $(document.body).on('click', '.cancel', function() {

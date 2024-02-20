@@ -9,8 +9,9 @@ block content
   .row
     h1 Validation des CFE
   .row
-    .col-md-1
+    .col-md-2
       button.btn.btn-danger.back Retour
+      button.btn.btn-info.lastCFE Liste des dernières CFE
   .row
     .col-md-3.offset-md-9
       .row
@@ -48,7 +49,9 @@ block content
             th Type
             th Durée
             th Détails
-  .hstack.gap-4.mb-3
-    button.btn.btn-danger.back Retour
+  .row.mb-3
+    .col-md-2
+      button.btn.btn-danger.back Retour
+      button.btn.btn-info.lastCFE Liste des dernières CFE
 
   include rejected.pug

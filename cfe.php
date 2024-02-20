@@ -18,6 +18,14 @@ class CFE {
         return $lines[0];
     }
 
+    public function getLastRecords() {
+        $query = 'SELECT * FROM cfe_records JOIN personnes ON personnes.givavNumber = cfe_records.who WHERE YEAR(workDate) = YEAR(NOW()) ORDER BY workDate DESC LIMIT 200';
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ]);
+        $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
+        return $lines;
+    }
+
     private function getLines($status, $givavNumber, $year) {
         $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :status AND YEAR(workDate) = :year';
         $sth = $this->conn->prepare($query);

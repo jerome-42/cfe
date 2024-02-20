@@ -1,0 +1,54 @@
+extends layout.pug
+
+block scripts
+  title Les dernières déclarations
+  script(src="js/listeDernieresCFE.js")
+
+block content
+  .row
+    h1 Les dernières déclarations
+  .row.mb-3
+    .col
+      button.btn.btn-danger.back Retour
+  .row
+    .col-md-3.offset-md-9
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="")#search
+  .row
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th Date
+            th(width="20%") Par
+            th Statut
+            th(width="10%") Bénéficiaire
+            th(width="10%") Type
+            th(width="10%") Durée
+            th Détails
+            th(width="20%") Cause du rejet
+        tbody
+          each line in $lines
+            tr(x-validation=$line['status'])
+              td.date #{$line['workDate']}
+              td #{$line['name']} (#{$line['givavNumber']})
+              td.status #{$line['status']}
+              td #{$line['beneficiary']}
+              td #{$line['workType']}
+              td= durationToHuman($line['duration'])
+              td #{$line['details']}
+              td #{$line['rejectedCause']}
+        tfoot
+          tr
+            th Date
+            th Statut
+            th Bénéficiaire
+            th Type
+            th Durée
+            th Détails
+            th Cause du rejet
+  .row.mb-3
+    .col
+      button.btn.btn-danger.back Retour
