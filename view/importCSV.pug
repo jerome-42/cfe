@@ -26,7 +26,11 @@ block content
       .row.mb-3
         label.col-form-label(for="csv") Fichier à importer
         .col-6
-          input.form-control(type="file")#csv
+          form(method="POST" enctype="multipart/form-data")#importCSV
+            input.form-control(type="file" name="csv")#csv
+      if $error
+        .row.mb-3
+          .alert.alert-danger(role="alert")= $error
       .row
         .col.d-none.d-sm-block.justify-content-md-center
           .btn-group

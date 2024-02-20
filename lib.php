@@ -11,6 +11,12 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
 
+function getSessionKey() {
+    if (!isset($_SESSION['signKey']))
+        $_SESSION['signKey'] = randomString(16);
+    return $_SESSION['signKey'];
+}
+
 function getYear() {
     return intval(date('Y'));
 }
@@ -94,6 +100,28 @@ function getClientIP() {
     else
         $ipaddress = 'UNKNOWN';
     return $ipaddress;
+}
+
+function parseDateDDMMAAAA($date) {
+    $d = explode(' ', $date);
+    $elem = explode('/', $d[0]);
+    if (count($elem) != 3)
+        throw new Exception($date." n'est pas une date au format DDMMAAAA");
+    if (count($d) == 1)
+        return ['year' => $elem[2], 'month' => $elem[1], 'day' => $elem[0] ];
+    else
+        return ['year' => $elem[2], 'month' => $elem[1], 'day' => $elem[0], 'time' => $d[1] ];
+}
+
+function randomString($length) {
+    $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+    $pass = [];
+    $alphaLength = strlen($alphabet) - 1;
+    for ($i = 0; $i < $length; $i++) {
+        $n = rand(0, $alphaLength);
+        $pass[] = $alphabet[$n];
+    }
+    return implode($pass);
 }
 
 function redirect($to) {

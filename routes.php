@@ -4,6 +4,7 @@
 
 include_once __DIR__ . '/router.php';
 include_once __DIR__ . '/cfe.php';
+include_once __DIR__ . '/csv.php';
 include_once __DIR__ . '/givav.php';
 include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
@@ -378,6 +379,104 @@ get('/importCSV', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
     $pug->displayFile('view/importCSV.pug', $_SESSION);
+});
+
+post('/importCSV', function($conn, $pug) {
+    if (!isset($_FILES['csv']) || $_FILES['csv']['name'] === '') {
+        http_response_code(500);
+        $vars = $_SESSION;
+        $vars['error'] = "Vous avez oublié de sélectionner un fichier";
+        return $pug->displayFile('view/importCSV.pug', $vars);
+    }
+    if ($_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(500);
+        $vars = $_SESSION;
+        $vars['error'] = "L'upload a échoué pour une raison inconnue";
+        return $pug->displayFile('view/importCSV.pug', $vars);
+    }
+    if ($_FILES['csv']['size'] > 100000) {
+        http_response_code(500);
+        $vars = $_SESSION;
+        $vars['error'] = "La taille maximale du fichier ne doit pas dépasser 100 Ko";
+        return $pug->displayFile('view/importCSV.pug', $vars);
+    }
+    if (($handle = fopen($_FILES['csv']['tmp_name'], "r")) === FALSE) {
+        http_response_code(500);
+        return $pug->displayFile('view/error.pug', [ 'message' => "Impossible d'ouvrir le fichier" ]);
+    } else {
+        $data = fgetcsv($handle, 1000, ",");
+        if (count($data) !== 6) {
+            http_response_code(500);
+            $vars = $_SESSION;
+            $vars['error'] = "Le fichier n'est pas un CSV au bon format: le séparateur de colonne doit être ,";
+            return $pug->displayFile('view/importCSV.pug', $vars);
+        }
+        $vars = $_SESSION;
+        rewind($handle); // on revient au début du fichier
+        list($lines, $errors, $totalDuration) = parseCSV($handle, true);
+        $vars['lines'] = $lines;
+        $vars['errors'] = $errors;
+        $vars['totalDuration'] = $totalDuration;
+        rewind($handle); // on revient au début du fichier
+        $contents = fread($handle, $_FILES['csv']['size']);
+        $contents = trim($contents);
+        $key = getSessionKey(); // private key
+        $vars['sign'] = hash('sha256', $contents.$key);
+        $vars['contents'] = base64_encode($contents);
+        fclose($handle);
+        return $pug->displayFile('view/importCSV-step2.pug', $vars);
+    }
+});
+
+
+post('/importCSV-finish', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    foreach ([ 'contents', 'sign' ] as $key) {
+        if (!isset($_POST[$key]) || $_POST[$key] === '') {
+            http_response_code(500);
+            return $pug->displayFile('view/error.pug', [ 'message' => $key." est manquant" ]);
+        }
+    }
+    // on vérifie sign, est-ce que contents est le même contents que celui qui a été validé auparavant ?
+    $key = getSessionKey(); // private key
+    $contents = base64_decode($_POST['contents']);
+    $signComputed = hash('sha256', $contents.$key);
+    if ($signComputed !== $_POST['sign']) {
+        http_response_code(500);
+        return $pug->displayFile('view/error.pug', [ 'message' => "La signature fournie ne correspond pas à celle calculée, veuillez prévenir le développeur" ]);
+    }
+    $handle = fopen("php://temp/maxmemory:".strlen($contents)+100, 'r+');
+    fputs($handle, $contents);
+    rewind($handle);
+    $query = "INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) VALUES (:who, NOW(), :workDate, :workType, :beneficiary, :duration, :status, :details)";
+    $sth = $conn->prepare($query);
+    list($lines, $errors, $totalDuration) = parseCSV($handle, true);
+    $linesInserted = [];
+    $totalDuration = 0;
+    foreach ($lines as $line) {
+        $status = 'submitted';
+        if (intval($line['d']->format('Y')) < intval(date('Y')))
+            $status = 'validated';
+        $d = parseDateDDMMAAAA($line['date']);
+        $d = $d['year'].'-'.$d['month'].'-'.$d['day'];
+        $ret = $sth->execute([ ':who' => $_SESSION['givavNumber'],
+                               ':workDate' => $d,
+                               ':workType' => $line['type'],
+                               ':beneficiary' => $line['beneficiary'],
+                               ':duration' => $line['duration'],
+                               ':status' => $status,
+                               ':details' => $line['details'],
+        ]);
+        if ($ret === true)
+            $totalDuration += $line['duration'];
+        $linesInserted[] = $line;
+    }
+    $vars = $_SESSION;
+    $vars['lines'] = $linesInserted;
+    $vars['totalDuration'] = $totalDuration;
+    $vars['errors'] = $errors;
+    $pug->displayFile('view/importCSV-report.pug', $vars);
 });
 
 get('/importCSV-exemple', function($conn, $pug) {
