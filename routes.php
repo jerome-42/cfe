@@ -70,7 +70,7 @@ post('/connexion', function($conn, $pug) {
         $_SESSION['givavNumber'] = $user['number'];
         $_SESSION['name'] = $user['name'];
         $_SESSION['mail'] = $user['mail'];
-        syslog(LOG_INFO, getClientIP()." ".$user['number']." ".$user['name']." logged");
+        syslog(LOG_INFO, "CFE ".getClientIP()." ".$user['number']." ".$user['name']." logged");
         return redirect('/');
     }
     catch (Exception $e) {
@@ -193,8 +193,9 @@ post('/declaration', function($conn, $pug) {
 
     $duration = $durationHour * 60 + $durationMinute;
     if (isset($_POST['id']) && is_numeric($_POST['id'])) {
+        $id = intval($_POST['id']);
         $cfe = new CFE($conn);
-        $line = $cfe->getLine(intval($_POST['id']));
+        $line = $cfe->getLine($id);
         if ($line === null) {
             return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
         }
@@ -207,6 +208,8 @@ post('/declaration', function($conn, $pug) {
                 return $pug->displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
             }
         }
+        syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." edit declaration cfe_records.id=".$line['id']);
+        syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." previous record: ".json_encode($line));
         $query = "UPDATE cfe_records SET registerDate = NOW(), workDate = :workDate, workType = :workType, beneficiary = :beneficiary, duration = :duration, details = :details WHERE id = :id";
         $sth = $conn->prepare($query);
         $sth->execute([ ':id' => $line['id'],
@@ -216,7 +219,12 @@ post('/declaration', function($conn, $pug) {
                         ':duration' => $duration,
                         ':details' => $_POST['details'],
         ]);
-        syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." edit declaration cfe_records.id=".$line['id']);
+        $newLine = $cfe->getLine(intval($id));
+        foreach (array_keys($newLine) as $key) {
+            if (isset($line[$key]) && isset($newLine[$key]) && $line[$key] != $newLine[$key]) {
+                syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." updated ".$key." from ".$line[$key]." to ".$newLine[$key]);
+            }
+        }
         return redirect("/declaration-complete");
     }
 
@@ -243,7 +251,9 @@ post('/declaration', function($conn, $pug) {
         $sth2 = $conn->query("SELECT LAST_INSERT_ID() AS id");
         if ($sth2->rowCount() === 1) {
             $id = $sth2->fetchAll()[0]['id'];
-            syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare cfe_records.id=".$id);
+            $cfe = new CFE($conn);
+            $line = $cfe->getLine($id);
+            syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare cfe_records.id=".$id." record: ".json_encode($line));
         }
     }
     redirect("/declaration-complete");
@@ -304,7 +314,7 @@ post('/deleteCFELine', function($conn, $pug) {
     $query = "DELETE FROM cfe_records WHERE id = :id";
     $sth = $conn->prepare($query);
     $sth->execute([ ':id' => $_POST['id'] ]);
-    syslog(LOG_INFO, getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." delete declaration cfe_records.id=".$_POST['id'].": ".json_encode($line));
+    syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." delete declaration cfe_records.id=".$_POST['id'].": ".json_encode($line));
     echo "OK";
 });
 

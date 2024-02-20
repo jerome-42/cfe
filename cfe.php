@@ -14,7 +14,7 @@ class CFE {
         $sth->execute([ ':id' => $id ]);
         if ($sth->rowCount() !== 1)
             return null;
-        $lines = $sth->fetchAll();
+        $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
         return $lines[0];
     }
 
