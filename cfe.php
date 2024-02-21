@@ -82,7 +82,7 @@ class CFE {
         if ($sth->rowCount() !== 1)
             throw new Exception("pas de ligne concernant le nombre d'heure par défaut dans settings pour l'année ".$year);
         $lines = $sth->fetchAll();
-        return $lines[0]['value'];
+        return intval($lines[0]['value']);
     }
 
     public function getDefaultCFE_TODO($year) {
@@ -92,7 +92,7 @@ class CFE {
         if ($sth->rowCount() !== 1)
             throw new Exception("pas de settings defaultCPE_TODO pour l'année ".$year);
         $lines = $sth->fetchAll();
-        return $lines[0]['value'];
+        return intval($lines[0]['value']);
     }
 
     public function isCompleted($membre) {
