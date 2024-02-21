@@ -24,7 +24,7 @@ block content
         - $minDate=date('Y')."-01-01"
         - $maxDate=date('Y')."-12-31"
         .row
-          if $enableMultiDateDeclaration && $line['id'] == ''
+          if ($enableMultiDateDeclaration) && ($line['id'] == '')
             .col-6
               label.form-label(for='startDateCFE') Date de début de r&eacute;alisation des heures de CFE:
               input.form-control#startDateCFE(type='date' min=$minDate max=$maxDate)

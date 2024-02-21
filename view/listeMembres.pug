@@ -42,7 +42,7 @@ block content
           each membre in $membres
             tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'])
               td
-                if $inSudo == false && $currentUser != $membre['givavNumber']
+                if ($inSudo == false) && ($currentUser != $membre['givavNumber'])
                   button.btn.btn-secondary.sudo
                     i.bi.bi-person-circle
                     span.d-none.d-sm-block2 Endosser
