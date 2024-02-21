@@ -21,12 +21,24 @@ function getYear() {
     return intval(date('Y'));
 }
 
-function exportAllData_getPersonnes($conn) {
+function exportAllData_getYears($conn) {
+    $query = "SELECT CAST(replace(what, 'defaultCFE_TODO_', '') AS SIGNED) AS year FROM settings WHERE what LIKE 'defaultCFE_TODO_%'";
+    $sth = $conn->prepare($query);
+    $sth->execute([ ]);
+    if ($sth->rowCount() === 0)
+        return [ getYear() ];
+    $data = $sth->fetchAll();
+    return array_map(function($line) {
+        return $line['year'];
+    }, $data);
+}
+
+function exportAllData_getPersonnes($conn, $year) {
     $fd = fopen('php://temp/maxmemory:1048576', 'w');
     if ($fd === false) {
         throw new Exception('Failed to open temporary file');
     }
-    $membres = Personne::getAll($conn);
+    $membres = Personne::getAll($conn, $year);
     $columns = [ [ 'givavNumber', 'givav' ], [ 'name', 'nom' ], [ 'email', 'email' ],
                  [ 'isAdmin', 'administrateur' ], [ 'cfeTODO', 'cfe' ] ];
     $headers = array_map(function($i) {
@@ -49,7 +61,7 @@ function exportAllData_getPersonnes($conn) {
     return $csv;
 }
 
-function exportAllData_getRecords($conn) {
+function exportAllData_getRecords($conn, $year) {
     $fd = fopen('php://temp/maxmemory:1048576', 'w');
     if ($fd === false) {
         throw new Exception('Failed to open temporary file');
@@ -66,7 +78,9 @@ function exportAllData_getRecords($conn) {
         return $i[1];
     }, $columns);
     fputcsv($fd, $headers);
-    $records = $cfe->getAllRecords();
+    $records = $cfe->getAllRecords($year);
+    if (count($records) === 0)
+        return '';
     foreach ($records as $record) {
         $line = [];
         foreach ($columns as $column) {

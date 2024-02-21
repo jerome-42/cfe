@@ -360,18 +360,25 @@ get('/exportAllData', function($conn) {
         outputName: $zipFilename,
         sendHttpHeaders: true, // enable output of HTTP headers
     );
-    // membres
-    $data = exportAllData_getPersonnes($conn);
-    $zip->addFile(
-        fileName: 'membres.csv',
-        data: $data,
-    );
-    // cfe
-    $data = exportAllData_getRecords($conn);
-    $zip->addFile(
-        fileName: 'cfe.csv',
-        data: $data,
-    );
+
+    $years = exportAllData_getYears($conn);
+    foreach ($years as $year) {
+        // membres
+        $data = exportAllData_getPersonnes($conn, $year);
+        $zip->addFile(
+            fileName: 'membres-'.$year.'.csv',
+            data: $data,
+        );
+
+        // cfe
+        $data = exportAllData_getRecords($conn, $year);
+        if ($data !== '') {
+            $zip->addFile(
+                fileName: 'cfe-'.$year.'.csv',
+                data: $data,
+            );
+        }
+    }
     $zip->finish();
 });
 

@@ -46,7 +46,7 @@ class CFE {
     public function getAllRecords($year) {
         $query = 'SELECT * FROM cfe_records WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
-        $sth->execute([]);
+        $sth->execute([ ':year' => $year ]);
         $lines = $sth->fetchAll();
         return $lines;
     }
