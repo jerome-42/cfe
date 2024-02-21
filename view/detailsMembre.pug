@@ -22,10 +22,15 @@ block content
   .row.mb-4
     .col-6.col-xl-1
       button.btn-primary#updateParams Mettre à jour
-  .row
+  .row.mb-3
     span
       b Statut actuel:&nbsp;
       span#details
+  .row
+    .col-4
+       button.btn.btn-secondary.sudo(x-num=$membre['givavNumber'])
+         i.bi.bi-person-circle.me-2
+         span.d-none.d-sm-block2 Endosser l'identité de #{$membre['name']}
   .row
     .col-md-3.offset-md-9
       .row

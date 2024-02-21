@@ -86,7 +86,7 @@ var updateDetails = function() {
 	    else
 		data.push("pas de CFE à réaliser");
 	    if (res.validated > 0)
-		data.push(pluralize(durationToHuman(res.validated), " validée"));
+		data.push(durationToHuman(res.validated) + " validées");
 	    if (res.submited === 0)
 		data.push("pas de CFE en attente de validation");
 	    else
@@ -102,6 +102,10 @@ $(document).ready(function() {
     });
     $('.validation').each(function() {
 	displayValidation($(this));
+    });
+    $('.sudo').click(function() {
+	var numGivav = $(this).attr('x-num');
+	window.location = '/sudo?numero='+numGivav;
     });
 
     $('.back').click(function() {
