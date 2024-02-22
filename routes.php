@@ -9,6 +9,12 @@ include_once __DIR__ . '/givav.php';
 include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
 
+function displayError($pug, $message) {
+    http_response_code(500);
+    $vars = array_merge($_SESSION, [ 'message' => $message ]);
+    $pug->displayFile('view/error.pug', $vars);
+}
+
 get('/', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
@@ -91,15 +97,15 @@ get('/declaration', function($conn, $pug) {
         $cfe = new CFE($conn);
         $line = $cfe->getLine(intval($_GET['id']));
         if ($line === null) {
-            return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+            return displayError($pug, "Déclaration inconnue");
         }
         if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
             // un non-admin ne peut éditer qu'une déclaration à lui et uniquement submitted
             if ($line['who'] !== $_SESSION['givavNumber']) {
-                return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+                return displayError($pug, "Déclaration inconnue");
             }
             if ($line['status'] !== 'submitted') {
-                return $pug->displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
+                return displayError($pug, "Vous ne pouvez pas éditer une déclaration validée ou rejetée");
             }
         } else {
             $vars['personne'] = Personne::load($conn, $line['who']);
@@ -130,8 +136,7 @@ post('/declaration', function($conn, $pug) {
     // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
     foreach ([ 'startDateCFE', 'stopDateCFE', 'type', 'beneficiary', 'durationHour', 'durationMinute' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
-            http_response_code(500);
-            return $pug->displayFile('view/error.pug', [ 'message' => $elem." n'est pas présent dans la requête" ]);
+            return displayError($pug, $elem." n'est pas présent dans la requête");
         }
     }
     $startDate = new DateTime();
@@ -140,56 +145,45 @@ post('/declaration', function($conn, $pug) {
     // start
     $startDate->setTimestamp(intval($_POST['startDateCFE']));
     if ($startDate->format('Y') !== $now->format('Y')) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
+        return displayError($pug, "L'année de déclaration doit être l'année en cours");
     }
     if ($startDate > $now) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
+        return displayError($pug, "Impossible de pré-déclarer");
     }
     // stop
     $stopDate->setTimestamp(intval($_POST['stopDateCFE']));
     if ($stopDate->format('Y') !== $now->format('Y')) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "L'année de déclaration doit être l'année en cours" ]);
+        return displayError($pug, "L'année de déclaration doit être l'année en cours");
     }
     if ($stopDate > $now) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Impossible de pré-déclarer" ]);
+        return displayError($pug, "Impossible de pré-déclarer");
     }
     // start vs stop
     if ($startDate > $stopDate) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Date de fin postérieure à la date de début" ]);
+        return displayError($pug, "Date de fin postérieure à la date de début");
     }
     if ($startDate != $stopDate && $_SESSION['enableMultiDateDeclaration'] === false) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Vous n'avez pas le droit de déclarer plusieurs dates (enableMultiDateDeclaration)" ]);
+        return displayError($pug, "Vous n'avez pas le droit de déclarer plusieurs dates (enableMultiDateDeclaration)");
     }
 
     // vérification heure
     if (!is_numeric($_POST['durationHour'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Le nomnbre d'heure n'est pas un nombre" ]);
+        return displayError($pug, "Le nombre d'heure n'est pas un nombre");
     }
     $durationHour = intval($_POST['durationHour']);
     if ($durationHour < 0 || $durationHour > 10) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Le nombre d'heure doit être entre 0 et 10" ]);
+        return displayError($pug, "Le nombre d'heure doit être entre 0 et 10");
     }
     // vérification minute
     if (!is_numeric($_POST['durationMinute'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Le nomnbre de minute n'est pas un nombre" ]);
+        return displayError($pug, "Le nomnbre de minute n'est pas un nombre");
     }
     $durationMinute = intval($_POST['durationMinute']);
     if ($durationMinute < 0 || $durationMinute >= 60) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Le nombre de minute doit être entre 0 et 10" ]);
+        return displayError($pug, "Le nombre de minute doit être entre 0 et 10");
     }
     if ($durationHour === 0 && $durationMinute === 0) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "La durée ne peut être nulle" ]);
+        return displayError($pug, "La durée ne peut être nulle");
     }
 
     $duration = $durationHour * 60 + $durationMinute;
@@ -198,15 +192,15 @@ post('/declaration', function($conn, $pug) {
         $cfe = new CFE($conn);
         $line = $cfe->getLine($id);
         if ($line === null) {
-            return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+            return displayError($pug, "Déclaration inconnue");
         }
         if (!isset($_SESSION['isAdmin']) || $_SESSION['isAdmin'] === false) {
             // un non-admin ne peut éditer qu'une déclaration à lui et uniquement submitted
             if ($line['who'] !== $_SESSION['givavNumber']) {
-                return $pug->displayFile('view/error.pug', [ 'message' => "Déclaration inconnue" ]);
+                return displayError($pug, "Déclaration inconnue");
             }
             if ($line['status'] !== 'submitted') {
-                return $pug->displayFile('view/error.pug', [ 'message' => "Vous ne pouvez pas éditer une déclaration validée ou rejetée" ]);
+                return displayError($pug, "Vous ne pouvez pas éditer une déclaration validée ou rejetée");
             }
         }
         syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." edit declaration cfe_records.id=".$line['id']);
@@ -264,7 +258,7 @@ get('/declaration-complete', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
-    $pug->displayFile('view/declaration-complete.pug');
+    $pug->displayFile('view/declaration-complete.pug', $_SESSION);
 });
 
 get('/deconnexion', function($conn) {
@@ -323,8 +317,7 @@ get('/detailsMembre', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
+        return displayError($pug, "le paramètre numéro est obligatoire et doit être un entier" );
     }
     $num = intval($_GET['numero']);
     $vars = $_SESSION;
@@ -344,8 +337,7 @@ post('/detailsMembreStats', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (!isset($_POST['num']) || !is_numeric($_POST['num'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "le paramètre numéro est obligatoire et doit être un entier" ]);
+        return displayError($pug, "le paramètre numéro est obligatoire et doit être un entier");
     }
     $num = intval($_POST['num']);
     $cfe = new CFE($conn);
@@ -391,31 +383,26 @@ get('/importCSV', function($conn, $pug) {
 post('/importCSV', function($conn, $pug) {
     if (!isset($_FILES['csv']) || $_FILES['csv']['name'] === '') {
         http_response_code(500);
-        $vars = $_SESSION;
-        $vars['error'] = "Vous avez oublié de sélectionner un fichier";
+        $vars = array_merge($_SESSION, [ 'error' => "Vous avez oublié de sélectionner un fichier" ]);
         return $pug->displayFile('view/importCSV.pug', $vars);
     }
     if ($_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
         http_response_code(500);
-        $vars = $_SESSION;
-        $vars['error'] = "L'upload a échoué pour une raison inconnue";
+        $vars = array_merge($_SESSION, [ 'error' => "L'upload a échoué pour une raison inconnue" ]);
         return $pug->displayFile('view/importCSV.pug', $vars);
     }
     if ($_FILES['csv']['size'] > 100000) {
         http_response_code(500);
-        $vars = $_SESSION;
-        $vars['error'] = "La taille maximale du fichier ne doit pas dépasser 100 Ko";
+        $vars = array_merge($_SESSION, [ 'error' => "La taille maximale du fichier ne doit pas dépasser 100 Ko" ]);
         return $pug->displayFile('view/importCSV.pug', $vars);
     }
     if (($handle = fopen($_FILES['csv']['tmp_name'], "r")) === FALSE) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Impossible d'ouvrir le fichier" ]);
+        return displayError($pug, "Impossible d'ouvrir le fichier");
     } else {
         $data = fgetcsv($handle, 1000, ",");
         if (count($data) !== 6) {
             http_response_code(500);
-            $vars = $_SESSION;
-            $vars['error'] = "Le fichier n'est pas un CSV au bon format: le séparateur de colonne doit être ,";
+            $vars = array_merge($_SESSION, [ 'error' => "Le fichier n'est pas un CSV au bon format: le séparateur de colonne doit être ,"]);
             return $pug->displayFile('view/importCSV.pug', $vars);
         }
         $vars = $_SESSION;
@@ -441,8 +428,7 @@ post('/importCSV-finish', function($conn, $pug) {
         return redirect('/');
     foreach ([ 'contents', 'sign' ] as $key) {
         if (!isset($_POST[$key]) || $_POST[$key] === '') {
-            http_response_code(500);
-            return $pug->displayFile('view/error.pug', [ 'message' => $key." est manquant" ]);
+            return displayError($pug, $key." est manquant");
         }
     }
     // on vérifie sign, est-ce que contents est le même contents que celui qui a été validé auparavant ?
@@ -450,8 +436,7 @@ post('/importCSV-finish', function($conn, $pug) {
     $contents = base64_decode($_POST['contents']);
     $signComputed = hash('sha256', $contents.$key);
     if ($signComputed !== $_POST['sign']) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "La signature fournie ne correspond pas à celle calculée, veuillez prévenir le développeur" ]);
+        return displayError($pug, "La signature fournie ne correspond pas à celle calculée, veuillez prévenir le développeur");
     }
     $handle = fopen("php://temp/maxmemory:".strlen($contents)+100, 'r+');
     fputs($handle, $contents);
@@ -525,19 +510,20 @@ get('/listeMembres', function($conn, $pug) {
         $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], getYear());
         $membre['cfeCompleted'] = $cfe->isCompleted($membre);
     }
-    $pug->displayFile('view/listeMembres.pug', [ 'currentUser' => $_SESSION['givavNumber'],
+    $vars = array_merge($_SESSION, [ 'currentUser' => $_SESSION['givavNumber'],
                                                  'inSudo' => isset($_SESSION['inSudo']),
                                                  'membres' => $membres,
                                                  'defaultCFE_TODO' => $defaultCFE_TODO,
     ]);
+    $pug->displayFile('view/listeMembres.pug', $vars);
 });
 
 get('/validation', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $cfe = new CFE($conn);
-    $lines = $cfe->getLinesToValidate();
-    $pug->displayFile('view/validation.pug', [ 'lines' => $lines ]);
+    $vars = array_merge($_SESSION, [ 'lines' => $cfe->getLinesToValidate() ]);
+    $pug->displayFile('view/validation.pug', $vars);
 });
 
 post('/updateMembreParams', function($conn) {
@@ -620,12 +606,10 @@ get('/sudo', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     if (isset($_SESSION['inSudo'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Veuillez vous déconnecter avant de tenter à nouveau un sudo" ]);
+        return displayError($pug, "Veuillez vous déconnecter avant de tenter à nouveau un sudo");
     }
     if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
-        http_response_code(500);
-        return $pug->displayFile('view/error.pug', [ 'message' => "Numéro attendu" ]);
+        return displayError($pug, "Numéro attendu" );
     }
     $_SESSION['inSudo'] = true;
     $_SESSION['previousGivavNumber'] = $_SESSION['givavNumber'];

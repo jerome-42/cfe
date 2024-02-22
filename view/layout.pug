@@ -16,6 +16,9 @@ html(lang="fr")
     .row.text-center.mt-4
       p
         a(href="/data/manuel-CFE.pdf") Le manuel de ce site web
+        if $isAdmin === true
+          | &nbsp;-&nbsp;
+          a(href="/data/manuel-CFE-admin.pdf") Et le manuel des administrateurs
       p= "Copyright ".date('Y')." AAVO "
         a(href="mailto:info@aavo.org") info@aavo.org
         br
