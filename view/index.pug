@@ -12,6 +12,11 @@ block content
       if $validated > 0
         .alert.alert-success Vous avez réalisé #{$durationToHuman($validated)} de CFE
           small.text-muted &nbsp;(depuis le 1er janvier)
+          if ($thecfetodo > 0) && ($validated < $thecfetodo)
+            .progress.mt-2(role="progressbar" aria-label="heures réalisées" aria-valuenow=$validated aria-valuemin="0" aria-valuemax=$thencfetodo style="height: 30px")
+              - $percent = ($validated/$thecfetodo)*100
+              .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
+
 
       $reste = $thecfetodo - $validated
       if $reste > 0

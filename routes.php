@@ -269,7 +269,7 @@ get('/deconnexion', function($conn) {
         $_SESSION['givavNumber'] = $previousUser['givavNumber'];
         $_SESSION['name'] = $previousUser['name'];
         $_SESSION['mail'] = $previousUser['mail'];
-        return redirect('/');
+        return redirect('/listeMembres');
     }
     session_destroy();
     redirect('/');

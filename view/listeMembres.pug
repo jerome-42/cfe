@@ -48,7 +48,13 @@ block content
                     span.d-none.d-sm-block2 Endosser
               td #{$membre['givavNumber']}
               td #{$membre['name']}
-              td= durationToHuman($membre['cfeValidated'])
+              td
+                if ($membre['cfeTODO'] > 0) && ($membre['cfeValidated'] > 0)
+                  .progress(role="progressbar" aria-label="heures réalisées" aria-valuenow=$membre['cfeValidated'] aria-valuemin="0" aria-valuemax=$membre['cfeTODO'])
+                    - $percent = ($membre['cfeValidated']/$membre['cfeTODO'])*100
+                    .progress-bar(style="width: "+$percent+"%;")
+                .text-center
+                  = durationToHuman($membre['cfeValidated'])
               if $membre['cfeTODO'] == 0
                 td aucun
               else
