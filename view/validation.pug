@@ -43,13 +43,15 @@ block content
               td(x-value=$line['duration'])= durationToHuman($line['duration'])
               td #{$line['details']}
           tr.pt-5
-            th
-            th
-            th
-            th
-            th Total
-            th= durationToHuman($total)
-            th
+            td
+            td
+            td
+            td
+            td
+              b Total
+            td
+              b= durationToHuman($total)
+            td
         tfoot
           tr
             th Statut
