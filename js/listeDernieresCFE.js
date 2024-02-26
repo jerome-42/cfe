@@ -9,6 +9,21 @@ String.prototype.replaceSpecialChars = function() {
     return newString;
 };
 
+var durationToHuman = function(d) {
+    var hours = Math.round(parseInt(d) / 60);
+    var minutes = parseInt(d) % 60;
+    var ret = [];
+    if (hours >= 2)
+        ret.push(hours+" heures");
+    else if (hours == 1)
+        ret.push("1 heure");
+    if (minutes > 1)
+        ret.push(minutes+" minutes");
+    else if (minutes == 1)
+        ret.push("1 minute");
+    return ret.join(' ');
+};
+
 $(document).ready(function() {
     $('#list > tbody > tr').each(function() {
 	switch ($(this).attr('x-validation')) {
@@ -65,23 +80,29 @@ $(document).ready(function() {
     });
 
     $('#search').on('keyup', function() {
+	var sum = 0;
 	var search = $(this).val().toLowerCase().replaceSpecialChars();
 	$('#list > tbody > tr').each(function() {
+	    if ($(this).hasClass('sum'))
+		return;
+	    var toDisplay = false;
 	    if (search === '')
-		$(this).show();
+		toDisplay = true;
 	    else {
-		var match = false;
 		$(this).find('td').each(function() {
 		    if ($(this).text().toLowerCase().replaceSpecialChars().indexOf(search) !== -1)
-			match = true;
+			toDisplay = true;
 		});
+	    }
 
-		if (match === false)
-		    $(this).hide();
-		else
-		    $(this).show();
+	    if (toDisplay === false)
+		$(this).hide();
+	    else {
+		sum += parseInt($(this).attr('x-duration'));
+		$(this).show();
 	    }
 	});
+	$('.durationSum').text(durationToHuman(sum));
     });
-    $('#search').focus();
+    $('#search').focus().trigger('keyup');
 });

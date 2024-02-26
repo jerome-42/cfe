@@ -30,10 +30,29 @@ var displayIsAdmin = function(elem) {
 	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2">&nbsp;Passer administrateur</span></button>'));
 };
 
+var durationToHuman = function(d) {
+    var hours = Math.round(parseInt(d) / 60);
+    var minutes = parseInt(d) % 60;
+    var ret = [];
+    if (hours >= 2)
+        ret.push(hours+" heures");
+    else if (hours == 1)
+        ret.push("1 heure");
+    if (minutes > 1)
+        ret.push(minutes+" minutes");
+    else if (minutes == 1)
+        ret.push("1 minute");
+    return ret.join(' ');
+};
+
 var updateList = function() {
+    var sumValidated = 0;
+    var sumTODO = 0;
     var search = $('#search').val().toLowerCase().replaceSpecialChars();
     $('#list > tbody > tr').each(function() {
 	var displayLine = false;
+	if ($(this).hasClass('sum')) // on ne filtre pas la dernière ligne qui affiche le total
+	    return;
 	if (search === '')
 	    displayLine = true;
 	else {
@@ -62,9 +81,32 @@ var updateList = function() {
 	}
 	if (displayLine === false)
 	    $(this).hide();
-	else
+	else {
+	    sumValidated += parseInt($(this).attr('x-cfeValidated'));
+	    sumTODO += parseInt($(this).attr('x-cfeTODO'));
 	    $(this).show();
+	}
     });
+    if (sumValidated > 0) {
+	if (sumTODO > 0) {
+	    $('.sumValidated').find('.progress')
+		.attr('aria-valuenow', sumValidated)
+		.attr('aria-valueMax', sumTODO);
+	    $('.sumValidated').find('.progress-bar').css('width', sumValidated/sumTODO+"%");
+	    $('.sumValidated').find('.progress').show();
+	    $('.sumValidated').find('.progrss-bar').show();
+	}
+	$('.sumValidatedLabel').text(durationToHuman(sumValidated));
+    }
+    else {
+	$('.sumValidated').find('.progress').hide();
+	$('.sumValidated').find('.progrss-bar').hide();
+	$('.sumValidated').text("0");
+    }
+    if (sumTODO > 0)
+	$('.sumTODO').text(durationToHuman(sumTODO));
+    else
+	$('.sumTODO').text("0");
 };
 
 $(document).ready(function() {
@@ -111,4 +153,5 @@ $(document).ready(function() {
 	updateList();
     });
     $('#search').focus();
+    updateList();
 });

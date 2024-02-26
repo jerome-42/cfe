@@ -31,7 +31,7 @@ block content
             th(width="10%") Cause du rejet
         tbody
           each line in $lines
-            tr(x-validation=$line['status'])
+            tr(x-validation=$line['status'] x-duration=$line['duration'])
               td.date= $line['workDate']
               td #{$line['name']} (#{$line['givavNumber']})
               td.status(x-validated-by=$line['validatedName'])= $line['status']
@@ -40,6 +40,17 @@ block content
               td= durationToHuman($line['duration'])
               td.small= $line['details']
               td.small= $line['rejectedCause']
+          tr.pt-5.sum
+            td
+            td
+            td
+            td
+            td
+              b Total
+            td
+              b.durationSum
+            td
+            td
         tfoot
           tr
             th Date

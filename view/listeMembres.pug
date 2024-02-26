@@ -64,6 +64,17 @@ block content
                   i.bi.bi-eye
                   span.d-none.d-sm-block2 &nbsp;Détails
               td.isAdmin
+          tr.sum
+            td
+            td
+            td.text-end
+              h5 Total
+            td.text-center.sumValidated
+              .progress(role="progressbar" aria-label="heures réalisées" aria-valuenow=0 aria-valuemin="0" aria-valuemax=0)
+                .progress-bar(style="width: "+$percent+"%;")
+              .sumValidatedLabel
+            td.text-center.sumTODO
+            td
         tfoot
           tr
             th Endosser
