@@ -95,6 +95,16 @@ class CFE {
         return intval($lines[0]['value']);
     }
 
+    public function getSubmittedDuration() {
+        $query = "SELECT SUM(duration) AS duration FROM cfe_records WHERE YEAR(workDate) = YEAR(NOW()) AND status = 'submitted'";
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ]);
+        if ($sth->rowCount() !== 1)
+            return null;
+        $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
+        return $lines[0]['duration'];
+    }
+
     public function isCompleted($membre) {
         if ($membre['cfeValidated'] >= $membre['cfeTODO'])
             return 1;

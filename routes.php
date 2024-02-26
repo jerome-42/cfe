@@ -21,6 +21,7 @@ get('/', function($conn, $pug) {
     }
     $cfe = new CFE($conn);
     $vars = array_merge($_SESSION, $cfe->getStats($_SESSION['givavNumber'], getYear()));
+    $vars['durationSubmitted'] = $cfe->getSubmittedDuration();
     $pug->displayFile('view/index.pug', $vars);
 });
 

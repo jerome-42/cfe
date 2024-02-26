@@ -49,7 +49,9 @@ block content
     .row.d-block.d-sm-none.justify-content-md-center
       .btn-group-vertical(role="group")
         if $isAdmin
-          button.btn.btn-warning.validation Je valide
+          button.btn.btn-warning.validation
+            span= durationToHuman($durationSubmitted)
+            | &nbsp;à valider
           button.btn.btn-primary.membres Liste des membres
         button.btn.btn-success.declaration Je déclare
         button.btn.btn-info.listeCFE Je consulte
@@ -60,7 +62,10 @@ block content
     .row.d-none.d-sm-block.justify-content-md-center
       .btn-group(role="group")
         if $isAdmin
-          button.btn.btn-warning.validation Je valide
+          button.btn.btn-warning.validation
+            span= durationToHuman($durationSubmitted)
+              br
+              à valider
           button.btn.btn-primary.membres Liste des membres
         button.btn.btn-success.declaration Je déclare
         button.btn.btn-info.listeCFE Je consulte
