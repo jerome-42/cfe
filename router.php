@@ -24,59 +24,32 @@ function any($route, $fct) {
 }
 
 function initPug() {
-    $pug = new Pug([
-        'cache' => __DIR__.'/../cache/',
-        'debug' => true,
-        'pretty' => true,
-    ]);
-    $pug->share('durationToHuman', function($text) {
-        $hours = floor(intval($text) / 60);
-        $minutes = intval($text) % 60;
-        if ($hours == 0 && $minutes == 0)
-            return "0 minute";
-        $ret = [];
-        if ($hours >= 2)
-            $ret[] = $hours." heures";
-        else if ($hours == 1)
-            $ret[] = "1 heure";
-        if ($minutes > 1)
-            $ret[] = $minutes." minutes";
-        else if ($minutes == 1)
-            $ret[] = "1 minute";
-        return join(' ', $ret);
-    });
-    return $pug;
 }
 
 function doRoute($fct,) {
     // connexion mysql
     try {
-        $config = json_decode(file_get_contents(__DIR__.'/config.json'), true);
-        $dsn = join(';', [ 'host='.$config['database']['host'], 'dbname='.$config['database']['database'] ]);
-        $conn = new PDO("mysql:".$dsn, $config['database']['username'], $config['database']['password']);
-        checkDatabase($conn, $config['database']['database']);
-        $conn->query("SET time_zone = 'Europe/Paris'");
-        $conn->beginTransaction();
+        $env = new Env();
     }
     catch (Exception $e) {
         http_response_code(500);
         $vars = [ 'message' => 'Impossible de se connecter à la base de données: '.$e->getMessage() ];
         return Phug::displayFile('view/error.pug', $vars);
     }
-    $pug = initPug();
+    $pug = $env->initPug();
 
     try {
         // on met à jour admin
         if (isset($_SESSION['auth']) && isset($_SESSION['givavNumber'])) {
-            $data = Personne::load($conn, $_SESSION['givavNumber']);
+            $data = Personne::load($env->mysql, $_SESSION['givavNumber']);
             $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
             $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
         }
-        $fct($conn, $pug);
-        $conn->commit();
+        $fct($env->mysql, $pug);
+        $env->mysql->commit();
     }
     catch (Exception $e) {
-        $conn->rollBack();
+        $env->mysql->rollBack();
         http_response_code(500);
         $session = getClientIP();
         if (isset($_SESSION['givavNumber']))
