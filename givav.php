@@ -68,11 +68,8 @@ class Givav {
             throw new Exception(curl_error($ch));
 
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        file_put_contents('test', $response);
         if ($http_code != 200)
             throw new Exception("GIVAV a retourné une erreur, attendez et ré-essayez à nouveau");
-        if ($response == 'Veuillez saisir un numéro national ou une adresse de courriel.')
-            throw new Exception($response);
         if (preg_match_all('/&id_aeronef=\d+">\s+([\s\w\(\)-\/]+)</m', $response, $matches) === false)
             throw new Exception("la regexp qui match les machines ne match plus rien, la source a changé ?");
         if (preg_match_all('/&id_aeronef=\d+">\s+([\s\w\(\)-\/]+)</m', $response, $matches) === false)
