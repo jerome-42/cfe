@@ -8,8 +8,9 @@ block content
   .row
     h1 Liste des machines
   .row
-    .col-md-1
+    .col-md-2
       button.btn.btn-danger.back Retour
+      button.btn.btn-info.parametrage Paramètrage
     .col-md-3
       .row
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
@@ -37,7 +38,23 @@ block content
                   mark= '(' . $machine['concours'] . ') '
                 = $machine['modele']
               td
-              td
+                if $machine['version_soft'] != 'NA'
+                  if estUneBonneVersionFlarm($machine['version_soft'])
+                   .alert.alert-success.text-center.mt-0.mb-0
+                      = machine['version_soft']
+                  else
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      i.bi.bi-exclamation-triangle-fill.me-2
+                      = machine['version_soft']
+                      i.bi.bi-exclamation-triangle-fill.ms-2
+                else
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    i.bi.bi-exclamation-triangle-fill.me-2
+                    | Version inconnue
+                    i.bi.bi-exclamation-triangle-fill.ms-2
+              td= timestampToDate($machine['quand'])
+                if $machine['flarm_mis_a_jour_par'] != null
+                  = ' (par '.$getMembreNameByGivavNumber($machine['flarm_mis_a_jour_par']).')'
         tfoot
           tr
             th Voir

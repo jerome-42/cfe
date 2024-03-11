@@ -1,0 +1,37 @@
+extends layout.pug
+
+block scripts
+  title Déclarer un FLARM
+  script(src="js/declarerFLARM.js")
+
+block content
+  .row
+    h1 Déclaration d'un FLARM
+  if (count($messages) > 0) || (count($errors) > 0)
+    .row.mb-4
+      h4 Résultat de l'analyse:
+      alert.alert-info
+        each line in $messages
+          p= $line
+      alert.alert-danger
+        each line in $errors
+          p= $line
+
+    p Déposez ici un fichier FLARM pour valider un FLARM. Le système va automatiquement extraire l'immatriculation de la machine pour lui affecter ce FLARM. Le système va ensuite contrôler la version du firmware utilisé.
+  .row.spinner.visually-hidden
+    .col-4.text-center
+      .spinner-border.text-primary(role="status")#spinner
+      br
+      span Upload en cours
+  
+  .row
+    .col-4
+      .mb-3
+        form(method="POST" enctype="multipart/form-data")#form
+          label.form-label(for="upload") Sélectionner les fichiers à uploader
+          input.form-control(type="file" name="igc[]" multiple)#upload
+  .row.container.text-center
+    .col-10.dropZone.mt-4.mb-4#dropZone
+      h4 ou bien glissez un fichier IGC ici
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour

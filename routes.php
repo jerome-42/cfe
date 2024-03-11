@@ -262,6 +262,121 @@ get('/declaration-complete', function($conn, $pug) {
     $pug->displayFile('view/declaration-complete.pug', $_SESSION);
 });
 
+get('/declarerFLARM', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    $vars = array_merge($_SESSION, [ 'messages' => [], 'errors' => [] ]);
+    $pug->displayFile('view/declarerFLARM.pug', $vars);
+});
+
+post('/declarerFLARM', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    if (!isset($_FILES['igc']) || count($_FILES['igc']) === 0) {
+        http_response_code(500);
+        $vars = array_merge($_SESSION, [ 'message' => "Vous avez oublié de sélectionner un fichier" ]);
+        return $pug->displayFile('view/error.pug', $vars);
+    }
+    $parametres = new Parametres($conn);
+    $flarmBonsHardware = explode("\n", $parametres->get('flarmBonsHardware', ''));
+    $flarmBonsHardware = array_map('trim', $flarmBonsHardware);
+    $planeurs = new Planeurs($conn);
+    $errors = [];
+    $messages = [];
+    for ($i = 0; $i < count($_FILES['igc']['name']); $i++) {
+        $file = [
+            'name' => $_FILES['igc']['name'][$i],
+            'full_path' => $_FILES['igc']['full_path'][$i],
+            'tmp_name' => $_FILES['igc']['tmp_name'][$i],
+            'error' => $_FILES['igc']['error'][$i],
+            'size' => $_FILES['igc']['size'][$i],
+        ];
+        if ($file['name'] === '') {
+            http_response_code(500);
+            $vars = array_merge($_SESSION, [ 'message' => "Vous avez oublié de sélectionner un fichier" ]);
+            return $pug->displayFile('view/error.pug', $vars);
+        }
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(500);
+            $vars = array_merge($_SESSION, [ 'message' => "L'upload a échoué pour une raison inconnue" ]);
+            return $pug->displayFile('view/error.pug', $vars);
+        }
+        if ($file['size'] > 1000000) {
+            $errors[] = "Le fichier ".$file['name']." est trop gros, il n'a pas été analysé";
+            continue;
+        }
+        if (($handle = fopen($file['tmp_name'], "r")) === FALSE) {
+            $errors[] = "Impossible d'ouvrir le fichier ".$file['name']." il s'agit d'une erreur serveur";
+        } else {
+            $subMessages = [];
+            $date = null;
+            $immat = null;
+            $softVersion = null;
+            $hardVersion = null;
+            $lineNo = 0;
+            $typeIGC = false;
+            while (($line = fgets($handle)) !== false) {
+                $line = trim($line);
+                if ($lineNo === 0) {
+                    if ($line[0] === 'A')
+                        $typeIGC = true;
+                    else {
+                        $errors[] = "Le fichier ".$file['name']." ne semble pas être un fichier IGC";
+                        break;
+                    }
+                }
+                $lineNo++;
+                if (preg_match_all('/^HFDTEDATE:(\d{6})$/m', $line, $matches) === 1) {
+                    $date = DateTime::createFromFormat('dmy', $matches[1][0]);
+                    $subMessages[] = "le fichier a été crée le ".$date->format('d/m/y');
+                }
+                if (preg_match_all('/^HFGIDGLIDERID:([\w-]+)$/m', $line, $matches) === 1) {
+                    $immat = $matches[1][0];
+                    $subMessages[] = "l'immatriculation ".$immat." a été détectée";
+                }
+                if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.]+)$/m', $line, $matches) === 1) {
+                    $softVersion = $matches[1][0];
+                    $subMessages[] = "la version logicielle ".$softVersion." a été détectée";
+                }
+                if (preg_match_all('/^HFRHWHARDWAREVERSION:([\w\-\.]+)$/m', $line, $matches) === 1) {
+                    $hardVersion = $matches[1][0];
+                    $subMessages[] = "le FLARM est un ".$hardVersion;
+                }
+            }
+            if ($typeIGC === false) {
+                continue;
+            }
+
+            if ($immat === null) {
+                $errors[] = "Dans le fichier ".$file['name']." l'immatriculation du planeur n'a pas été reconnue, est-ce un fichier IGC ?";
+                continue;
+            }
+            if ($softVersion === null || $hardVersion === null) {
+                $errors[] = "Dans le fichier ".$file['name']." la version matérielle et/ou la version logicielle n'a pas été détectée, le fichier IGC semble être corrompu";
+                continue;
+            }
+            if ($date === null) {
+                $errors[] = "Dans le fichier ".$file['name']." la date du vol n'a pas été détectée, le fichier IGC semble être corrompu";
+                continue;
+            }
+            $machine = $planeurs->getPlaneurDepuisImmat($immat);
+            if ($machine === null) {
+                $errors[] = "Le fichier ".$file['name']." a été analysé mais la machine ".$immat." n'existe pas dans notre liste de machine (".implode(', ', $subMessages).')';
+                continue;
+            }
+            if (in_array($hardVersion, $flarmBonsHardware) === false) {
+                $errors[] = "Le fichier ".$file['name']." a été analysé mais le modèle ".$hardVersion." n'est pas reconnu, les XCSoar et Oudie ne sont pas autorisés, si ce n'est pas l'un d'eux, ajoutez ".$hardVersion."à la liste des modèles reconnus";
+                continue;
+            }
+            $planeurs->enregistreFlarm($date, $machine, $file['name'], $softVersion, $hardVersion, $_SESSION['givavNumber']);
+            $messages[] = "Le fichier ".$file['name']." a été analysé (".implode(', ', $subMessages).')';
+            fclose($handle);
+        }
+    }
+    $vars = array_merge($_SESSION, [ 'messages' => $messages, 'errors' => $errors ]);
+    $pug->displayFile('view/declarerFLARM.pug', $vars);
+});
+
 get('/deconnexion', function($conn) {
     if (isset($_SESSION['inSudo'])) {
         unset($_SESSION['inSudo']);
@@ -312,6 +427,22 @@ post('/deleteCFELine', function($conn, $pug) {
     $sth->execute([ ':id' => $_POST['id'] ]);
     syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." delete declaration cfe_records.id=".$_POST['id'].": ".json_encode($line));
     echo "OK";
+});
+
+get('/detailsMachine', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
+        return displayError($pug, "le paramètre numéro est obligatoire et doit être un entier" );
+    }
+    $num = intval($_GET['numero']);
+    $planeurs = new Planeurs($conn);
+    $vars['machine'] = $planeurs->getPlaneurDepuisId($num);
+    $vars['derniereDeclaration'] = $planeurs->getDerniereDeclarationFlarm($num);
+    if ($vars['machine'] === null)
+        throw new Exception("Le numéro ".$num." ne correspond à aucun planeur dans la base de données");
+    $vars['flarmLogs'] = $planeurs->getFlarmLogs($num);
+    $pug->displayFile('view/detailsMachine.pug', $vars);
 });
 
 get('/detailsMembre', function($conn, $pug) {
@@ -526,6 +657,26 @@ get('/listeMembres', function($conn, $pug) {
                                                  'defaultCFE_TODO' => $defaultCFE_TODO,
     ]);
     $pug->displayFile('view/listeMembres.pug', $vars);
+});
+
+get('/parametresFlarm', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $param = new Parametres($conn);
+    $vars = array_merge($_SESSION, [
+        'flarmBonnesVersions' => $param->get('flarmBonnesVersions', ''),
+        'flarmBonsHardware' => $param->get('flarmBonsHardware', ''),
+    ]);
+    $pug->displayFile('view/parametresFlarm.pug', $vars);
+});
+
+post('/parametresFlarm', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $param = new Parametres($conn);
+    $param->set('flarmBonnesVersions', $_POST['flarmBonnesVersions']);
+    $param->set('flarmBonsHardware', $_POST['flarmBonsHardware']);
+    redirect('/listeMachines');
 });
 
 get('/validation', function($conn, $pug) {

@@ -1,6 +1,7 @@
 <?php
 
 include_once __DIR__ . '/db.php';
+include_once __DIR__ . '/parametres.php';
 include_once __DIR__ . '/planeurs.php';
 
 class Env {
@@ -39,6 +40,27 @@ class Env {
             else if ($minutes == 1)
                 $ret[] = "1 minute";
             return join(' ', $ret);
+        });
+        $this->pug->share('getMembreNameByGivavNumber', function($text) {
+            if (is_numeric($text) === false)
+                return 'NA';
+            $id = intval($text);
+            $q = "SELECT name FROM personnes WHERE givavNumber = :givavNumber";
+            $sth = $this->mysql->prepare($q);
+            $sth->execute([ ':givavNumber' => $id ]);
+            $name = $sth->fetchAll(PDO::FETCH_ASSOC)[0]['name'];
+            return $name;
+        });
+        $this->pug->share('timestampToDate', function($text) {
+            if (is_numeric($text) === false)
+                return 'NA';
+            return date('d/m/Y', intval($text));
+        });
+        $this->pug->share('estUneBonneVersionFlarm', function($version) {
+            $parametres = new Parametres($this->mysql);
+            $goodFlarmVersion = explode("\n", $parametres->get('flarmBonnesVersions', ''));
+            $goodFlarmVersion = array_map('trim', $goodFlarmVersion);
+            return in_array($version, $goodFlarmVersion);
         });
         return $this->pug;
     }

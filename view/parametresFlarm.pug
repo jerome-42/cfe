@@ -1,0 +1,22 @@
+extends layout.pug
+
+block scripts
+  title Paramètrage FLARM
+  script(src="js/parametresFlarm.js")
+
+block content
+  .row
+    h1 Paramètrage FLARM
+  .row
+    .col-4
+      form(method="POST")
+        .mb-3
+          label.form-label(for="flarmBonnesVersions") Liste des bonnes versions FLARM (1 numéro de version par ligne):
+          textarea.form-control(name="flarmBonnesVersions" rows="10")#flarmBonnesVersions= $flarmBonnesVersions
+        .mb-3
+          label.form-label(for="flarmBonsHardware") Liste des hardware qui seront analysés (but: interdire les fichiers qui viennent de XCSoar ou des Oudie):
+          textarea.form-control(name="flarmBonsHardware" rows="10")#flarmBonsHardware= $flarmBonsHardware
+        button.btn.btn-primary(type="submit") Sauvegarder
+
+  .hstack.gap-4.mb-3.mt-3
+    button.btn.btn-danger.back Annuler

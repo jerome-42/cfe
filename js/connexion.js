@@ -3,6 +3,6 @@ $(document).ready(function() {
     $('form').on('submit', function(event) {
 	$('.alert').remove();
 	$('button[type="submit"]').remove();
-	$('#spinner').removeClass('visually-hidden');
+	$('.visually-hidden').removeClass('visually-hidden');
     });
 });

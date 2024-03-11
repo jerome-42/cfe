@@ -1,0 +1,61 @@
+extends layout.pug
+
+block scripts
+  title Détails d'une machine
+  script(src="js/detailsMachine.js")
+
+block content
+  .row
+    h1 Détails de la machine #{$machine['immat']}
+      if $machine['concours'] != ''
+        = ' ('.$machine['concours'].') '
+      = $machine['modele']
+  .row
+    .col-1
+      case $derniereDeclaration['version_hard']
+        when 'Flarm05'
+          img.img-fluid(src="/img/flarm_sans_sd.jpg")
+        when 'Flarm06'
+          img.img-fluid(src="/img/flarm_classic.jpg")
+        default
+          p Modèle de FLARM inconnu (#{$derniereDeclaration['version_hard']})
+  .row.mt-2.mb-2
+    .col-2
+      if ($derniereDeclaration['version_soft'] != 'NA')
+        if estUneBonneVersionFlarm($derniereDeclaration['version_soft']) == false
+         .alert.alert-danger.text-center.mt-0.mb-0
+           i.bi.bi-exclamation-triangle-fill.me-2
+           = 'Version dépassée: '+derniereDeclaration['version_soft']
+           i.bi.bi-exclamation-triangle-fill.ms-2
+        else
+         .alert.alert-success.text-center.mt-0.mb-0
+           = derniereDeclaration['version_soft']+' (version à jour)'
+      
+  .row
+    h3 Liste des enregistrements IGC analysés
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th Date
+            th Version FLARM
+            th Fichier
+            th Modèle
+            th Par
+        tbody
+          each line in $flarmLogs
+            tr
+              td= timestampToDate($line['quand'])
+              td= $line['version_soft']
+              td= $line['fichier']
+              td= $line['version_hard']
+              td= $getMembreNameByGivavNumber($line['who'])
+        tfoot
+          tr
+            th Date
+            th Version FLARM
+            th Fichier
+            th Modèle
+            th Par
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour

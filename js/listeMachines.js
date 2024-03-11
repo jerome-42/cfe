@@ -33,9 +33,13 @@ $(document).ready(function() {
 	window.location = '/';
     });
 
+    $('.parametrage').click(function() {
+	window.location = '/parametresFlarm';
+    });
+
     $('.displayDetails').click(function() {
-	var numGivav = $(this).parents('tr').attr('x-num');
-	window.location = '/detailsMembre?numero='+numGivav;
+	var id = $(this).parents('tr').attr('x-num');
+	window.location = '/detailsMachine?numero='+id;
     });
 
     $('#filter').on('change', function() {

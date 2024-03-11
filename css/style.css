@@ -13,6 +13,19 @@
     display: inline!important;
 }
 
+.dropZone {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    background-color: rgba(111, 66, 193, 0.1);
+    border: 1px solid rgba(111, 66, 193, 0.3);
+    &-dragover {
+	background-color: #eef;
+    }
+    &-filename {
+	margin-right: 0.5em;
+    }
+}
+
 @media (max-width: 576px) {
     .d-sm-block2 {
 	display: none!important;

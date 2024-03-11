@@ -26,5 +26,8 @@ block content
                   if $error
                     .alert.alert-danger(role="alert")= $error
                   button.btn.btn-primary(type="submit")#submit Connexion
-                  .spinner-border.text-primary.visually-hidden(role="status")#spinner
-                    span.visually-hidden Connexion en cours
+                  .row.text-center.spinner.visually-hidden
+                    .col-12
+                      .spinner-border.text-primary(role="status")#spinner
+                      br
+                      span Connexion en cours
