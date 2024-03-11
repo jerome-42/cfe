@@ -24,14 +24,5 @@ block content
       br
       span Upload en cours
   
-  .row
-    .col-4
-      .mb-3
-        form(method="POST" enctype="multipart/form-data")#form
-          label.form-label(for="upload") Sélectionner les fichiers à uploader
-          input.form-control(type="file" name="igc[]" multiple)#upload
-  .row.container.text-center
-    .col-10.dropZone.mt-4.mb-4#dropZone
-      h4 ou bien glissez un fichier IGC ici
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
