@@ -8,6 +8,9 @@ $(document).ready(function() {
     $(".listeCFE").click(function() {
         window.location = "/listeCFE";
     });
+    $(".listeMachines").click(function() {
+        window.location = "/listeMachines";
+    });
     $('.logout').click(function() {
         window.location = '/deconnexion';
     });

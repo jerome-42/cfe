@@ -501,6 +501,15 @@ get('/listeCFE', function($conn, $pug) {
     $pug->displayFile('view/listeCFE.pug', $vars);
 });
 
+get('/listeMachines', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $planeurs = new Planeurs($conn);
+    $machines = $planeurs->liste();
+    $vars = array_merge($_SESSION, [ 'machines' => $machines ]);
+    $pug->displayFile('view/listeMachines.pug', $vars);
+});
+
 get('/listeMembres', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

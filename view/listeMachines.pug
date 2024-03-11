@@ -1,0 +1,48 @@
+extends layout.pug
+
+block scripts
+  title Liste des machines
+  script(src="js/listeMachines.js")
+
+block content
+  .row
+    h1 Liste des machines
+  .row
+    .col-md-1
+      button.btn.btn-danger.back Retour
+    .col-md-3
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="immat / type")#search
+  .row
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th Voir
+            th Immatriculation
+            th Version FLARM
+            th Dernière vérification FLARM
+        tbody
+          each machine in $machines
+            tr(x-num=$machine['id'])
+              td
+                button.btn.btn-primary.displayDetails
+                  i.bi.bi-eye
+                  span.d-none.d-sm-block2 &nbsp;Détails
+              td
+                b.display-6= $machine['immat'].' '
+                if $machine['concours'] != ''
+                  mark= '(' . $machine['concours'] . ') '
+                = $machine['modele']
+              td
+              td
+        tfoot
+          tr
+            th Voir
+            th Immatriculation
+            th Version FLARM
+            th Dernière vérification FLARM
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour

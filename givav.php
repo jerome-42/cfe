@@ -1,12 +1,21 @@
 <?php
 
 class Givav {
-    static function auth($login, $password) {
+    private $login;
+    private $password;
+    private $session;
+
+    public function __construct($login, $password) {
+        $this->login = $login;
+        $this->password = $password;
+    }
+
+    public function login() {
         $url = 'https://club.givav.fr/givav.php/gvsmart/main/connect';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'no_national' => $login, 'mot_de_passe' => $password ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'no_national' => $this->login, 'mot_de_passe' => $this->password ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); 
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -34,15 +43,50 @@ class Givav {
             parse_str($item, $cookie);
             $cookies = array_merge($cookies, $cookie);
         }
-        //DEBUG var_dump($cookies);
-        // on va chercher le prénom + nom du connecté
-        $user = self::getName($cookies['PHPSESSID']);
-        return $user;
-
-        throw new Exception("Erreur interne, veuillez contacter l'administrateur");
+        $this->session = $cookie['PHPSESSID'];
     }
 
-    private static function getName($session) {
+    static function auth($login, $password) {
+        $givav = new Givav($login, $password);
+        $givav->login();
+        // on va chercher le prénom + nom du connecté
+        return $givav->getName();
+    }
+
+    public function getGliders() {
+        $url = 'https://club.givav.fr/givav.php/gvsmart/vol/lanceDistrib?sessid=1&assoc=119501';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID='.$this->session);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        $response = curl_exec($ch);
+        if (curl_errno($ch))
+            throw new Exception(curl_error($ch));
+
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        file_put_contents('test', $response);
+        if ($http_code != 200)
+            throw new Exception("GIVAV a retourné une erreur, attendez et ré-essayez à nouveau");
+        if ($response == 'Veuillez saisir un numéro national ou une adresse de courriel.')
+            throw new Exception($response);
+        if (preg_match_all('/&id_aeronef=\d+">\s+([\s\w\(\)-\/]+)</m', $response, $matches) === false)
+            throw new Exception("la regexp qui match les machines ne match plus rien, la source a changé ?");
+        if (preg_match_all('/&id_aeronef=\d+">\s+([\s\w\(\)-\/]+)</m', $response, $matches) === false)
+            throw new Exception("la regexp qui match les machines ne match plus rien, la source a changé ?");
+        $gliders = array_map(function($a) {
+            $a = trim($a);
+            if (preg_match_all('/([\w\d-]+) \(([[:alnum:]\s\/]*)\) ([[:alnum:]\s\/]*)/m', $a, $details) === false)
+                return null;
+            return [ 'immat' => $details[1][0], 'concours' => trim($details[2][0]), 'modele' => trim($details[3][0]) ];
+        }, $matches[1]);
+        return $gliders;
+    }
+
+    private function getName() {
         $url = 'https://club.givav.fr/givav.php/gvsmart/donnee/adresse?sessid=1';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -50,7 +94,7 @@ class Givav {
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID='.$session);
+        curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID='.$this->session);
         $response = curl_exec($ch);
         if (curl_errno($ch))
             throw new Exception(curl_error($ch));

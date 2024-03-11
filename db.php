@@ -18,6 +18,16 @@ $tables = [
   INDEX `who`(`who`)
 ) ENGINE=InnoDB",
 
+    'planeurs' => "CREATE TABLE `planeurs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `immat` varchar(255) NOT NULL,
+  `concours` varchar(255) NOT NULL,
+  `modele` varchar(255) NOT NULL,
+  `visible` tinyint(1) DEFAULT '1' NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `immat` (`immat`)
+) ENGINE=InnoDB",
+
     'personnes' => "CREATE TABLE `personnes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
