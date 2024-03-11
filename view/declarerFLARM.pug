@@ -17,12 +17,21 @@ block content
         each line in $errors
           p= $line
 
-    p Déposez ici un fichier FLARM pour valider un FLARM. Le système va automatiquement extraire l'immatriculation de la machine pour lui affecter ce FLARM. Le système va ensuite contrôler la version du firmware utilisé.
+  .row
+    p En téléchargeant des fichiers IGC le système est capable d'en extraire l'immatriculation et la version du logiciel.
+      br
+      | Ainsi le contrôle des FLARM est plus aisé et plus rapide.
   .row.spinner.visually-hidden
     .col-4.text-center
       .spinner-border.text-primary(role="status")#spinner
       br
       span Upload en cours
   
+  .row
+    .col-4
+      .mb-3
+        form(method="POST" enctype="multipart/form-data")#form
+          label.form-label(for="upload") Sélectionner les fichiers à uploader
+          input.form-control(type="file" name="igc[]" multiple)#upload
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
