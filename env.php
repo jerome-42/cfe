@@ -1,6 +1,7 @@
 <?php
 
 include_once __DIR__ . '/db.php';
+include_once __DIR__ . '/flarm.php';
 include_once __DIR__ . '/parametres.php';
 include_once __DIR__ . '/planeurs.php';
 
@@ -61,6 +62,11 @@ class Env {
             $goodFlarmVersion = explode("\n", $parametres->get('flarmBonnesVersions', ''));
             $goodFlarmVersion = array_map('trim', $goodFlarmVersion);
             return in_array($version, $goodFlarmVersion);
+        });
+        $this->pug->share('tinyintVersText', function($text) {
+            if (intval($text) === 1)
+                return 'oui';
+            return 'non';
         });
         return $this->pug;
     }

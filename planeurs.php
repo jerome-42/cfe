@@ -31,6 +31,11 @@ class Planeurs {
                      'version_hard' => $line['version_hard'],
                      'quand' => $line['quand'],
                      'flarm_mis_a_jour_par' => $line['who'],
+                     'stealth' => $line['stealth'],
+                     'noTrack' => $line['noTrack'],
+                     'radioId' => $line['radioId'],
+                     'porteeDetails' => $line['porteeDetails'],
+                     'porteeEnDecaDuMinimum' => $line['porteeEnDecaDuMinimum'],
             ];
         }
         return [ 'version_soft' => 'NA', 'version_hard' => 'NA', 'quand' => 'NA', 'flarm_mis_a_jour_par' => '' ];
@@ -54,16 +59,10 @@ class Planeurs {
         return $sth->fetchAll(PDO::FETCH_ASSOC)[0];
     }
 
-    public function enregistreFlarm($date, $machine, $fichier, $softVersion, $hardVersion, $who) {
-        $q = "INSERT INTO flarm_logs (planeur, quand, fichier, version_soft, version_hard, who) VALUES (:planeur, FROM_UNIXTIME(:quand), :fichier, :version_soft, :version_hard, :who) ON DUPLICATE KEY UPDATE version_soft = :version_soft, version_hard = :version_hard, who = :who";
+    public function enregistreFlarm($data) {
+        $q = "INSERT INTO flarm_logs (planeur, quand, fichier, version_soft, version_hard, who, stealth, noTrack, radioId, porteeEnDecaDuMinimum, porteeMoyenne, porteeDetails) VALUES (:planeur, FROM_UNIXTIME(:quand), :fichier, :version_soft, :version_hard, :who, :stealth, :noTrack, :radioId, :porteeEnDecaDuMinimum, :porteeMoyenne, :porteeDetails) ON DUPLICATE KEY UPDATE version_soft = :version_soft, version_hard = :version_hard, who = :who, stealth = :stealth, noTrack = :noTrack, radioId = :radioId, porteeEnDecaDuMinimum = :porteeEnDecaDuMinimum, porteeMoyenne = :porteeMoyenne, porteeDetails = :porteeDetails";
         $sth = $this->conn->prepare($q);
-        $sth->execute([
-            ':planeur' => $machine['id'],
-            ':quand' => $date->getTimestamp(),
-            ':fichier' => $fichier,
-            ':version_soft' => $softVersion,
-            ':version_hard' => $hardVersion,
-            ':who' => $who ]);
+        $sth->execute($data);
     }
 
     public function getFlarmLogs($planeurId) {

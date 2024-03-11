@@ -269,6 +269,7 @@ get('/declarerFLARM', function($conn, $pug) {
     $pug->displayFile('view/declarerFLARM.pug', $vars);
 });
 
+// trop long
 post('/declarerFLARM', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
@@ -281,6 +282,7 @@ post('/declarerFLARM', function($conn, $pug) {
     $flarmBonsHardware = explode("\n", $parametres->get('flarmBonsHardware', ''));
     $flarmBonsHardware = array_map('trim', $flarmBonsHardware);
     $planeurs = new Planeurs($conn);
+    $flarm = new Flarm($conn);
     $errors = [];
     $messages = [];
     for ($i = 0; $i < count($_FILES['igc']['name']); $i++) {
@@ -315,7 +317,9 @@ post('/declarerFLARM', function($conn, $pug) {
             $hardVersion = null;
             $lineNo = 0;
             $typeIGC = false;
+            $contenuIGC = '';
             while (($line = fgets($handle)) !== false) {
+                $contenuIGC .= $line;
                 $line = trim($line);
                 if ($lineNo === 0) {
                     if ($line[0] === 'A')
@@ -368,7 +372,21 @@ post('/declarerFLARM', function($conn, $pug) {
                 $errors[] = "Le fichier ".$file['name']." a été analysé mais le modèle ".$hardVersion." n'est pas reconnu, les XCSoar et Oudie ne sont pas autorisés, si ce n'est pas l'un d'eux, ajoutez ".$hardVersion."à la liste des modèles reconnus";
                 continue;
             }
-            $planeurs->enregistreFlarm($date, $machine, $file['name'], $softVersion, $hardVersion, $_SESSION['givavNumber']);
+            $details = $flarm->verificationPortee($file['name'], $contenuIGC);
+            $planeurs->enregistreFlarm([
+                ':quand' => $date->getTimestamp(),
+                ':planeur' => $machine['id'],
+                ':fichier' => $file['name'],
+                ':version_soft' => $softVersion,
+                ':version_hard' => $hardVersion,
+                ':who' => $_SESSION['givavNumber'],
+                ':stealth' => $details['stealth'],
+                ':noTrack' => $details['noTrack'],
+                ':radioId' => $details['radioId'],
+                ':porteeMoyenne' => $details['porteeMoyenne'],
+                ':porteeEnDecaDuMinimum' => $details['porteeEnDecaDuMinimum'],
+                ':porteeDetails' => $details['porteeDetails'],
+            ]);
             $messages[] = "Le fichier ".$file['name']." a été analysé (".implode(', ', $subMessages).')';
             fclose($handle);
         }

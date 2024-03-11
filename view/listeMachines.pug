@@ -21,10 +21,11 @@ block content
       table.table.table-striped#list
         thead
           tr
-            th Voir
-            th Immatriculation
-            th Version FLARM
-            th Dernière vérification FLARM
+            th(width="10%") Voir
+            th(width="30%") Immatriculation
+            th(width="15%") Version FLARM
+            th(width="15%") Dernière vérification FLARM
+            th(width="20%") Détails
         tbody
           each machine in $machines
             tr(x-num=$machine['id'])
@@ -55,6 +56,21 @@ block content
               td= timestampToDate($machine['quand'])
                 if $machine['flarm_mis_a_jour_par'] != null
                   = ' (par '.$getMembreNameByGivavNumber($machine['flarm_mis_a_jour_par']).')'
+              td
+                if $machine['porteeEnDecaDuMinimum'] === 1
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    span Portée en deça du minimum (aéronefs volants à 250 km/h)
+                    br
+                    span.small Valeurs relevées: #{$machine['porteeDetails']}
+                else if $machine['porteeDetails'] != ''
+                  span.small Valeurs relevées: #{$machine['porteeDetails']}
+                if $machine['stealth'] === 1
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    span Mode stealth activé
+                if $machine['noTrack'] === 1
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    span Mode noTrack activé
+
         tfoot
           tr
             th Voir

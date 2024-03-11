@@ -20,7 +20,7 @@ block content
         default
           p Modèle de FLARM inconnu (#{$derniereDeclaration['version_hard']})
   .row.mt-2.mb-2
-    .col-2
+    .col-3
       if ($derniereDeclaration['version_soft'] != 'NA')
         if estUneBonneVersionFlarm($derniereDeclaration['version_soft']) == false
          .alert.alert-danger.text-center.mt-0.mb-0
@@ -30,7 +30,19 @@ block content
         else
          .alert.alert-success.text-center.mt-0.mb-0
            = derniereDeclaration['version_soft']+' (version à jour)'
+      if ($derniereDeclaration['porteeEnDecaDuMinimum'] == 1)
+        .alert.alert-danger.text-center.mt-0.mb-0
+          span Portée en deça du minimum
+          br
+          span.small Valeurs relevées: #{derniereDeclaration['porteeDetails']}
       
+  .row.mt-2.mb-2
+    .col-4
+      ul
+        li Id radio: #{derniereDeclaration['radioId']}
+        li Stealth: #{tinyintVersText(derniereDeclaration['stealth'])}
+        li No track: #{tinyintVersText(derniereDeclaration['noTrack'])}
+        li Portée relevée: #{derniereDeclaration['porteeDetails']}
   .row
     h3 Liste des enregistrements IGC analysés
     .col-12
