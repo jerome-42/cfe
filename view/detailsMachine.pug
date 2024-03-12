@@ -35,6 +35,12 @@ block content
           span Portée en deça du minimum
           br
           span.small Valeurs relevées: #{lastLog['rangeDetails']}
+      if $ognStatus
+        .alert.alert-danger.text-center.mt-0.mb-0
+          span= $ognStatus
+      if $flarmnetStatus
+        .alert.alert-danger.text-center.mt-0.mb-0
+          span= $flarmnetStatus
       
   .row.mt-2.mb-2
     .col-4
@@ -46,6 +52,11 @@ block content
         if $lastLog['flarmResultUrl'] != ''
           li
             a(href=$lastLog['flarmResultUrl'] target="_blank") Détails sur le site flarm.com
+        if $ognStatus == null
+          li OGN: enregistré
+        if $flarmnetStatus == null
+          li Flarmnet: enregistré
+
   .row
     h3 Liste des enregistrements IGC analysés
     .col-12

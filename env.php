@@ -1,8 +1,11 @@
 <?php
 
+include_once __DIR__ . '/cache.php';
 include_once __DIR__ . '/db.php';
 include_once __DIR__ . '/flarm.php';
+include_once __DIR__ . '/flarmnet.php';
 include_once __DIR__ . '/gliders.php';
+include_once __DIR__ . '/ogn.php';
 include_once __DIR__ . '/settings.php';
 
 class Env {
@@ -67,6 +70,26 @@ class Env {
             if (intval($text) === 1)
                 return 'oui';
             return 'non';
+        });
+        $this->pug->share('timeago', function($text) {
+            if (!is_numeric($text))
+                return $text;
+            $timestamp = intval($text);
+
+            $strTime = array("seconde", "minute", "heure", "jour", "mois", "année");
+            $length = array("60","60","24","30","12","10");
+
+            $currentTime = time();
+            if ($currentTime >= $timestamp) {
+                $diff = time() - $timestamp;
+                for ($i = 0; $diff >= $length[$i] && $i < count($length) - 1; $i++) {
+                    $diff = $diff / $length[$i];
+                }
+
+                $diff = round($diff);
+                return "il y a ".$diff." ".$strTime[$i]."(s)";
+            }
+            return '';
         });
         return $this->pug;
     }

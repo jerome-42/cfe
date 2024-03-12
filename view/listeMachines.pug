@@ -16,6 +16,13 @@ block content
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
           input.form-control(type="text" placeholder="immat / type / version flarm")#search
+    .col-md-3.offset-md-4.text-end
+      p.mb-0 Dernier téléchargement de la base de données&nbsp;
+        a(href="http://wiki.glidernet.org/ddb") OGN
+        | &nbsp;: #{timeago($ognDatabaseTimestamp)}
+      p.mb-0 Dernier téléchargement de la base de données&nbsp;
+        a(href="https://www.flarmnet.org/flarmnet/downloads/" target="_blank") flarmnet
+        | &nbsp;: #{timeago($flarmnetDatabaseTimestamp)}
   .row
     .col-12
       table.table.table-striped#list
@@ -70,6 +77,12 @@ block content
                 if $glider['noTrack'] === 1
                   .alert.alert-danger.text-center.mt-0.mb-0
                     span Mode noTrack activé
+                if $glider['ognStatus']
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    span= $glider['ognStatus']
+                if $glider['flarmnetStatus']
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    span= $glider['flarmnetStatus']
 
         tfoot
           tr

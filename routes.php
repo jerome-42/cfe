@@ -474,6 +474,10 @@ get('/detailsMachine', function($conn, $pug) {
     if ($vars['glider'] === null)
         throw new Exception("Le numéro ".$num." ne correspond à aucun planeur dans la base de données");
     $vars['flarmLogs'] = $gliders->getFlarmLogs($id);
+    $ogn = new OGN();
+    $vars['ognStatus'] = $ogn->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
+    $flarmnet = new Flarmnet();
+    $vars['flarmnetStatus'] = $flarmnet->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
     $pug->displayFile('view/detailsMachine.pug', $vars);
 });
 
@@ -668,8 +672,12 @@ get('/listeMachines', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $g = new Gliders($conn);
-    $gliders = $g->list();
+    $gliders = $g->listWithOGNAndFlarmnetStatus();
     $vars = array_merge($_SESSION, [ 'gliders' => $gliders ]);
+    $ogn = new OGN();
+    $vars['ognDatabaseTimestamp'] = $ogn->getDatabaseCreationDate();
+    $flarmnet = new Flarmnet();
+    $vars['flarmnetDatabaseTimestamp'] = $flarmnet->getDatabaseCreationDate();
     $pug->displayFile('view/listeMachines.pug', $vars);
 });
 

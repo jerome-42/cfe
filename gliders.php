@@ -28,6 +28,19 @@ class Gliders {
         return $gliders;
     }
 
+    public function listWithOGNAndFlarmnetStatus() {
+        $gliders = $this->list();
+        $ogn = new OGN();
+        $flarmnet = new Flarmnet();
+        foreach ($gliders as &$glider) {
+            if (isset($glider['radioId'])) {
+                $glider['ognStatus'] = $ogn->doesGliderIsRegistered($glider['immat'], $glider['radioId']);
+                $glider['flarmnetStatus'] = $flarmnet->doesGliderIsRegistered($glider['immat'], $glider['radioId']);
+            }
+        }
+        return $gliders;
+    }
+
     public function getLastFlarmLog($gliderId) {
         $q = "SELECT *, UNIX_TIMESTAMP(`when`) AS `when` FROM flarm_logs WHERE glider = :id ORDER BY `when` DESC LIMIT 1";
         $sth = $this->conn->prepare($q);
