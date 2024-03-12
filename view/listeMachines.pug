@@ -79,3 +79,25 @@ block content
             th Dernière vérification FLARM
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
+    button.btn.btn-primary.addGlider Ajouter une machine
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalAddGlider
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5 Ajouter une machine
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          form(method="POST" action="/ajoutMachine")#formAddGlider
+            .mb-3
+              label.form-label(for="immat") Immatriculation
+              input.form-control(type="text" name="immat" placeholder="F-CXXX")#immat
+            .mb-3
+              label.form-label(for="concours") Numéro de concours
+              input.form-control(type="text" name="concours" placeholder="")#concours
+            .mb-3
+              label.form-label(for="type") Modèle
+              input.form-control(type="text" name="type" placeholder="Discus")
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-primary(type="button")#addGlider Ajouter cette machine

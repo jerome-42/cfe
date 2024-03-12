@@ -42,6 +42,31 @@ $(document).ready(function() {
 	window.location = '/detailsMachine?numero='+id;
     });
 
+    $('.addGlider').click(function() {
+	$('#immat').val('');
+	$('#concours').val('');
+	$('#type').val('');
+	$('#modalAddGlider').modal('show');
+    });
+
+    $('#modalAddGlider').on('shown.bs.modal', function() {
+	$('#immat').focus();
+    });
+
+    $('#addGlider').click(function() {
+	if ($('#immat').val() === '') {
+	    alert("L'immatriculation doit être saisie");
+	    $('#immat').focus();
+	    return;
+	}
+	if ($('#type').val() === '') {
+	    alert("La machine doit avoir un modèle");
+	    $('#type').focus();
+	    return;
+	}
+	$('#formAddGlider').trigger('submit');
+    });
+
     $('#filter').on('change', function() {
 	updateList();
     });

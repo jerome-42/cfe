@@ -25,6 +25,19 @@ get('/', function($conn, $pug) {
     $pug->displayFile('view/index.pug', $vars);
 });
 
+post('/ajoutMachine', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    foreach ([ 'immat', 'type' ] as $key) {
+        if (!isset($_POST[$key]) || $_POST[$key] === '') {
+            return displayError($pug, $key." n'existe pas hors il est obligatoire");
+        }
+    }
+    $g = new Gliders($conn);
+    $gliders = $g->add(trim($_POST['immat']), trim($_POST['concours']), trim($_POST['type']));
+    redirect('/listeMachines');
+});
+
 get('/error', function($conn) {
     throw new Exception("test d'erreur");
 });
