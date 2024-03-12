@@ -3,6 +3,39 @@
 class Flarm {
     private $conn;
 
+    static public function aircraftTypeToText($type) {
+        switch (intval($type)) {
+        case 1:
+            return "planeur";
+        case 2:
+            return "remorqueur";
+        case 3:
+            return "hélicoptère";
+        case 4:
+            return "parachutiste";
+        case 5:
+            return "deltaplane";
+        case 6:
+            return "parapente";
+        case 7:
+            return "avion";
+        case 8:
+            return "jet";
+        case 9:
+            return "OVNI";
+        case 10:
+            return "ballon";
+        case 11:
+            return "dirigeable";
+        case 12:
+            return "drone";
+        case 13:
+            return "fixe";
+        default:
+            return "inconnu";
+        }
+    }
+
     public function __construct($conn) {
         $this->conn = $conn;
     }

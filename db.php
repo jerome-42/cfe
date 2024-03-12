@@ -31,6 +31,7 @@ $tables = [
   `rangeAvg` int,
   `rangeDetails` varchar(255),
   `rangeBelowMinimum` tinyint(1),
+  `aircraftType` varchar(255),
   `flarmResultUrl` varchar(255),
   `who` bigint unsigned NOT NULL,
   PRIMARY KEY (`id`),
@@ -43,6 +44,7 @@ $tables = [
   `immat` varchar(255) NOT NULL,
   `concours` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
+  `aircraftType` varchar(255) NOT NULL,
   `visible` tinyint(1) DEFAULT '1' NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `immat` (`immat`)

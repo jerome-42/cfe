@@ -38,7 +38,7 @@ catch (Exception $e) {
     fprintf(STDERR, "erreur: ".$e->getMessage().PHP_EOL);
     exit(1);
 }
-$q = "INSERT INTO glider (immat, concours, type) VALUES (:immat, :concours, :type) ON DUPLICATE KEY UPDATE concours = :concours, type = :type";
+$q = "INSERT INTO glider (immat, concours, type, aircraftType) VALUES (:immat, :concours, :type, 'planeur') ON DUPLICATE KEY UPDATE concours = :concours, type = :type";
 $sth = $env->mysql->prepare($q);
 foreach ($planeurs as $planeur) {
     $sth->execute([

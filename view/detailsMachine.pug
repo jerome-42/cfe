@@ -35,6 +35,9 @@ block content
           span Portée en deça du minimum
           br
           span.small Valeurs relevées: #{lastLog['rangeDetails']}
+      if ($lastLog['flarmAircraftType'] != '') && ($lastLog['flarmAircraftType'] != $glider['aircraftType'])
+        .alert.alert-danger.text-center.mt-0.mb-0
+          span Le type d'aéronef configuré dans le FLARM (#{$lastLog['flarmAircraftType']}) ne correspond pas au type réel de l'aéronef (#{$glider['aircraftType']})
       if $ognStatus
         .alert.alert-danger.text-center.mt-0.mb-0
           span= $ognStatus

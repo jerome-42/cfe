@@ -57,6 +57,7 @@ class Gliders {
                      'rangeDetails' => $line['rangeDetails'],
                      'rangeBelowMinimum' => $line['rangeBelowMinimum'],
                      'flarmResultUrl' => $line['flarmResultUrl'],
+                     'flarmAircraftType' => $line['aircraftType'],
             ];
         }
         return [ 'versionSoft' => 'NA', 'versionHard' => 'NA', 'when' => 'NA', 'who' => '' ];
@@ -81,7 +82,7 @@ class Gliders {
     }
 
     public function registerFlarmLog($data) {
-        $q = "INSERT INTO flarm_logs (glider, `when`, filename, versionSoft, versionHard, stealth, noTrack, radioId, rangeAvg, rangeDetails, rangeBelowMinimum, flarmResultUrl, who) VALUES (:glider, FROM_UNIXTIME(:when), :filename, :versionSoft, :versionHard, :stealth, :noTrack, :radioId, :rangeAvg, :rangeDetails, :rangeBelowMinimum, :flarmResultUrl, :who) ON DUPLICATE KEY UPDATE versionSoft = :versionSoft, versionHard = :versionHard, who = :who, stealth = :stealth, noTrack = :noTrack, radioId = :radioId, rangeBelowMinimum = :rangeBelowMinimum, rangeAvg = :rangeAvg, rangeDetails = :rangeDetails, flarmResultUrl = :flarmResultUrl";
+        $q = "INSERT INTO flarm_logs (glider, `when`, filename, versionSoft, versionHard, stealth, noTrack, radioId, rangeAvg, rangeDetails, rangeBelowMinimum, aircraftType, flarmResultUrl, who) VALUES (:glider, FROM_UNIXTIME(:when), :filename, :versionSoft, :versionHard, :stealth, :noTrack, :radioId, :rangeAvg, :rangeDetails, :rangeBelowMinimum, :aircraftType, :flarmResultUrl, :who) ON DUPLICATE KEY UPDATE versionSoft = :versionSoft, versionHard = :versionHard, who = :who, stealth = :stealth, noTrack = :noTrack, radioId = :radioId, rangeBelowMinimum = :rangeBelowMinimum, rangeAvg = :rangeAvg, rangeDetails = :rangeDetails, aircraftType = :aircraftType, flarmResultUrl = :flarmResultUrl";
         $sth = $this->conn->prepare($q);
         $sth->execute($data);
     }

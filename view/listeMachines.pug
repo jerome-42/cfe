@@ -71,6 +71,9 @@ block content
                     span.small Valeurs relevées: #{$glider['rangeDetails']}
                 else if $glider['rangeDetails'] != ''
                   span.small Valeurs relevées: #{$glider['rangeDetails']}
+                if ($glider['flarmAircraftType'] != '') && ($glider['flarmAircraftType'] != $glider['aircraftType'])
+                  .alert.alert-danger.text-center.mt-0.mb-0
+                    span Le type d'aéronef configuré dans le FLARM (#{$glider['flarmAircraftType']}) ne correspond pas au type réel de l'aéronef (#{$glider['aircraftType']})
                 if $glider['stealth'] === 1
                   .alert.alert-danger.text-center.mt-0.mb-0
                     span Mode stealth activé

@@ -328,6 +328,7 @@ post('/declarerFLARM', function($conn, $pug) {
             $immat = null;
             $softVersion = null;
             $hardVersion = null;
+            $aircraftType = null;
             $lineNo = 0;
             $IGCType = false;
             $IGCContent = '';
@@ -358,6 +359,10 @@ post('/declarerFLARM', function($conn, $pug) {
                 if (preg_match_all('/^HFRHWHARDWAREVERSION:([\w\-\.]+)$/m', $line, $matches) === 1) {
                     $hardVersion = $matches[1][0];
                     $subMessages[] = "le FLARM est un ".$hardVersion;
+                }
+                if (preg_match_all('/^LFLA\d+ACFT\s (\d+)$/m', $line, $matches) === 1) {
+                    $aircraftType = Flarm::aircraftTypeToText($matches[1][0]);
+                    $subMessages[] = "le type d'aéronef est ".Flarm::aircraftTypeToText($aircraftType);
                 }
             }
             if ($IGCType === false) {
@@ -399,6 +404,7 @@ post('/declarerFLARM', function($conn, $pug) {
                 ':rangeAvg' => $details['rangeAvg'],
                 ':rangeBelowMinimum' => $details['rangeBelowMinimum'],
                 ':rangeDetails' => $details['rangeDetails'],
+                ':aircraftType' => $aircraftType,
                 ':flarmResultUrl' => $details['flarmResultUrl'],
             ]);
             $messages[] = "Le fichier ".$file['name']." a été analysé (".implode(', ', $subMessages).')';
@@ -472,7 +478,7 @@ get('/detailsMachine', function($conn, $pug) {
     $vars['glider'] = $gliders->getGliderById($id);
     $vars['lastLog'] = $gliders->getLastFlarmLog($id);
     if ($vars['glider'] === null)
-        throw new Exception("Le numéro ".$num." ne correspond à aucun planeur dans la base de données");
+        throw new Exception("Le numéro ".$id." ne correspond à aucun planeur dans la base de données");
     $vars['flarmLogs'] = $gliders->getFlarmLogs($id);
     $ogn = new OGN();
     $vars['ognStatus'] = $ogn->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
