@@ -2,8 +2,8 @@
 
 include_once __DIR__ . '/db.php';
 include_once __DIR__ . '/flarm.php';
-include_once __DIR__ . '/parametres.php';
-include_once __DIR__ . '/planeurs.php';
+include_once __DIR__ . '/gliders.php';
+include_once __DIR__ . '/settings.php';
 
 class Env {
     public $mysql;
@@ -57,9 +57,9 @@ class Env {
                 return 'NA';
             return date('d/m/Y', intval($text));
         });
-        $this->pug->share('estUneBonneVersionFlarm', function($version) {
-            $parametres = new Parametres($this->mysql);
-            $goodFlarmVersion = explode("\n", $parametres->get('flarmBonnesVersions', ''));
+        $this->pug->share('isAGoodFlarmVersion', function($version) {
+            $settings = new Settings($this->mysql);
+            $goodFlarmVersion = explode("\n", $settings->get('flarmGoodSoftVersion', ''));
             $goodFlarmVersion = array_map('trim', $goodFlarmVersion);
             return in_array($version, $goodFlarmVersion);
         });

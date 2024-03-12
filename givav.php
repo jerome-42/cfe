@@ -78,7 +78,7 @@ class Givav {
             $a = trim($a);
             if (preg_match_all('/([\w\d-]+) \(([[:alnum:]\s\/]*)\) ([[:alnum:]\s\/]*)/m', $a, $details) === false)
                 return null;
-            return [ 'immat' => $details[1][0], 'concours' => trim($details[2][0]), 'modele' => trim($details[3][0]) ];
+            return [ 'immat' => $details[1][0], 'concours' => trim($details[2][0]), 'type' => trim($details[3][0]) ];
         }, $matches[1]);
         return $gliders;
     }

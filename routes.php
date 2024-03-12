@@ -278,10 +278,10 @@ post('/declarerFLARM', function($conn, $pug) {
         $vars = array_merge($_SESSION, [ 'message' => "Vous avez oublié de sélectionner un fichier" ]);
         return $pug->displayFile('view/error.pug', $vars);
     }
-    $parametres = new Parametres($conn);
-    $flarmBonsHardware = explode("\n", $parametres->get('flarmBonsHardware', ''));
-    $flarmBonsHardware = array_map('trim', $flarmBonsHardware);
-    $planeurs = new Planeurs($conn);
+    $settings = new Settings($conn);
+    $flarmKnownHardware = explode("\n", $settings->get('flarmKnownHardware', ''));
+    $flarmKnownHardware = array_map('trim', $flarmKnownHardware);
+    $gliders = new Gliders($conn);
     $flarm = new Flarm($conn);
     $errors = [];
     $messages = [];
@@ -316,14 +316,14 @@ post('/declarerFLARM', function($conn, $pug) {
             $softVersion = null;
             $hardVersion = null;
             $lineNo = 0;
-            $typeIGC = false;
-            $contenuIGC = '';
+            $IGCType = false;
+            $IGCContent = '';
             while (($line = fgets($handle)) !== false) {
-                $contenuIGC .= $line;
+                $IGCContent .= $line;
                 $line = trim($line);
                 if ($lineNo === 0) {
                     if ($line[0] === 'A')
-                        $typeIGC = true;
+                        $IGCType = true;
                     else {
                         $errors[] = "Le fichier ".$file['name']." ne semble pas être un fichier IGC";
                         break;
@@ -347,7 +347,7 @@ post('/declarerFLARM', function($conn, $pug) {
                     $subMessages[] = "le FLARM est un ".$hardVersion;
                 }
             }
-            if ($typeIGC === false) {
+            if ($IGCType === false) {
                 continue;
             }
 
@@ -363,29 +363,30 @@ post('/declarerFLARM', function($conn, $pug) {
                 $errors[] = "Dans le fichier ".$file['name']." la date du vol n'a pas été détectée, le fichier IGC semble être corrompu";
                 continue;
             }
-            $machine = $planeurs->getPlaneurDepuisImmat($immat);
-            if ($machine === null) {
+            $glider = $gliders->getGliderByImmat($immat);
+            if ($glider === null) {
                 $errors[] = "Le fichier ".$file['name']." a été analysé mais la machine ".$immat." n'existe pas dans notre liste de machine (".implode(', ', $subMessages).')';
                 continue;
             }
-            if (in_array($hardVersion, $flarmBonsHardware) === false) {
+            if (in_array($hardVersion, $flarmKnownHardware) === false) {
                 $errors[] = "Le fichier ".$file['name']." a été analysé mais le modèle ".$hardVersion." n'est pas reconnu, les XCSoar et Oudie ne sont pas autorisés, si ce n'est pas l'un d'eux, ajoutez ".$hardVersion."à la liste des modèles reconnus";
                 continue;
             }
-            $details = $flarm->verificationPortee($file['name'], $contenuIGC);
-            $planeurs->enregistreFlarm([
-                ':quand' => $date->getTimestamp(),
-                ':planeur' => $machine['id'],
-                ':fichier' => $file['name'],
-                ':version_soft' => $softVersion,
-                ':version_hard' => $hardVersion,
+            $details = $flarm->checkRange($file['name'], $IGCContent);
+            $gliders->registerFlarmLog([
+                ':when' => $date->getTimestamp(),
+                ':glider' => $glider['id'],
+                ':filename' => $file['name'],
+                ':versionSoft' => $softVersion,
+                ':versionHard' => $hardVersion,
                 ':who' => $_SESSION['givavNumber'],
                 ':stealth' => $details['stealth'],
                 ':noTrack' => $details['noTrack'],
                 ':radioId' => $details['radioId'],
-                ':porteeMoyenne' => $details['porteeMoyenne'],
-                ':porteeEnDecaDuMinimum' => $details['porteeEnDecaDuMinimum'],
-                ':porteeDetails' => $details['porteeDetails'],
+                ':rangeAvg' => $details['rangeAvg'],
+                ':rangeBelowMinimum' => $details['rangeBelowMinimum'],
+                ':rangeDetails' => $details['rangeDetails'],
+                ':flarmResultUrl' => $details['flarmResultUrl'],
             ]);
             $messages[] = "Le fichier ".$file['name']." a été analysé (".implode(', ', $subMessages).')';
             fclose($handle);
@@ -453,13 +454,13 @@ get('/detailsMachine', function($conn, $pug) {
     if (!isset($_GET['numero']) || !is_numeric($_GET['numero'])) {
         return displayError($pug, "le paramètre numéro est obligatoire et doit être un entier" );
     }
-    $num = intval($_GET['numero']);
-    $planeurs = new Planeurs($conn);
-    $vars['machine'] = $planeurs->getPlaneurDepuisId($num);
-    $vars['derniereDeclaration'] = $planeurs->getDerniereDeclarationFlarm($num);
-    if ($vars['machine'] === null)
+    $id = intval($_GET['numero']);
+    $gliders = new Gliders($conn);
+    $vars['glider'] = $gliders->getGliderById($id);
+    $vars['lastLog'] = $gliders->getLastFlarmLog($id);
+    if ($vars['glider'] === null)
         throw new Exception("Le numéro ".$num." ne correspond à aucun planeur dans la base de données");
-    $vars['flarmLogs'] = $planeurs->getFlarmLogs($num);
+    $vars['flarmLogs'] = $gliders->getFlarmLogs($id);
     $pug->displayFile('view/detailsMachine.pug', $vars);
 });
 
@@ -653,9 +654,9 @@ get('/listeCFE', function($conn, $pug) {
 get('/listeMachines', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
-    $planeurs = new Planeurs($conn);
-    $machines = $planeurs->liste();
-    $vars = array_merge($_SESSION, [ 'machines' => $machines ]);
+    $g = new Gliders($conn);
+    $gliders = $g->list();
+    $vars = array_merge($_SESSION, [ 'gliders' => $gliders ]);
     $pug->displayFile('view/listeMachines.pug', $vars);
 });
 
@@ -680,10 +681,10 @@ get('/listeMembres', function($conn, $pug) {
 get('/parametresFlarm', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
-    $param = new Parametres($conn);
+    $settings = new Settings($conn);
     $vars = array_merge($_SESSION, [
-        'flarmBonnesVersions' => $param->get('flarmBonnesVersions', ''),
-        'flarmBonsHardware' => $param->get('flarmBonsHardware', ''),
+        'flarmGoodSoftVersion' => $settings->get('flarmGoodSoftVersion', ''),
+        'flarmKnownHardware' => $settings->get('flarmKnownHardware', ''),
     ]);
     $pug->displayFile('view/parametresFlarm.pug', $vars);
 });
@@ -691,9 +692,9 @@ get('/parametresFlarm', function($conn, $pug) {
 post('/parametresFlarm', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
-    $param = new Parametres($conn);
-    $param->set('flarmBonnesVersions', $_POST['flarmBonnesVersions']);
-    $param->set('flarmBonsHardware', $_POST['flarmBonsHardware']);
+    $settings = new Settings($conn);
+    $settings->set('flarmGoodSoftVersion', $_POST['flarmGoodSoftVersion']);
+    $settings->set('flarmKnownHardware', $_POST['flarmKnownHardware']);
     redirect('/listeMachines');
 });
 

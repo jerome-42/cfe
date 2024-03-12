@@ -15,7 +15,7 @@ block content
       .row
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
-          input.form-control(type="text" placeholder="immat / type")#search
+          input.form-control(type="text" placeholder="immat / type / version flarm")#search
   .row
     .col-12
       table.table.table-striped#list
@@ -27,47 +27,47 @@ block content
             th(width="15%") Dernière vérification FLARM
             th(width="20%") Détails
         tbody
-          each machine in $machines
-            tr(x-num=$machine['id'])
+          each glider in $gliders
+            tr(x-num=$glider['id'])
               td
                 button.btn.btn-primary.displayDetails
                   i.bi.bi-eye
                   span.d-none.d-sm-block2 &nbsp;Détails
               td
-                b.display-6= $machine['immat'].' '
-                if $machine['concours'] != ''
-                  mark= '(' . $machine['concours'] . ') '
-                = $machine['modele']
+                b.display-6= $glider['immat'].' '
+                if $glider['concours'] != ''
+                  mark= '(' . $glider['concours'] . ') '
+                = $glider['type']
               td
-                if $machine['version_soft'] != 'NA'
-                  if estUneBonneVersionFlarm($machine['version_soft'])
+                if $glider['versionSoft'] != 'NA'
+                  if isAGoodFlarmVersion($glider['versionSoft'])
                    .alert.alert-success.text-center.mt-0.mb-0
-                      = machine['version_soft']
+                      = glider['versionSoft']
                   else
                     .alert.alert-danger.text-center.mt-0.mb-0
                       i.bi.bi-exclamation-triangle-fill.me-2
-                      = machine['version_soft']
+                      = glider['versionSoft']
                       i.bi.bi-exclamation-triangle-fill.ms-2
                 else
                   .alert.alert-danger.text-center.mt-0.mb-0
                     i.bi.bi-exclamation-triangle-fill.me-2
                     | Version inconnue
                     i.bi.bi-exclamation-triangle-fill.ms-2
-              td= timestampToDate($machine['quand'])
-                if $machine['flarm_mis_a_jour_par'] != null
-                  = ' (par '.$getMembreNameByGivavNumber($machine['flarm_mis_a_jour_par']).')'
+              td= timestampToDate($glider['when'])
+                if $glider['who'] != null
+                  = ' (par '.$getMembreNameByGivavNumber($glider['who']).')'
               td
-                if $machine['porteeEnDecaDuMinimum'] === 1
+                if $glider['rangeBelowMinimum'] === 1
                   .alert.alert-danger.text-center.mt-0.mb-0
                     span Portée en deça du minimum (aéronefs volants à 250 km/h)
                     br
-                    span.small Valeurs relevées: #{$machine['porteeDetails']}
-                else if $machine['porteeDetails'] != ''
-                  span.small Valeurs relevées: #{$machine['porteeDetails']}
-                if $machine['stealth'] === 1
+                    span.small Valeurs relevées: #{$glider['rangeDetails']}
+                else if $glider['rangeDetails'] != ''
+                  span.small Valeurs relevées: #{$glider['rangeDetails']}
+                if $glider['stealth'] === 1
                   .alert.alert-danger.text-center.mt-0.mb-0
                     span Mode stealth activé
-                if $machine['noTrack'] === 1
+                if $glider['noTrack'] === 1
                   .alert.alert-danger.text-center.mt-0.mb-0
                     span Mode noTrack activé
 

@@ -20,28 +20,29 @@ $tables = [
 
     'flarm_logs' => "CREATE TABLE `flarm_logs`(
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `planeur` bigint unsigned NOT NULL,
-  `quand` date NOT NULL,
-  `fichier` varchar(255) NOT NULL,
-  `version_soft` varchar(255) NOT NULL,
-  `version_hard` varchar(255) NOT NULL,
+  `glider` bigint unsigned NOT NULL,
+  `when` date NOT NULL,
+  `filename` varchar(255) NOT NULL,
+  `versionSoft` varchar(255) NOT NULL,
+  `versionHard` varchar(255) NOT NULL,
   `stealth` tinyint(1),
   `noTrack` tinyint(1),
   `radioId` varchar(255),
-  `porteeMoyenne` int,
-  `porteeDetails` varchar(255),
-  `porteeEnDecaDuMinimum` tinyint(1),
+  `rangeAvg` int,
+  `rangeDetails` varchar(255),
+  `rangeBelowMinimum` tinyint(1),
+  `flarmResultUrl` varchar(255),
   `who` bigint unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_index` (`planeur`, `quand`, `fichier`),
-  INDEX `planeur`(`planeur`)
+  UNIQUE KEY `unique_index` (`glider`, `when`, `filename`),
+  INDEX `glider`(`glider`)
 ) ENGINE=InnoDB",
 
-    'planeurs' => "CREATE TABLE `planeurs` (
+    'glider' => "CREATE TABLE `glider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `immat` varchar(255) NOT NULL,
   `concours` varchar(255) NOT NULL,
-  `modele` varchar(255) NOT NULL,
+  `type` varchar(255) NOT NULL,
   `visible` tinyint(1) DEFAULT '1' NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `immat` (`immat`)

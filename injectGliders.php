@@ -16,7 +16,7 @@ if (isset($options['h'])) {
     exit(0);
 }
 if (!isset($options['u'])) {
-    fprintf(STDERR, '-u is mandatory'.PHP_EOL);
+    fprintf(STDERR, '-u est obligatoire'.PHP_EOL);
     exit(1);
 }
 
@@ -38,13 +38,13 @@ catch (Exception $e) {
     fprintf(STDERR, "erreur: ".$e->getMessage().PHP_EOL);
     exit(1);
 }
-$q = "INSERT INTO planeurs (immat, concours, modele) VALUES (:immat, :concours, :modele) ON DUPLICATE KEY UPDATE concours = :concours, modele = :modele";
+$q = "INSERT INTO glider (immat, concours, type) VALUES (:immat, :concours, :type) ON DUPLICATE KEY UPDATE concours = :concours, type = :type";
 $sth = $env->mysql->prepare($q);
 foreach ($planeurs as $planeur) {
     $sth->execute([
         ':immat' => $planeur['immat'],
         ':concours' => $planeur['concours'],
-        ':modele' => $planeur['modele'],
+        ':type' => $planeur['type'],
     ]);
 }
 $env->mysql->commit();

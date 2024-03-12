@@ -1,6 +1,6 @@
 <?php
 
-class Parametres {
+class Settings {
     private $conn;
 
     public function __construct($conn) {

@@ -7,18 +7,17 @@ class Flarm {
         $this->conn = $conn;
     }
 
-    public function verificationPortee($nomFichier, $contenuIGC) {
+    public function checkRange($filename, $igcData) {
         $url = 'https://www.flarm.com/support/tools-software/flarm-range-analyzer/range-analyzer-files-upload';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
-        // TODO ajout fichier
-        $igc = new \CURLStringFile($contenuIGC, $nomFichier, 'application/octet-stream');
+        $igc = new \CURLStringFile($igcData, $filename, 'application/octet-stream');
         $headers = [ "Content-Type" => "multipart/form-data" ];
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'igcfile[0]' => $igc, 'action' => 'shortTerm' ]);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); 
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); 
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -36,16 +35,20 @@ class Flarm {
             throw new Exception("Réponse inattendue de flarm.com");
         if (preg_match_all('/href="https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=(\w+\.IGC)"/m', $response, $matches) === false)
             throw new Exception("Réponse inattendue de flarm.com");
-        $nomFichier = $matches[1][0];
+        $flarmFilename = $matches[1][0];
 
-        return $this->recupereResultats($nomFichier);
+        if (preg_match_all('/href="(https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=\w+\.IGC)"/m', $response, $matches) === false)
+            throw new Exception("Réponse inattendue de flarm.com");
+
+        $url = $matches[1][0];
+        return $this->recupereResultats($flarmFilename, $url);
     }
 
-    private function recupereResultats($nomFichier) {
+    private function recupereResultats($flarmFilename, $flarmResultUrl) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://www.flarm.com/analyzer/parseIgc.php');
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'filesToProcess' => $nomFichier ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'filesToProcess' => $flarmFilename ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -63,6 +66,7 @@ class Flarm {
             'stealth' => ($data[0]['stealth'] === 'OFF' ? 0 : 1),
             'noTrack' => ($data[0]['noTrack'] === 'OFF' ? 0 : 1),
             'radioId' => $data[0]['radioId'],
+            'flarmResultUrl' => $flarmResultUrl,
         ];
         // from FLARM https://www.flarm.com/analyzer/js/minimum-range.js
         $minimumRange = [];
@@ -93,9 +97,9 @@ class Flarm {
             $toRet = array_merge($toRet, [
                 'minium' => $minimum, // [m]
                 'maximum' => $maximum, // [m]
-                'porteeMoyenne' => $avg,
-                'porteeEnDecaDuMinimum' => $rangeBelowMinimum === true ? 1 : 0,
-                'porteeDetails' => 'Minimum: '.round($minimum/1000).' km, maximum: '.round($maximum/1000).' km, moyenne: '.round($avg/1000).' km',
+                'rangeAvg' => $avg,
+                'rangeBelowMinimum' => $rangeBelowMinimum === true ? 1 : 0,
+                'rangeDetails' => 'Minimum: '.round($minimum/1000).' km, maximum: '.round($maximum/1000).' km, moyenne: '.round($avg/1000).' km',
             ]);
         }
         return $toRet;
