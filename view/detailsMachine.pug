@@ -68,6 +68,7 @@ block content
             th Fichier
             th Modèle
             th Par
+            th Analyse de la portée
         tbody
           each line in $flarmLogs
             tr
@@ -76,6 +77,9 @@ block content
               td= $line['filename']
               td= $line['versionHard']
               td= $getMembreNameByGivavNumber($line['who'])
+              td
+                if $line['flarmResultUrl']
+                  a(href=$line['flarmResultUrl'] target="_blank") Analyse de la portée
         tfoot
           tr
             th Date
@@ -83,5 +87,6 @@ block content
             th Fichier
             th Modèle
             th Par
+            th Analyse de la portée
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
