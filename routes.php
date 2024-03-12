@@ -28,13 +28,13 @@ get('/', function($conn, $pug) {
 post('/ajoutMachine', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
-    foreach ([ 'immat', 'type' ] as $key) {
+    foreach ([ 'immat', 'type', 'typeAeronef' ] as $key) {
         if (!isset($_POST[$key]) || $_POST[$key] === '') {
             return displayError($pug, $key." n'existe pas hors il est obligatoire");
         }
     }
     $g = new Gliders($conn);
-    $gliders = $g->add(trim($_POST['immat']), trim($_POST['concours']), trim($_POST['type']));
+    $gliders = $g->add(trim($_POST['immat']), trim($_POST['concours']), trim($_POST['type']), trim($_POST['typeAeronef']));
     redirect('/listeMachines');
 });
 

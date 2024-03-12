@@ -7,11 +7,11 @@ class Gliders {
         $this->conn = $conn;
     }
 
-    public function add($immat, $concours, $type) {
-        $q = "INSERT INTO glider (immat, concours, type) VALUES (:immat, :concours, :type) ON DUPLICATE KEY UPDATE id = id";
+    public function add($immat, $concours, $type, $aircraftType) {
+        $q = "INSERT INTO glider (immat, concours, type, aircraftType) VALUES (:immat, :concours, :type, :aircraftType) ON DUPLICATE KEY UPDATE id = id";
         // on pourrait utiliser INSERT IGNORE INTO glider mais ça ne remonterait pas toutes les erreurs
         $sth = $this->conn->prepare($q);
-        $sth->execute([ ':immat' => $immat, ':concours' => $concours, ':type' => $type ]);
+        $sth->execute([ ':immat' => $immat, ':concours' => $concours, ':type' => $type, ':aircraftType' => $aircraftType ]);
     }
 
     public function list($onlyVisible = false) {

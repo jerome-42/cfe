@@ -114,6 +114,11 @@ block content
             .mb-3
               label.form-label(for="type") Modèle
               input.form-control(type="text" name="type" placeholder="Discus")
+            .mb-3
+              label.form-label(for="typeAeronef") Type
+              select.form-control(name="typeAeronef")#typeAeronef
+                option(value="planeur") Planeur
+                option(value="remorqueur") Remorqueur
         .modal-footer
           button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
           button.btn.btn-primary(type="button")#addGlider Ajouter cette machine
