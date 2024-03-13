@@ -49,8 +49,8 @@ class Flarm {
         $headers = [ "Content-Type" => "multipart/form-data" ];
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'igcfile[0]' => $igc, 'action' => 'shortTerm' ]);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); 
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);

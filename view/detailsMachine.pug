@@ -5,91 +5,94 @@ block scripts
   script(src="js/detailsMachine.js")
 
 block content
-  .row
-    h1 Détails de la machine #{glider['immat']}
-      if $glider['concours'] != ''
-        = ' ('.$glider['concours'].') '
-      = $glider['modele']
-  .row
-    .col-1
-      case $lastLog['versionHard']
-        when 'Flarm05'
-          img.img-fluid(src="/img/flarm_sans_sd.jpg")
-        when 'Flarm06'
-          img.img-fluid(src="/img/flarm_classic.jpg")
-        default
-          p Modèle de FLARM inconnu (#{$lastLog['versionHard']})
-  .row.mt-2.mb-2
-    .col-4
-      if ($lastLog['versionSoft'] != 'NA')
-        if isAGoodFlarmVersion($lastLog['versionSoft']) == false
-         .alert.alert-danger.text-center.mt-0.mb-0
-           i.bi.bi-exclamation-triangle-fill.me-2
-           = 'Version dépassée: '+lastLog['versionSoft']
-           i.bi.bi-exclamation-triangle-fill.ms-2
-        else
-         .alert.alert-success.text-center.mt-0.mb-0
-           = lastLog['versionSoft']+' (version à jour)'
-      if ($lastLog['rangeBelowMinimum'] == 1)
-        .alert.alert-danger.text-center.mt-0.mb-0
-          span Portée en deça du minimum
-          br
-          span.small Valeurs relevées: #{lastLog['rangeDetails']}
-      if ($lastLog['flarmAircraftType'] != '') && ($lastLog['flarmAircraftType'] != $glider['aircraftType'])
-        .alert.alert-danger.text-center.mt-0.mb-0
-          span Le type d'aéronef configuré dans le FLARM (#{$lastLog['flarmAircraftType']}) ne correspond pas au type réel de l'aéronef (#{$glider['aircraftType']})
-      if $ognStatus
-        .alert.alert-danger.text-center.mt-0.mb-0
-          span= $ognStatus
-      if $flarmnetStatus
-        .alert.alert-danger.text-center.mt-0.mb-0
-          span= $flarmnetStatus
-      
-  .row.mt-2.mb-2
-    .col-4
-      ul
-        li Id radio: #{lastLog['radioId']}
-        li Stealth: #{tinyintVersText(lastLog['stealth'])}
-        li No track: #{tinyintVersText(lastLog['noTrack'])}
-        li Portée relevée: #{lastLog['rangeDetails']}
-        if $lastLog['flarmResultUrl'] != ''
-          li
-            a(href=$lastLog['flarmResultUrl'] target="_blank") Détails sur le site flarm.com
-        if $ognStatus == null
-          li OGN: enregistré
-        if $flarmnetStatus == null
-          li Flarmnet: enregistré
-
-  .row
-    h3 Liste des enregistrements IGC analysés
-    .col-12
-      table.table.table-striped#list
-        thead
-          tr
-            th Date
-            th Version FLARM
-            th Fichier
-            th Modèle
-            th Par
-            th Analyse de la portée
-        tbody
-          each line in $flarmLogs
+  if $lastLog == null
+    p Aucun fichier IGC analysé pour #{glider['immat']} impossible d'afficher quoi que ce soit.
+  else
+    .row
+      h1 Détails de la machine #{glider['immat']}
+        if $glider['concours'] != ''
+          = ' ('.$glider['concours'].') '
+        = $glider['modele']
+    .row
+      .col-1
+        case $lastLog['versionHard']
+          when 'Flarm05'
+            img.img-fluid(src="/img/flarm_sans_sd.jpg")
+          when 'Flarm06'
+            img.img-fluid(src="/img/flarm_classic.jpg")
+          default
+            p Modèle de FLARM inconnu (#{$lastLog['versionHard']})
+    .row.mt-2.mb-2
+      .col-4
+        if ($lastLog['versionSoft'] != 'NA')
+          if isAGoodFlarmVersion($lastLog['versionSoft']) == false
+           .alert.alert-danger.text-center.mt-0.mb-0
+             i.bi.bi-exclamation-triangle-fill.me-2
+             = 'Version dépassée: '+lastLog['versionSoft']
+             i.bi.bi-exclamation-triangle-fill.ms-2
+          else
+           .alert.alert-success.text-center.mt-0.mb-0
+             = lastLog['versionSoft']+' (version à jour)'
+        if ($lastLog['rangeBelowMinimum'] == 1)
+          .alert.alert-danger.text-center.mt-0.mb-0
+            span Portée en deça du minimum
+            br
+            span.small Valeurs relevées: #{lastLog['rangeDetails']}
+        if ($lastLog['flarmAircraftType'] != '') && ($lastLog['flarmAircraftType'] != $glider['aircraftType'])
+          .alert.alert-danger.text-center.mt-0.mb-0
+            span Le type d'aéronef configuré dans le FLARM (#{$lastLog['flarmAircraftType']}) ne correspond pas au type réel de l'aéronef (#{$glider['aircraftType']})
+        if $ognStatus
+          .alert.alert-danger.text-center.mt-0.mb-0
+            span= $ognStatus
+        if $flarmnetStatus
+          .alert.alert-danger.text-center.mt-0.mb-0
+            span= $flarmnetStatus
+        
+    .row.mt-2.mb-2
+      .col-4
+        ul
+          li Id radio: #{lastLog['radioId']}
+          li Stealth: #{tinyintVersText(lastLog['stealth'])}
+          li No track: #{tinyintVersText(lastLog['noTrack'])}
+          li Portée relevée: #{lastLog['rangeDetails']}
+          if $lastLog['flarmResultUrl'] != ''
+            li
+              a(href=$lastLog['flarmResultUrl'] target="_blank") Détails sur le site flarm.com
+          if $ognStatus == null
+            li OGN: enregistré
+          if $flarmnetStatus == null
+            li Flarmnet: enregistré
+  
+    .row
+      h3 Liste des enregistrements IGC analysés
+      .col-12
+        table.table.table-striped#list
+          thead
             tr
-              td= timestampToDate($line['when'])
-              td= $line['versionSoft']
-              td= $line['filename']
-              td= $line['versionHard']
-              td= $getMembreNameByGivavNumber($line['who'])
-              td
-                if $line['flarmResultUrl']
-                  a(href=$line['flarmResultUrl'] target="_blank") Analyse de la portée
-        tfoot
-          tr
-            th Date
-            th Version FLARM
-            th Fichier
-            th Modèle
-            th Par
-            th Analyse de la portée
+              th Date
+              th Version FLARM
+              th Fichier
+              th Modèle
+              th Par
+              th Analyse de la portée
+          tbody
+            each line in $flarmLogs
+              tr
+                td= timestampToDate($line['when'])
+                td= $line['versionSoft']
+                td= $line['filename']
+                td= $line['versionHard']
+                td= $getMembreNameByGivavNumber($line['who'])
+                td
+                  if $line['flarmResultUrl']
+                    a(href=$line['flarmResultUrl'] target="_blank") Analyse de la portée
+          tfoot
+            tr
+              th Date
+              th Version FLARM
+              th Fichier
+              th Modèle
+              th Par
+              th Analyse de la portée
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour

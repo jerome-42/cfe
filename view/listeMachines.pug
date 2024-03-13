@@ -46,7 +46,7 @@ block content
                   mark= '(' . $glider['concours'] . ') '
                 = $glider['type']
               td
-                if $glider['versionSoft'] != 'NA'
+                if $glider['versionSoft'] != ''
                   if isAGoodFlarmVersion($glider['versionSoft'])
                    .alert.alert-success.text-center.mt-0.mb-0
                       = glider['versionSoft']
@@ -58,7 +58,7 @@ block content
                 else
                   .alert.alert-danger.text-center.mt-0.mb-0
                     i.bi.bi-exclamation-triangle-fill.me-2
-                    | Version inconnue
+                    | Pas de fichier IGC
                     i.bi.bi-exclamation-triangle-fill.ms-2
               td= timestampToDate($glider['when'])
                 if $glider['who'] != null

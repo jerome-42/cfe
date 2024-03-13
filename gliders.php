@@ -23,7 +23,8 @@ class Gliders {
         $gliders = $sth->fetchAll(PDO::FETCH_ASSOC);
         foreach ($gliders as &$glider) {
             $flarm = $this->getLastFlarmLog($glider['id']);
-            $glider = array_merge($glider, $flarm);
+            if ($flarm !== null)
+                $glider = array_merge($glider, $flarm);
         }
         return $gliders;
     }
@@ -60,7 +61,7 @@ class Gliders {
                      'flarmAircraftType' => $line['aircraftType'],
             ];
         }
-        return [ 'versionSoft' => 'NA', 'versionHard' => 'NA', 'when' => 'NA', 'who' => '' ];
+        return null;
     }
 
     public function getGliderById($id) {

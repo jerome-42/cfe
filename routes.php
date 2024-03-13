@@ -486,9 +486,11 @@ get('/detailsMachine', function($conn, $pug) {
         throw new Exception("Le numéro ".$id." ne correspond à aucun planeur dans la base de données");
     $vars['flarmLogs'] = $gliders->getFlarmLogs($id);
     $ogn = new OGN();
-    $vars['ognStatus'] = $ogn->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
+    if ($vars['lastLog'] !== null)
+        $vars['ognStatus'] = $ogn->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
     $flarmnet = new Flarmnet();
-    $vars['flarmnetStatus'] = $flarmnet->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
+    if ($vars['lastLog'] !== null)
+        $vars['flarmnetStatus'] = $flarmnet->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
     $pug->displayFile('view/detailsMachine.pug', $vars);
 });
 
