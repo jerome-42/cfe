@@ -16,7 +16,7 @@ block content
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
           input.form-control(type="text" placeholder="immat / type / version flarm")#search
-    .col-md-3.offset-md-4.text-end
+    .col-md-4.offset-md-3.text-end
       p.mb-0 Dernier téléchargement de la base de données&nbsp;
         a(href="http://wiki.glidernet.org/ddb") OGN
         | &nbsp;: #{timeago($ognDatabaseTimestamp)}
@@ -29,10 +29,10 @@ block content
         thead
           tr
             th(width="10%") Voir
-            th(width="30%") Immatriculation
+            th(width="20%") Immatriculation
             th(width="15%") Version FLARM
             th(width="15%") Dernière vérification FLARM
-            th(width="20%") Détails
+            th(width="30%") Détails
         tbody
           each glider in $gliders
             tr(x-num=$glider['id'])
