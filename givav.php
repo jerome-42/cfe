@@ -53,7 +53,20 @@ class Givav {
         return $givav->getName();
     }
 
-    public function getGliders() {
+    public function getAndStoreGliders($mysql) {
+        $gliders = $this->getGliders();
+        $q = "INSERT INTO glider (immat, concours, type, aircraftType) VALUES (:immat, :concours, :type, 'planeur') ON DUPLICATE KEY UPDATE concours = :concours, type = :type";
+        $sth = $mysql->prepare($q);
+        foreach ($gliders as $glider) {
+            $sth->execute([
+                ':immat' => $glider['immat'],
+                ':concours' => $glider['concours'],
+                ':type' => $glider['type'],
+            ]);
+        }
+    }
+
+    private function getGliders() {
         $url = 'https://club.givav.fr/givav.php/gvsmart/vol/lanceDistrib?sessid=1&assoc=119501';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -83,7 +96,7 @@ class Givav {
         return $gliders;
     }
 
-    private function getName() {
+    public function getName() {
         $url = 'https://club.givav.fr/givav.php/gvsmart/donnee/adresse?sessid=1';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);

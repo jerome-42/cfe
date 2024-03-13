@@ -32,19 +32,10 @@ if ($password === '') {
 try {
     $givav = new Givav($user, $password);
     $givav->login();
-    $planeurs = $givav->getGliders();
+    $givav->getAndStoreGliders($env->mysql);
 }
 catch (Exception $e) {
     fprintf(STDERR, "erreur: ".$e->getMessage().PHP_EOL);
     exit(1);
-}
-$q = "INSERT INTO glider (immat, concours, type, aircraftType) VALUES (:immat, :concours, :type, 'planeur') ON DUPLICATE KEY UPDATE concours = :concours, type = :type";
-$sth = $env->mysql->prepare($q);
-foreach ($planeurs as $planeur) {
-    $sth->execute([
-        ':immat' => $planeur['immat'],
-        ':concours' => $planeur['concours'],
-        ':type' => $planeur['type'],
-    ]);
 }
 $env->mysql->commit();

@@ -85,8 +85,13 @@ post('/connexion', function($conn, $pug) {
         return $pug->displayFile('view/connexion.pug', $vars);
     }
     try {
-        $user = Givav::auth($_POST['login'], $_POST['pass']);
+        $givav = new Givav($_POST['login'], $_POST['pass']);
+        $givav->login();
+        $user = $givav->getName();
         Personne::creeOuMAJ($conn, $user);
+        if (Personne::estAdmin($conn, $user['number']) === true) {
+            $givav->getAndStoreGliders($conn);
+        }
         $_SESSION['auth'] = true;
         $_SESSION['givavNumber'] = $user['number'];
         $_SESSION['name'] = $user['name'];
