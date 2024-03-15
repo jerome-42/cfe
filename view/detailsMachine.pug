@@ -20,6 +20,10 @@ block content
             img.img-fluid(src="/img/flarm_sans_sd.jpg")
           when 'Flarm06'
             img.img-fluid(src="/img/flarm_classic.jpg")
+          when 'PowerFLARM-IGC'
+            img.img-fluid(src="/img/flarm_power.jpg")
+          when 'PowerFLARM'
+            img.img-fluid(src="/img/flarm_power.jpg")
           default
             p Modèle de FLARM inconnu (#{$lastLog['versionHard']})
     .row.mt-2.mb-2
