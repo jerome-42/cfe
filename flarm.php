@@ -66,8 +66,12 @@ class Flarm {
         curl_close($ch);
         if ($http_code != 200)
             throw new Exception("Réponse inattendue de flarm.com");
-        if (preg_match_all('/href="https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=(\w+\.IGC)"/m', $response, $matches) === false)
+        $res = preg_match_all('/href="https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=(\w+\.IGC)"/m', $response, $matches);
+        if ($res === false)
             throw new Exception("Réponse inattendue de flarm.com");
+        // le fichier n'est pas géré par flarm
+        if ($res === 0)
+            return [ 'stealth' => '0', 'noTrack' => '0', 'radioId' => 'NA', 'flarmResultUrl' => '', 'rangeAvg' => 0, 'rangeBelowMinimum' => 0, 'rangeDetails' => "flarm.com n'a pas réussi à analyser le fichier" ];
         $flarmFilename = $matches[1][0];
 
         if (preg_match_all('/href="(https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=\w+\.IGC)"/m', $response, $matches) === false)

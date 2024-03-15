@@ -349,29 +349,35 @@ post('/declarerFLARM', function($conn, $pug) {
                         break;
                     }
                 }
+                // FLARM utilise des clefs en majuscules, Triadis utilise du camelCase
                 $lineNo++;
-                if (preg_match_all('/^HFDTEDATE:(\d{6})$/m', $line, $matches) === 1) {
+                if (preg_match_all('/^HFDTEDATE:(\d{6})$/mi', $line, $matches) === 1) {
                     $date = DateTime::createFromFormat('dmy', $matches[1][0]);
                     $subMessages[] = "le fichier a été crée le ".$date->format('d/m/y');
                 }
-                if (preg_match_all('/^HFGIDGLIDERID:([\w-]+)$/m', $line, $matches) === 1) {
+                // TRIADIS
+                if (preg_match_all('/^HFDTE(\d{6})$/m', $line, $matches) === 1) {
+                    $date = DateTime::createFromFormat('dmy', $matches[1][0]);
+                    $subMessages[] = "le fichier a été crée le ".$date->format('d/m/y');
+                }
+                if (preg_match_all('/^HFGIDGLIDERID:([\w-]+)$/mi', $line, $matches) === 1) {
                     $immat = $matches[1][0];
                     $subMessages[] = "l'immatriculation ".$immat." a été détectée";
                 }
-                if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.,]+)$/m', $line, $matches) === 1) {
+                if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.,]+)$/mi', $line, $matches) === 1) {
                     $softVersion = $matches[1][0];
                     $subMessages[] = "la version logicielle ".$softVersion." a été détectée";
                 }
-                if (preg_match_all('/^HFRHWHARDWAREVERSION:([\w\-\.]+)$/m', $line, $matches) === 1) {
+                if (preg_match_all('/^HFRHWHARDWAREVERSION:([\w\-\.\s]+)$/mi', $line, $matches) === 1) {
                     $hardVersion = $matches[1][0];
                     $subMessages[] = "le FLARM est un ".$hardVersion;
                 }
                 // uniquement pour les powerflarm
-                if (preg_match_all('/^HFFTYFRTYPE:([\w\-\.]+)$/m', $line, $matches) === 1) {
+                if (preg_match_all('/^HFFTYFRTYPE:([\w\-\.]+)$/mi', $line, $matches) === 1) {
                     $flarmType = $matches[1][0];
                     $subMessages[] = "le FLARM est un ".$flarmType;
                 }
-                if (preg_match_all('/^LFLA\d+ACFT\s (\d+)$/m', $line, $matches) === 1) {
+                if (preg_match_all('/^LFLA\d+ACFT\s (\d+)$/mi', $line, $matches) === 1) {
                     $aircraftType = Flarm::aircraftTypeToText($matches[1][0]);
                     $subMessages[] = "le type d'aéronef est ".Flarm::aircraftTypeToText($aircraftType);
                 }
@@ -388,8 +394,12 @@ post('/declarerFLARM', function($conn, $pug) {
                 $errors[] = "Dans le fichier ".$file['name']." l'immatriculation du planeur n'a pas été reconnue, est-ce un fichier IGC ?";
                 continue;
             }
-            if ($softVersion === null || $hardVersion === null) {
-                $errors[] = "Dans le fichier ".$file['name']." la version matérielle et/ou la version logicielle n'a pas été détectée, le fichier IGC semble être corrompu";
+            if ($hardVersion === null) {
+                $errors[] = "Dans le fichier ".$file['name']." la version matérielle (HFRHWHARDWAREVERSION ou HFFTYFRTYPE) n'a pas été détectée, le fichier IGC semble être corrompu";
+                continue;
+            }
+            if ($softVersion === null) {
+                $errors[] = "Dans le fichier ".$file['name']." la version logicielle (HFRFWFIRMWAREVERSION) n'a pas été détectée, le fichier IGC semble être corrompu";
                 continue;
             }
             if ($date === null) {
