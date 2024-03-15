@@ -333,6 +333,7 @@ post('/declarerFLARM', function($conn, $pug) {
             $immat = null;
             $softVersion = null;
             $hardVersion = null;
+            $flarmType = null;
             $aircraftType = null;
             $lineNo = 0;
             $IGCType = false;
@@ -357,7 +358,7 @@ post('/declarerFLARM', function($conn, $pug) {
                     $immat = $matches[1][0];
                     $subMessages[] = "l'immatriculation ".$immat." a été détectée";
                 }
-                if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.]+)$/m', $line, $matches) === 1) {
+                if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.,]+)$/m', $line, $matches) === 1) {
                     $softVersion = $matches[1][0];
                     $subMessages[] = "la version logicielle ".$softVersion." a été détectée";
                 }
@@ -365,11 +366,20 @@ post('/declarerFLARM', function($conn, $pug) {
                     $hardVersion = $matches[1][0];
                     $subMessages[] = "le FLARM est un ".$hardVersion;
                 }
+                // uniquement pour les powerflarm
+                if (preg_match_all('/^HFFTYFRTYPE:([\w\-\.]+)$/m', $line, $matches) === 1) {
+                    $flarmType = $matches[1][0];
+                    $subMessages[] = "le FLARM est un ".$flarmType;
+                }
                 if (preg_match_all('/^LFLA\d+ACFT\s (\d+)$/m', $line, $matches) === 1) {
                     $aircraftType = Flarm::aircraftTypeToText($matches[1][0]);
                     $subMessages[] = "le type d'aéronef est ".Flarm::aircraftTypeToText($aircraftType);
                 }
             }
+            // pour les powerflarm la rév hard est 1.0 et le modèle est dans HFFTYFRTYPE
+            // donc on adapte
+            if ($flarmType !== null)
+                $hardVersion = $flarmType;
             if ($IGCType === false) {
                 continue;
             }

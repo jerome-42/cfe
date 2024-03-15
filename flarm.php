@@ -132,7 +132,7 @@ class Flarm {
                 'maximum' => $maximum, // [m]
                 'rangeAvg' => $avg,
                 'rangeBelowMinimum' => $rangeBelowMinimum === true ? 1 : 0,
-                'rangeDetails' => 'Minimum: '.round($minimum/1000).' km, maximum: '.round($maximum/1000).' km, moyenne: '.round($avg/1000).' km',
+                'rangeDetails' => 'Minimum: '.round($minimum/1000, 1).' km, maximum: '.round($maximum/1000, 1).' km, moyenne: '.round($avg/1000, 1).' km',
             ]);
         }
         return $toRet;
