@@ -17,9 +17,6 @@ $(document).ready(function() {
     $(".membres").click(function() {
         window.location = "/listeMembres";
     });
-    $(".declarerFLARM").click(function() {
-        window.location = "/declarerFLARM";
-    });
     $(".validation").click(function() {
         window.location = "/validation";
     });

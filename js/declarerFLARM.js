@@ -1,6 +1,6 @@
 $(document).ready(function() {
     $('.back').click(function() {
-	window.location = '/';
+	window.location = '/listeMachines';
     });
     $('#upload').change(function() {
 	$('#form').hide();

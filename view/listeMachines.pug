@@ -8,15 +8,16 @@ block content
   .row
     h1 Liste des machines
   .row
-    .col-md-2
+    .col-md-3
       button.btn.btn-danger.back Retour
       button.btn.btn-info.parametrage Paramètrage
+      button.btn.btn-success.declarerFLARM Enregistrer un FLARM
     .col-md-3
       .row
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
           input.form-control(type="text" placeholder="immat / type / version flarm")#search
-    .col-md-4.offset-md-3.text-end
+    .col-md-4.offset-md-2.text-end
       p.mb-0 Dernier téléchargement de la base de données&nbsp;
         a(href="http://wiki.glidernet.org/ddb") OGN
         | &nbsp;: #{timeago($ognDatabaseTimestamp)}

@@ -33,6 +33,10 @@ $(document).ready(function() {
 	window.location = '/';
     });
 
+    $(".declarerFLARM").click(function() {
+        window.location = "/declarerFLARM";
+    });
+
     $('.parametrage').click(function() {
 	window.location = '/parametresFlarm';
     });
