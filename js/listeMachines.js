@@ -37,6 +37,14 @@ $(document).ready(function() {
         window.location = "/declarerFLARM";
     });
 
+    $(".refreshOGNCache").click(function() {
+        window.location = "/refreshCache?what=OGN";
+    });
+
+    $(".refreshFlarmnetCache").click(function() {
+        window.location = "/refreshCache?what=Flarmnet";
+    });
+
     $('.parametrage').click(function() {
 	window.location = '/parametresFlarm';
     });

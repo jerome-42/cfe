@@ -30,8 +30,8 @@ class Flarmnet {
         return "Non déclaré sur Flarmnet";
     }
 
-    private function fetchAndParseDatabase() {
-        $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://www.flarmnet.org/static/files/wfn/data.fln', 7, false, function($data) {
+    private function fetchAndParseDatabase($force = false) {
+        $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://www.flarmnet.org/static/files/wfn/data.fln', 7, $force, function($data) {
             $decode = function($text, $length) {
                 $ret = "";
                 for ($i = 0; $i < $length; $i = $i + 2) {
@@ -57,8 +57,11 @@ class Flarmnet {
         $this->database = json_decode($data, true);
     }
 
-
     public function getDatabaseCreationDate() {
         return $this->cache->getCacheStatus($this->databaseFilename);
+    }
+
+    public function refreshDatabase() {
+        $this->fetchAndParseDatabase(true);
     }
 }

@@ -752,6 +752,19 @@ post('/parametresFlarm', function($conn, $pug) {
     redirect('/listeMachines');
 });
 
+get('/refreshCache', function($conn, $pug) {
+    $cache = new Cache();
+    if ($_GET['what'] === 'OGN') {
+        $ogn = new OGN();
+        $ogn->refreshDatabase();
+    }
+    if ($_GET['what'] === 'Flarmnet') {
+        $flarmnet = new Flarmnet();
+        $flarmnet->refreshDatabase();
+    }
+    redirect('/listeMachines');
+});
+
 get('/validation', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

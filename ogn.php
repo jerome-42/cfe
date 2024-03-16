@@ -34,12 +34,16 @@ class OGN {
         return "Non déclaré sur OGN";
     }
 
-    private function fetchAndParseDatabase() {
-        $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://ddb.glidernet.org//download/?j=1', 7, false);
+    private function fetchAndParseDatabase($force = false) {
+        $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://ddb.glidernet.org//download/?j=1', 7, $force);
         $this->database = json_decode($data, true);
     }
 
     public function getDatabaseCreationDate() {
         return $this->cache->getCacheStatus($this->databaseFilename);
+    }
+
+    public function refreshDatabase() {
+        $this->fetchAndParseDatabase(true);
     }
 }
