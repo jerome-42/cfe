@@ -4,5 +4,8 @@
 	"username": "cfe",
 	"password": "cfe",
 	"database": "cfe"
+    },
+    "osrt": {
+        "credentials": [ { "login": "", "password": "" } ]
     }
 }
