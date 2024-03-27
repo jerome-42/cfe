@@ -45,6 +45,10 @@ $(document).ready(function() {
         window.location = "/refreshCache?what=Flarmnet";
     });
 
+    $(".refreshOSRT").click(function() {
+        window.location = "/refreshCache?what=OSRT";
+    });
+
     $('.parametrage').click(function() {
 	window.location = '/parametresFlarm';
     });

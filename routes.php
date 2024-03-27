@@ -701,7 +701,7 @@ get('/listeCFE', function($conn, $pug) {
     $pug->displayFile('view/listeCFE.pug', $vars);
 });
 
-get('/listeMachines', function($conn, $pug) {
+get('/listeMachines', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $g = new Gliders($conn);
@@ -711,6 +711,10 @@ get('/listeMachines', function($conn, $pug) {
     $vars['ognDatabaseTimestamp'] = $ogn->getDatabaseCreationDate();
     $flarmnet = new Flarmnet();
     $vars['flarmnetDatabaseTimestamp'] = $flarmnet->getDatabaseCreationDate();
+    $osrt = new OSRT($conn);
+    $gliders = new Gliders($env->mysql);
+    $gliders->updateDataFromOSRT($env->config['osrt'], $env->mysql, false);
+    $vars['osrtDatabaseTimestamp'] = $osrt->getDatabaseLastUpdate($env->config['osrt']);
     $pug->displayFile('view/listeMachines.pug', $vars);
 });
 
@@ -752,7 +756,9 @@ post('/parametresFlarm', function($conn, $pug) {
     redirect('/listeMachines');
 });
 
-get('/refreshCache', function($conn, $pug) {
+get('/refreshCache', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
     $cache = new Cache();
     if ($_GET['what'] === 'OGN') {
         $ogn = new OGN();
@@ -761,6 +767,10 @@ get('/refreshCache', function($conn, $pug) {
     if ($_GET['what'] === 'Flarmnet') {
         $flarmnet = new Flarmnet();
         $flarmnet->refreshDatabase();
+    }
+    if ($_GET['what'] === 'OSRT') {
+        $gliders = new Gliders($env->mysql);
+        $gliders->updateDataFromOSRT($env->config['osrt'], $env->mysql, true);
     }
     redirect('/listeMachines');
 });

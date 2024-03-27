@@ -45,7 +45,7 @@ function doRoute($fct,) {
             $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
             $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
         }
-        $fct($env->mysql, $pug);
+        $fct($env->mysql, $pug, $env);
         $env->mysql->commit();
     }
     catch (Exception $e) {

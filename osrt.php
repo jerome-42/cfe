@@ -13,10 +13,21 @@
 class OSRT {
     private $fqdn = 'https://osrt.g-nav.org/';
     private $login;
-    public function __construct() {
+    private $mysql;
 
+    public function __construct($mysql) {
+        $this->mysql = $mysql;
     }
 
+    private function doesOSRTNeedToBeContacted($login, $forceUpdate) {
+        $cache = new Cache();
+        $cacheFilename = $this->getCacheFilename($login);
+        if ($cache->doesCacheIsExpired($cacheFilename, 4, $forceUpdate))
+            return true;
+        return false;
+    }
+
+    // 6
     private function fromRoleGetGliders($roleURL) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->getAbsoluteURL($roleURL));
@@ -34,6 +45,7 @@ class OSRT {
         return $this->fromRoleGetGlidersParseHTML($response);
     }
 
+    // 7
     private function fromRoleGetGlidersParseHTML($html) {
         $immats = [];
         $dom = new DomDocument();
@@ -58,6 +70,29 @@ class OSRT {
         return $glidersDetails;
     }
 
+    private function getAbsoluteURL($url) {
+        if (strpos($url, 'http') === false)
+            return $this->fqdn.$url;
+        return $url;
+    }
+
+    private function getCacheFilename($login) {
+        return 'osrt-'.preg_replace('/[[:^print:]]/', '', $login); // on ne garde que des caractères imprimables
+    }
+
+    public function getDatabaseLastUpdate($osrtConfig) {
+        $d = null;
+        $cache = new Cache();
+        foreach ($osrtConfig['credentials'] as $credential) {
+            $cacheFilename = $this->getCacheFilename($credential['login']);
+            $cacheStatus = $cache->getCacheStatus($cacheFilename);
+            if (is_numeric($cacheStatus) && ($d === null || $cacheStatus > $d))
+                $d = $cacheStatus;
+        }
+        return $d;
+    }
+
+    // 8
     private function getDetailsFromImmat($immatURL, $immat) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->getAbsoluteURL($immatURL));
@@ -75,7 +110,8 @@ class OSRT {
         return $this->getDetailsFromImmatParseHTML($response, $immat);
     }
 
-    public function getDetailsFromImmatParseHTML($html, $immat) {
+    // 9
+    private function getDetailsFromImmatParseHTML($html, $immat) {
         $toRet = [];
         // CEN
         if (preg_match_all('/expire le <span id="infoGeneCardex">([\d\/]+)/', $html, $matches) === 1) {
@@ -105,7 +141,8 @@ class OSRT {
         return $toRet;
     }
 
-    public function getGlidersDetails() {
+    // 5
+    private function getGlidersDetails() {
         $glidersDetails = [];
         foreach ($this->roles as $role) {
             $glidersDetails = array_merge($glidersDetails, $this->fromRoleGetGliders($role));
@@ -113,7 +150,8 @@ class OSRT {
         return $glidersDetails;
     }
 
-    public function login($login, $password) {
+    // 2
+    private function login($login, $password) {
         $this->login = $login;
         $url = $this->fqdn.'index.php';
         $ch = curl_init();
@@ -144,6 +182,7 @@ class OSRT {
         return $this->loginStep2($login, $password, $nextURL);
     }
 
+    // 3
     private function loginStep2($login, $password, $url) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -176,6 +215,7 @@ class OSRT {
         $this->parseRoles($body);
     }
 
+    // 4
     private function parseRoles($html) {
         $roles = [];
         $dom = new DomDocument();
@@ -191,9 +231,34 @@ class OSRT {
         $this->roles = $roles;
     }
 
-    private function getAbsoluteURL($url) {
-        if (strpos($url, 'http') === false)
-            return $this->fqdn.$url;
-        return $url;
+    // 1
+    public function updateGliderDetails($login, $password, $forceUpdate) {
+        if ($this->doesOSRTNeedToBeContacted($login, $forceUpdate)) {
+            $this->login($login, $password);
+            $details = $this->getGlidersDetails();
+            foreach ($details as $gliderDetails) {
+                $setClauses = [];
+                $values = [ 'immat' => $gliderDetails['immat'] ];
+                foreach ([ 'cenExpirationDate', 'aprsExpirationDate' ] as $key) {
+                    if (isset($gliderDetails[$key])) {
+                        $setClauses[] = $key.' = FROM_UNIXTIME(:'.$key.')';
+                        $values[':'.$key] = $gliderDetails[$key]->getTimestamp();
+                    }
+                    else
+                        $setClauses[] = $key.' = NULL';
+                }
+                $q = "UPDATE glider SET ".implode(', ', $setClauses)." WHERE immat = :immat";
+                //DEBUG var_dump($q, $values);
+                $sth = $this->mysql->prepare($q);
+                $sth->execute($values);
+            }
+            $this->updateCacheTimestamp($login);
+        }
+    }
+
+    private function updateCacheTimestamp($login) {
+        $cache = new Cache();
+        $cacheFilename = $this->getCacheFilename($login);
+        $cache->writeCacheFile($cacheFilename, 'updated at '.date(DATE_RFC2822));
     }
 }

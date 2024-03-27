@@ -28,6 +28,10 @@ block content
         | &nbsp;: #{timeago($flarmnetDatabaseTimestamp)}
         button.btn.btn-sm.btn-primary.refreshFlarmnetCache
           i.bi.bi-arrow-clockwise
+      p.mb-0 Dernière mise à jour depuis l'OSRT&nbsp;
+        | &nbsp;: #{timeago($osrtDatabaseTimestamp)}
+        button.btn.btn-sm.btn-primary.refreshOSRT
+          i.bi.bi-arrow-clockwise
   .row
     .col-12
       table.table.table-striped#list

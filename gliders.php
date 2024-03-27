@@ -95,27 +95,10 @@ class Gliders {
         return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function updateDataFromOSRT($osrt) {
+    public function updateDataFromOSRT($osrt, $mysql, $forceUpdate = false) {
         foreach ($osrt['credentials'] as $credential) {
-            $osrt = new OSRT();
-            $osrt->login($credential['login'], $credential['password']);
-            $details = $osrt->getGlidersDetails();
-            foreach ($details as $gliderDetails) {
-                $setClauses = [];
-                $values = [ 'immat' => $gliderDetails['immat'] ];
-                foreach ([ 'cenExpirationDate', 'aprsExpirationDate' ] as $key) {
-                    if (isset($gliderDetails[$key])) {
-                        $setClauses[] = $key.' = FROM_UNIXTIME(:'.$key.')';
-                        $values[':'.$key] = $gliderDetails[$key]->getTimestamp();
-                    }
-                    else
-                        $setClauses[] = $key.' = NULL';
-                }
-                $q = "UPDATE glider SET ".implode(', ', $setClauses)." WHERE immat = :immat";
-                //DEBUG var_dump($q, $values);
-                $sth = $this->conn->prepare($q);
-                $sth->execute($values);
-            }
+            $osrt = new OSRT($mysql);
+            $osrt->updateGliderDetails($credential['login'], $credential['password'], $forceUpdate);
         }
     }
 }

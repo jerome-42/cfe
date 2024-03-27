@@ -19,17 +19,26 @@ class Cache {
         return $s['mtime'];
     }
 
-    public function getContentFromCacheAndDownloadIfNecessary($filename, $url, $cacheDurationInDays, $forceUpdate, $afterDownload = null) {
+    // true => le cache a expiré
+    // false => le cache n'a pas expiré
+    public function doesCacheIsExpired($filename, $cacheDurationInDays, $forceUpdate) {
         if ($forceUpdate === true)
-            return $this->download($filename, $url, $afterDownload);
+            return true;
         $path = $this->getPath($filename);
         if (file_exists($path) === false)
-            return $this->download($filename, $url, $afterDownload);
+            return true;
         $s = stat($path);
         if ($s === false)
-            return $this->download($filename, $url, $afterDownload);
+            return true;
         if ($s['mtime'] + $cacheDurationInDays * 86400 < time())
+            return true;
+        return false;
+    }
+
+    public function getContentFromCacheAndDownloadIfNecessary($filename, $url, $cacheDurationInDays, $forceUpdate, $afterDownload = null) {
+        if ($this->doesCacheIsExpired($filename, $cacheDurationInDays, $forceUpdate))
             return $this->download($filename, $url, $afterDownload);
+        $path = $this->getPath($filename);
         return file_get_contents($path);
     }
 
@@ -46,13 +55,17 @@ class Cache {
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($http_code != 200)
             throw new Exception("Impossible de télécharger le fichier");
-        $path = $this->getPath($filename);
         if ($afterDownload === null) {
-            file_put_contents($path, $response);
+            $this->writeCacheFile($filename, $response);
             return $response;
         }
         $data = $afterDownload($response);
-        file_put_contents($path, $data);
+        $this->writeCacheFile($filename, $data);
         return $data;
+    }
+
+    public function writeCacheFile($filename, $data) {
+        $path = $this->getPath($filename);
+        file_put_contents($path, $data);
     }
 }
