@@ -66,6 +66,6 @@ class Cache {
 
     public function writeCacheFile($filename, $data) {
         $path = $this->getPath($filename);
-        file_put_contents($path, $data);
+        @file_put_contents($path, $data);
     }
 }

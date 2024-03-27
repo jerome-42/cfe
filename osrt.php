@@ -32,7 +32,7 @@ class OSRT {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->getAbsoluteURL($roleURL));
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID='.$this->session);
         $response = curl_exec($ch);
@@ -55,9 +55,15 @@ class OSRT {
         foreach ($nodes as $node) {
             if ($node->getAttribute('href') != '') {
                 $link = $node->getAttribute('href');
-                $immatNode = $xpath->query("//td[@id='mainRespCol1']", $node->parentNode->parentNode);
-                $immat = trim($immatNode[0]->textContent);
-                $immats[] = [ 'immat' => $immat, 'link' => $link ];
+                // il peut y avoir des liens pour accéder à la visite en cours
+                // main.php?user=xxx&page=visiteMaintenance
+                // on ne veut que les liens de ce type: main.php?user=xxxx&amp;page=situTech
+                if (strpos($link, 'situTech') !== false) {
+                    $immatNode = $node->parentNode->nextSibling->nextSibling;
+                    $immat = trim($immatNode->textContent);
+                    //DEBUG echo "glider: ".$immat." ".$link.PHP_EOL;
+                    $immats[] = [ 'immat' => $immat, 'link' => $link ];
+                }
             }
         }
         if (count($immats) === 0)
@@ -107,6 +113,7 @@ class OSRT {
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($http_code != 200)
             throw new Exception("OSRT a retourné une erreur, attendez et ré-essayez à nouveau");
+        //DEBUG file_put_contents($immat, $response);
         return $this->getDetailsFromImmatParseHTML($response, $immat);
     }
 
@@ -127,7 +134,8 @@ class OSRT {
         $xpath = new DOMXpath($dom);        
         $nodes = $xpath->query("//table[@id='TourOngletStep1-1']/tr/td");
         foreach ($nodes as $node) {
-            if ($node->textContent === 'Visite Annuelle') {
+            // parfois annuelle parfois annuele
+            if (preg_match('/visite\s+annuel+e/im', $node->textContent) === 1) {
                 $dateString = $node->nextElementSibling->textContent;
                 //DEBUG echo "$immat get APRS: ".$dateString.PHP_EOL;
                 list($day, $month, $year) = explode('/', $dateString);

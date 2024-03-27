@@ -28,6 +28,44 @@ block content
             p Modèle de FLARM inconnu (#{$lastLog['versionHard']})
     .row.mt-2.mb-2
       .col-4
+        if $glider['cenExpirationDate'] != null
+          if isBefore($glider['cenExpirationDate'], time())
+            .alert.alert-danger.text-center.mt-0.mb-0
+              | Expiration du CEN&nbsp;
+              = timestampToDate($glider['cenExpirationDate'])
+              br
+              = timeago($glider['cenExpirationDate'], 'expiré')
+          elseif isBefore($glider['cenExpirationDate'], $aprsCenWarningTimestamp)
+            .alert.alert-warning.text-center.mt-0.mb-0
+              | Expiration du CEN&nbsp;
+              = timestampToDate($glider['cenExpirationDate'])
+              br
+              = reverseTimeago($glider['cenExpirationDate'])
+          else
+            .alert.alert-success.text-center.mt-0.mb-0
+              | Expiration du CEN&nbsp;
+              = timestampToDate($glider['cenExpirationDate'])
+              br
+              = reverseTimeago($glider['cenExpirationDate'])
+        if $glider['aprsExpirationDate'] != null
+          if isBefore($glider['aprsExpirationDate'], time())
+            .alert.alert-danger.text-center.mt-0.mb-0
+              | Expiration de l'APRS&nbsp;
+              = timestampToDate($glider['aprsExpirationDate'])
+              br
+              = timeago($glider['aprsExpirationDate'], 'expiré')
+          elseif isBefore($glider['aprsExpirationDate'], $aprsCenWarningTimestamp)
+            .alert.alert-warning.text-center.mt-0.mb-0
+              | Expiration de l'APRS&nbsp;
+              = timestampToDate($glider['aprsExpirationDate'])
+              br
+              = reverseTimeago($glider['aprsExpirationDate'])
+          else
+            .alert.alert-success.text-center.mt-0.mb-0
+              | Expiration de l'APRS&nbsp;
+              = timestampToDate($glider['aprsExpirationDate'])
+              br
+              = reverseTimeago($glider['aprsExpirationDate'])
         if ($lastLog['versionSoft'] != 'NA')
           if isAGoodFlarmVersion($lastLog['versionSoft']) == false
            .alert.alert-danger.text-center.mt-0.mb-0

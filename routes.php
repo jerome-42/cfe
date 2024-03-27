@@ -511,6 +511,7 @@ get('/detailsMachine', function($conn, $pug) {
     $flarmnet = new Flarmnet();
     if ($vars['lastLog'] !== null)
         $vars['flarmnetStatus'] = $flarmnet->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
+    $vars['aprsCenWarningTimestamp'] = time() + 86400 * 30; // 1 mois
     $pug->displayFile('view/detailsMachine.pug', $vars);
 });
 
@@ -715,6 +716,7 @@ get('/listeMachines', function($conn, $pug, $env) {
     $gliders = new Gliders($env->mysql);
     $gliders->updateDataFromOSRT($env->config['osrt'], $env->mysql, false);
     $vars['osrtDatabaseTimestamp'] = $osrt->getDatabaseLastUpdate($env->config['osrt']);
+    $vars['aprsCenWarningTimestamp'] = time() + 86400 * 30; // 1 mois
     $pug->displayFile('view/listeMachines.pug', $vars);
 });
 

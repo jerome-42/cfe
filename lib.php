@@ -147,3 +147,11 @@ function renderHTML($file) {
     $content = file_get_contents($file);
     echo $content;
 }
+
+function pluralize($n, $text) {
+    if ($n >= 2) {
+        if ($text[strlen($text)-1] != 's')
+            return $text.'s';
+    }
+    return $text;
+}

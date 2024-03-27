@@ -28,7 +28,8 @@ block content
         | &nbsp;: #{timeago($flarmnetDatabaseTimestamp)}
         button.btn.btn-sm.btn-primary.refreshFlarmnetCache
           i.bi.bi-arrow-clockwise
-      p.mb-0 Dernière mise à jour depuis l'OSRT&nbsp;
+      p.mb-0 Dernière mise à jour depuis l'
+        a(href="https://osrt.g-nav.org/" target="_blank") OSRT
         | &nbsp;: #{timeago($osrtDatabaseTimestamp)}
         button.btn.btn-sm.btn-primary.refreshOSRT
           i.bi.bi-arrow-clockwise
@@ -37,8 +38,10 @@ block content
       table.table.table-striped#list
         thead
           tr
-            th(width="10%") Voir
-            th(width="20%") Immatriculation
+            th(width="5%") Voir
+            th(width="15%") Immatriculation
+            th(width="10%") Expiration CEN
+            th(width="10%") Expiration APRS
             th(width="15%") Version FLARM
             th(width="15%") Dernière vérification FLARM
             th(width="30%") Détails
@@ -55,20 +58,58 @@ block content
                   mark= '(' . $glider['concours'] . ') '
                 = $glider['type']
               td
+                if $glider['cenExpirationDate'] != null
+                  if isBefore($glider['cenExpirationDate'], time())
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      | CEN&nbsp;
+                      = timestampToDate($glider['cenExpirationDate'])
+                      br
+                      = timeago($glider['cenExpirationDate'], 'expiré')
+                  elseif isBefore($glider['cenExpirationDate'], $aprsCenWarningTimestamp)
+                    .alert.alert-warning.text-center.mt-0.mb-0
+                      | CEN&nbsp;
+                      = timestampToDate($glider['cenExpirationDate'])
+                      br
+                      = reverseTimeago($glider['cenExpirationDate'], 'expire')
+                  else
+                    .alert.alert-success.text-center.mt-0.mb-0
+                      | CEN&nbsp;
+                      = timestampToDate($glider['cenExpirationDate'])
+                      br
+                      = reverseTimeago($glider['cenExpirationDate'], 'expire')
+
+              td
+                if $glider['aprsExpirationDate'] != null
+                  if isBefore($glider['aprsExpirationDate'], time())
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      | APRS&nbsp;
+                      = timestampToDate($glider['aprsExpirationDate'])
+                      br
+                      = timeago($glider['aprsExpirationDate'], 'expiré')
+                  elseif isBefore($glider['aprsExpirationDate'], $aprsCenWarningTimestamp)
+                    .alert.alert-warning.text-center.mt-0.mb-0
+                      | APRS&nbsp;
+                      = timestampToDate($glider['aprsExpirationDate'])
+                      br
+                      = reverseTimeago($glider['aprsExpirationDate'], 'expire')
+                  else
+                    .alert.alert-success.text-center.mt-0.mb-0
+                      | APRS&nbsp;
+                      = timestampToDate($glider['aprsExpirationDate'])
+                      br
+                      = reverseTimeago($glider['aprsExpirationDate'], 'expire')
+
+              td
                 if $glider['versionSoft'] != ''
                   if isAGoodFlarmVersion($glider['versionSoft'])
                    .alert.alert-success.text-center.mt-0.mb-0
                       = glider['versionSoft']
                   else
                     .alert.alert-danger.text-center.mt-0.mb-0
-                      i.bi.bi-exclamation-triangle-fill.me-2
                       = glider['versionSoft']
-                      i.bi.bi-exclamation-triangle-fill.ms-2
                 else
                   .alert.alert-danger.text-center.mt-0.mb-0
-                    i.bi.bi-exclamation-triangle-fill.me-2
                     | Pas de fichier IGC
-                    i.bi.bi-exclamation-triangle-fill.ms-2
               td= timestampToDate($glider['when'])
                 if $glider['who'] != null
                   = ' (par '.$getMembreNameByGivavNumber($glider['who']).')'
@@ -100,6 +141,8 @@ block content
           tr
             th Voir
             th Immatriculation
+            th(width="5%") Expiration APRS
+            th(width="5%") Expiration CEN
             th Version FLARM
             th Dernière vérification FLARM
   .hstack.gap-4.mb-3

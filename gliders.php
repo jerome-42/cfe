@@ -15,7 +15,7 @@ class Gliders {
     }
 
     public function list($onlyVisible = false) {
-        $q = "SELECT * FROM glider ORDER BY immat";
+        $q = "SELECT *, UNIX_TIMESTAMP(`cenExpirationDate`) AS `cenExpirationDate`, UNIX_TIMESTAMP(`aprsExpirationDate`) AS `aprsExpirationDate` FROM glider ORDER BY immat";
         if ($onlyVisible === true)
             $q = "SELECT * FROM glider WHERE visible = 1 ORDER BY immat";
         $sth = $this->conn->prepare($q);
@@ -65,7 +65,7 @@ class Gliders {
     }
 
     public function getGliderById($id) {
-        $q = "SELECT * FROM glider WHERE id = :id";
+        $q = "SELECT *, UNIX_TIMESTAMP(`cenExpirationDate`) AS `cenExpirationDate`, UNIX_TIMESTAMP(`aprsExpirationDate`) AS `aprsExpirationDate` FROM glider WHERE id = :id";
         $sth = $this->conn->prepare($q);
         $sth->execute([ ':id' => $id ]);
         if ($sth->rowCount() !== 1)
@@ -74,7 +74,7 @@ class Gliders {
     }
 
     public function getGliderByImmat($immat) {
-        $q = "SELECT * FROM glider WHERE immat = :immat";
+        $q = "SELECT *, UNIX_TIMESTAMP(`cenExpirationDate`) AS `cenExpirationDate`, UNIX_TIMESTAMP(`aprsExpirationDate`) AS `aprsExpirationDate` FROM glider WHERE immat = :immat";
         $sth = $this->conn->prepare($q);
         $sth->execute([ ':immat' => $immat ]);
         if ($sth->rowCount() !== 1)
