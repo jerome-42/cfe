@@ -546,6 +546,23 @@ post('/detailsMembreStats', function($conn, $pug) {
     echo json_encode($cfe->getStats($num, getYear()));
 });
 
+post('/editGliderComment', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    foreach ([ 'id' ] as $key) {
+        if (!isset($_POST[$key]) || $_POST[$key] === '') {
+            return displayError($pug, $key." n'existe pas hors il est obligatoire");
+        }
+    }
+    $g = new Gliders($conn);
+    $details = 'le '.date('d/m/y').' par '.$_SESSION['name'];
+    $g->editComment($_POST['id'], $_POST['comment'], $details);
+    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'detail') !== false)
+        redirect('/detailsMachine?numero='.$_POST['id']);
+    else
+        redirect('/listeMachines');
+});
+
 get('/exportAllData', function($conn) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

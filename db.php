@@ -48,6 +48,7 @@ $tables = [
   `cenExpirationDate` date NULL,
   `aprsExpirationDate` date NULL,
   `visible` tinyint(1) DEFAULT '1' NOT NULL,
+  `comment` text NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `immat` (`immat`)
 ) ENGINE=InnoDB",

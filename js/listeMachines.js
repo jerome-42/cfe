@@ -9,6 +9,13 @@ String.prototype.replaceSpecialChars = function() {
     return newString;
 };
 
+var initTooltips = function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+};
+
 var updateList = function() {
     var search = $('#search').val().toLowerCase().replaceSpecialChars();
     $('#list > tbody > tr').each(function() {
@@ -58,6 +65,27 @@ $(document).ready(function() {
 	window.location = '/detailsMachine?numero='+id;
     });
 
+    $('.editComment').click(function() {
+	var id = $(this).parents('tr').attr('x-num');
+        $('#gliderId').val(id);
+	var comment = $(this).parents('tr').attr('x-comment');
+	$('#comment').val(comment);
+	$('#modalEditComment').modal('show');
+    });
+
+    $('.clearComment').click(function() {
+	$('#comment').val('');
+        $('#addComment').click();
+    });
+
+    $('#modalEditComment').on('shown.bs.modal', function() {
+        $('#comment').focus();
+    });
+
+    $('#addComment').click(function() {
+        $('#formEditComment').trigger('submit');
+    });
+
     $('.addGlider').click(function() {
 	$('#immat').val('');
 	$('#concours').val('');
@@ -90,6 +118,7 @@ $(document).ready(function() {
     $('#search').on('keyup', function() {
 	updateList();
     });
+    initTooltips();
     $('#search').focus();
     updateList();
 });

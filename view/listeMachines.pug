@@ -17,7 +17,7 @@ block content
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
         .col-sm-9
           input.form-control(type="text" placeholder="immat / type / version flarm")#search
-    .col-md-4.offset-md-2.text-end
+    .d-none.d-sm-block.col-md-4.offset-md-2.text-end
       p.mb-0 Dernier téléchargement de la base de données&nbsp;
         a(href="http://wiki.glidernet.org/ddb" target="_blank") OGN
         | &nbsp;: #{timeago($ognDatabaseTimestamp)}
@@ -35,116 +35,127 @@ block content
           i.bi.bi-arrow-clockwise
   .row
     .col-12
-      table.table.table-striped#list
-        thead
-          tr
-            th(width="5%") Voir
-            th(width="15%") Immatriculation
-            th(width="10%") Expiration CEN
-            th(width="10%") Expiration APRS
-            th(width="15%") Version FLARM
-            th(width="15%") Dernière vérification FLARM
-            th(width="30%") Détails
-        tbody
-          each glider in $gliders
-            tr(x-num=$glider['id'])
-              td
-                button.btn.btn-primary.displayDetails
-                  i.bi.bi-eye
-                  span.d-none.d-sm-block2 &nbsp;Détails
-              td
-                b.display-6= $glider['immat'].' '
-                if $glider['concours'] != ''
-                  mark= '(' . $glider['concours'] . ') '
-                = $glider['type']
-              td
-                if $glider['cenExpirationDate'] != null
-                  if isBefore($glider['cenExpirationDate'], time())
-                    .alert.alert-danger.text-center.mt-0.mb-0
-                      | CEN&nbsp;
-                      = timestampToDate($glider['cenExpirationDate'])
-                      br
-                      = timeago($glider['cenExpirationDate'], 'expiré')
-                  elseif isBefore($glider['cenExpirationDate'], $aprsCenWarningTimestamp)
-                    .alert.alert-warning.text-center.mt-0.mb-0
-                      | CEN&nbsp;
-                      = timestampToDate($glider['cenExpirationDate'])
-                      br
-                      = reverseTimeago($glider['cenExpirationDate'], 'expire')
-                  else
-                    .alert.alert-success.text-center.mt-0.mb-0
-                      | CEN&nbsp;
-                      = timestampToDate($glider['cenExpirationDate'])
-                      br
-                      = reverseTimeago($glider['cenExpirationDate'], 'expire')
+      .table-responsive-xxl
+        table.table.table-striped#list
+          thead
+            tr
+              th Voir
+              th Immatriculation
+              th Expiration CEN
+              th Expiration APRS
+                .small (de la visite annuelle), il peut y avoir des butées dépassées qui ne sont pas reprise ici
+              th Version FLARM
+              th Dernière vérification FLARM
+              th Détails
+          tbody
+            each glider in $gliders
+              tr(x-num=$glider['id'] x-comment=$glider['comment'])
+                td
+                  button.btn.btn-primary.displayDetails
+                    i.bi.bi-eye
+                    span.d-none.d-sm-block2 &nbsp;Détails
+                td
+                  .col
+                    b.display-6= $glider['immat'].' '
+                    if $glider['concours'] != ''
+                      mark= '(' . $glider['concours'] . ') '
+                    = $glider['type']
+                  .col
+                    if $glider['comment'] == ''
+                      i.bi.bi-chat.editComment
+                    else
+                      span.editComment(data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title=$glider['comment'].' ('.$glider['commentDetails'].')')
+                        i.bi.bi-chat-fill.me-1
+                        = my_substr($glider['comment'], 40)
+                td
+                  if $glider['cenExpirationDate'] != null
+                    if isBefore($glider['cenExpirationDate'], time())
+                      .alert.alert-danger.text-center.mt-0.mb-0
+                        | CEN&nbsp;
+                        = timestampToDate($glider['cenExpirationDate'])
+                        br
+                        = timeago($glider['cenExpirationDate'], 'expiré')
+                    elseif isBefore($glider['cenExpirationDate'], $aprsCenWarningTimestamp)
+                      .alert.alert-warning.text-center.mt-0.mb-0
+                        | CEN&nbsp;
+                        = timestampToDate($glider['cenExpirationDate'])
+                        br
+                        = reverseTimeago($glider['cenExpirationDate'], 'expire')
+                    else
+                      .alert.alert-success.text-center.mt-0.mb-0
+                        | CEN&nbsp;
+                        = timestampToDate($glider['cenExpirationDate'])
+                        br
+                        = reverseTimeago($glider['cenExpirationDate'], 'expire')
 
-              td
-                if $glider['aprsExpirationDate'] != null
-                  if isBefore($glider['aprsExpirationDate'], time())
-                    .alert.alert-danger.text-center.mt-0.mb-0
-                      | APRS&nbsp;
-                      = timestampToDate($glider['aprsExpirationDate'])
-                      br
-                      = timeago($glider['aprsExpirationDate'], 'expiré')
-                  elseif isBefore($glider['aprsExpirationDate'], $aprsCenWarningTimestamp)
-                    .alert.alert-warning.text-center.mt-0.mb-0
-                      | APRS&nbsp;
-                      = timestampToDate($glider['aprsExpirationDate'])
-                      br
-                      = reverseTimeago($glider['aprsExpirationDate'], 'expire')
-                  else
-                    .alert.alert-success.text-center.mt-0.mb-0
-                      | APRS&nbsp;
-                      = timestampToDate($glider['aprsExpirationDate'])
-                      br
-                      = reverseTimeago($glider['aprsExpirationDate'], 'expire')
+                td
+                  if $glider['aprsExpirationDate'] != null
+                    if isBefore($glider['aprsExpirationDate'], time())
+                      .alert.alert-danger.text-center.mt-0.mb-0
+                        | APRS&nbsp;
+                        = timestampToDate($glider['aprsExpirationDate'])
+                        br
+                        = timeago($glider['aprsExpirationDate'], 'expiré')
+                    elseif isBefore($glider['aprsExpirationDate'], $aprsCenWarningTimestamp)
+                      .alert.alert-warning.text-center.mt-0.mb-0
+                        | APRS&nbsp;
+                        = timestampToDate($glider['aprsExpirationDate'])
+                        br
+                        = reverseTimeago($glider['aprsExpirationDate'], 'expire')
+                    else
+                      .alert.alert-success.text-center.mt-0.mb-0
+                        | APRS&nbsp;
+                        = timestampToDate($glider['aprsExpirationDate'])
+                        br
+                        = reverseTimeago($glider['aprsExpirationDate'], 'expire')
 
-              td
-                if $glider['versionSoft'] != ''
-                  if isAGoodFlarmVersion($glider['versionSoft'])
-                   .alert.alert-success.text-center.mt-0.mb-0
-                      = glider['versionSoft']
+                td
+                  if $glider['versionSoft'] != ''
+                    if isAGoodFlarmVersion($glider['versionSoft'])
+                     .alert.alert-success.text-center.mt-0.mb-0
+                        = glider['versionSoft']
+                    else
+                      .alert.alert-danger.text-center.mt-0.mb-0
+                        = glider['versionSoft']
                   else
                     .alert.alert-danger.text-center.mt-0.mb-0
-                      = glider['versionSoft']
-                else
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    | Pas de fichier IGC
-              td= timestampToDate($glider['when'])
-                if $glider['who'] != null
-                  = ' (par '.$getMembreNameByGivavNumber($glider['who']).')'
-              td
-                if $glider['rangeBelowMinimum'] === 1
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    span Portée en deça du minimum (aéronefs volants à 250 km/h)
-                    br
+                      | Pas de fichier IGC
+                td= timestampToDate($glider['when'])
+                  if $glider['who'] != null
+                    = ' (par '.$getMembreNameByGivavNumber($glider['who']).')'
+                td
+                  if $glider['rangeBelowMinimum'] === 1
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      span Portée en deça du minimum (aéronefs volants à 250 km/h)
+                      br
+                      span.small Valeurs relevées: #{$glider['rangeDetails']}
+                  else if $glider['rangeDetails'] != ''
                     span.small Valeurs relevées: #{$glider['rangeDetails']}
-                else if $glider['rangeDetails'] != ''
-                  span.small Valeurs relevées: #{$glider['rangeDetails']}
-                if ($glider['flarmAircraftType'] != '') && ($glider['flarmAircraftType'] != $glider['aircraftType'])
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    span Le type d'aéronef configuré dans le FLARM (#{$glider['flarmAircraftType']}) ne correspond pas au type réel de l'aéronef (#{$glider['aircraftType']})
-                if $glider['stealth'] === 1
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    span Mode stealth activé
-                if $glider['noTrack'] === 1
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    span Mode noTrack activé
-                if $glider['ognStatus']
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    span= $glider['ognStatus']
-                if $glider['flarmnetStatus']
-                  .alert.alert-danger.text-center.mt-0.mb-0
-                    span= $glider['flarmnetStatus']
+                  if ($glider['flarmAircraftType'] != '') && ($glider['flarmAircraftType'] != $glider['aircraftType'])
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      span Le type d'aéronef configuré dans le FLARM (#{$glider['flarmAircraftType']}) ne correspond pas au type réel de l'aéronef (#{$glider['aircraftType']})
+                  if $glider['stealth'] === 1
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      span Mode stealth activé
+                  if $glider['noTrack'] === 1
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      span Mode noTrack activé
+                  if $glider['ognStatus']
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      span= $glider['ognStatus']
+                  if $glider['flarmnetStatus']
+                    .alert.alert-danger.text-center.mt-0.mb-0
+                      span= $glider['flarmnetStatus']
 
-        tfoot
-          tr
-            th Voir
-            th Immatriculation
-            th(width="5%") Expiration APRS
-            th(width="5%") Expiration CEN
-            th Version FLARM
-            th Dernière vérification FLARM
+          tfoot
+            tr
+              th Voir
+              th Immatriculation
+              th Expiration APRS
+              th Expiration CEN
+              th Version FLARM
+              th Dernière vérification FLARM
+              th Détails
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
     button.btn.btn-primary.addGlider Ajouter une machine
@@ -174,3 +185,21 @@ block content
         .modal-footer
           button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
           button.btn.btn-primary(type="button")#addGlider Ajouter cette machine
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalEditComment
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5 Editer le commentaire
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          form(method="POST" action="/editGliderComment")#formEditComment
+            input(type="hidden" name="id")#gliderId
+            .btn-group.mb-2(role="group")
+              button.btn.btn-outline-primary.clearComment(type="button") Supprimer le commentaire
+            .mb-3
+              label.form-label(for="comment") Commentaire
+              textarea.form-control(name="comment" placeholder="Commentaire" rows="5")#comment
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-primary(type="button")#addComment Enregistrer

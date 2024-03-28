@@ -70,6 +70,14 @@ class Env {
             $goodFlarmVersion = array_map('trim', $goodFlarmVersion);
             return in_array($version, $goodFlarmVersion);
         });
+        $this->pug->share('my_substr', function($text, $nbChar) {
+            if (is_numeric($nbChar) === false)
+                return $text;
+            $nbChar = intval($nbChar);
+            if (strlen($text) <= $nbChar)
+                return $text;
+            return substr($text, 0, $nbChar).'...';
+        });
         $this->pug->share('tinyintVersText', function($text) {
             if (intval($text) === 1)
                 return 'oui';

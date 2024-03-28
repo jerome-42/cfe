@@ -14,6 +14,22 @@ class Gliders {
         $sth->execute([ ':immat' => $immat, ':concours' => $concours, ':type' => $type, ':aircraftType' => $aircraftType ]);
     }
 
+    public function editComment($id, $comment, $details) {
+        $detailsLoaded = $this->getGliderById($id);
+        if ($detailsLoaded['comment'] === $comment)
+            return;
+
+        if ($comment != '') {
+            $q = "UPDATE glider SET comment = :comment, commentDetails = :details WHERE id = :id";
+            $sth = $this->conn->prepare($q);
+            $sth->execute([ ':comment' => $comment, ':details' => $details, ':id' => $id ]);
+        } else {
+            $q = "UPDATE glider SET comment = NULL, commentDetails = NULL WHERE id = :id";
+            $sth = $this->conn->prepare($q);
+            $sth->execute([ ':id' => $id ]);
+        }
+    }
+
     public function list($onlyVisible = false) {
         $q = "SELECT *, UNIX_TIMESTAMP(`cenExpirationDate`) AS `cenExpirationDate`, UNIX_TIMESTAMP(`aprsExpirationDate`) AS `aprsExpirationDate` FROM glider ORDER BY immat";
         if ($onlyVisible === true)

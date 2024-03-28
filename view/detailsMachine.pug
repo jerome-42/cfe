@@ -93,6 +93,14 @@ block content
     .row.mt-2.mb-2
       .col-4
         ul
+          li
+            if $glider['comment'] == ''
+              i.bi.bi-chat.editComment
+            else
+              span.editComment(data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title=$glider['comment'].' ('.$glider['commentDetails'].')')
+                i.bi.bi-chat-fill.me-1
+                = $glider['comment']
+
           li Id radio: #{lastLog['radioId']}
           li Stealth: #{tinyintVersText(lastLog['stealth'])}
           li No track: #{tinyintVersText(lastLog['noTrack'])}
@@ -138,3 +146,21 @@ block content
               th Analyse de la portée
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalEditComment
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5 Editer le commentaire
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          form(method="POST" action="/editGliderComment")#formEditComment
+            input(type="hidden" name="id" value=$glider['id'])
+            .btn-group.mb-2(role="group")
+              button.btn.btn-outline-primary.clearComment(type="button") Supprimer le commentaire
+            .mb-3
+              label.form-label(for="comment") Commentaire
+              textarea.form-control(name="comment" placeholder="Commentaire" rows="5")#comment= $glider['comment']
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-primary(type="button")#addComment Enregistrer
