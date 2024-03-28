@@ -39,14 +39,14 @@ block content
         table.table.table-striped#list
           thead
             tr
-              th Voir
-              th Immatriculation
-              th Expiration CEN
-              th Expiration APRS
+              th(width="5%") Voir
+              th(width="15%") Immatriculation
+              th(width="10%") Expiration CEN
+              th(width="10%") Expiration APRS
                 .small (de la visite annuelle), il peut y avoir des butées dépassées qui ne sont pas reprise ici
-              th Version FLARM
-              th Dernière vérification FLARM
-              th Détails
+              th(width="15%") Version FLARM
+              th(width="15%") Dernière vérification FLARM
+              th(width="30%") Détails
           tbody
             each glider in $gliders
               tr(x-num=$glider['id'] x-comment=$glider['comment'])
