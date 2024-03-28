@@ -38,10 +38,6 @@ post('/ajoutMachine', function($conn, $pug) {
     redirect('/listeMachines');
 });
 
-get('/error', function($conn) {
-    throw new Exception("test d'erreur");
-});
-
 post('/changeAdmin', function($conn) {
     if (!isset($_SESSION['auth'])) {
         echo "vous n'êtes pas connecté";
@@ -561,6 +557,10 @@ post('/editGliderComment', function($conn, $pug) {
         redirect('/detailsMachine?numero='.$_POST['id']);
     else
         redirect('/listeMachines');
+});
+
+get('/error', function($conn) {
+    throw new Exception("test d'erreur");
 });
 
 get('/exportAllData', function($conn) {
