@@ -17,6 +17,7 @@ block content
 	.col-sm-2
           select.form-control#filter
             option(value="all") Tous
+            option(value="realizedMoreThan0") Ayant réalisé des heures
             option(value="validated") Les membres ayant validés leurs CFE
             option(value="0") Dispensés de CFE
             option(value="admin") Les admin
@@ -65,10 +66,10 @@ block content
                   span.d-none.d-sm-block2 &nbsp;Détails
               td.isAdmin
           tr.sum
-            td
-            td
             td.text-end
               h5 Total
+            td.sumPeople
+            td
             td.text-center.sumValidated
               .progress(role="progressbar" aria-label="heures réalisées" aria-valuenow=0 aria-valuemin="0" aria-valuemax=0)
                 .progress-bar(style="width: "+$percent+"%;")

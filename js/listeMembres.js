@@ -48,6 +48,7 @@ var durationToHuman = function(d) {
 var updateList = function() {
     var sumValidated = 0;
     var sumTODO = 0;
+    var sumPeople = 0;
     var search = $('#search').val().toLowerCase().replaceSpecialChars();
     $('#list > tbody > tr').each(function() {
 	var displayLine = false;
@@ -74,6 +75,10 @@ var updateList = function() {
 	    if (parseFloat($(this).attr('x-cfeTODO')) === '0' || parseFloat($(this).attr('x-cfeTODO')) === defaultCFE_TODO)
 		displayLine = false;
 	    break;
+	case 'realizedMoreThan0':
+	    if (parseFloat($(this).attr('x-cfeValidated')) === 0)
+		displayLine = false;
+	    break;
 	case 'validated':
 	    if ($(this).attr('x-cfeCompleted') === '0')
 		displayLine = false;
@@ -84,6 +89,7 @@ var updateList = function() {
 	else {
 	    sumValidated += parseInt($(this).attr('x-cfeValidated'));
 	    sumTODO += parseInt($(this).attr('x-cfeTODO'));
+            sumPeople += 1;
 	    $(this).show();
 	}
     });
@@ -107,6 +113,7 @@ var updateList = function() {
 	$('.sumTODO').text(durationToHuman(sumTODO));
     else
 	$('.sumTODO').text("0");
+    $('.sumPeople').text(sumPeople+' personnes');
 };
 
 $(document).ready(function() {
