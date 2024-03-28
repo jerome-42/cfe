@@ -5,14 +5,12 @@ block scripts
   script(src="js/detailsMachine.js")
 
 block content
-  if $lastLog == null
-    p Aucun fichier IGC analysé pour #{glider['immat']} impossible d'afficher quoi que ce soit.
-  else
-    .row
-      h1 Détails de la machine #{glider['immat']}
-        if $glider['concours'] != ''
-          = ' ('.$glider['concours'].') '
-        = $glider['modele']
+  .row
+    h1 Détails de la machine #{glider['immat']}
+      if $glider['concours'] != ''
+        = ' ('.$glider['concours'].') '
+      = $glider['modele']
+  if $lastLog != null
     .row
       .col-1
         case $lastLog['versionHard']
@@ -26,46 +24,47 @@ block content
             img.img-fluid(src="/img/flarm_power.jpg")
           default
             p Modèle de FLARM inconnu (#{$lastLog['versionHard']})
-    .row.mt-2.mb-2
-      .col-4
-        if $glider['cenExpirationDate'] != null
-          if isBefore($glider['cenExpirationDate'], time())
-            .alert.alert-danger.text-center.mt-0.mb-0
-              | Expiration du CEN&nbsp;
-              = timestampToDate($glider['cenExpirationDate'])
-              br
-              = timeago($glider['cenExpirationDate'], 'expiré')
-          elseif isBefore($glider['cenExpirationDate'], $aprsCenWarningTimestamp)
-            .alert.alert-warning.text-center.mt-0.mb-0
-              | Expiration du CEN&nbsp;
-              = timestampToDate($glider['cenExpirationDate'])
-              br
-              = reverseTimeago($glider['cenExpirationDate'])
-          else
-            .alert.alert-success.text-center.mt-0.mb-0
-              | Expiration du CEN&nbsp;
-              = timestampToDate($glider['cenExpirationDate'])
-              br
-              = reverseTimeago($glider['cenExpirationDate'])
-        if $glider['aprsExpirationDate'] != null
-          if isBefore($glider['aprsExpirationDate'], time())
-            .alert.alert-danger.text-center.mt-0.mb-0
-              | Expiration de l'APRS&nbsp;
-              = timestampToDate($glider['aprsExpirationDate'])
-              br
-              = timeago($glider['aprsExpirationDate'], 'expiré')
-          elseif isBefore($glider['aprsExpirationDate'], $aprsCenWarningTimestamp)
-            .alert.alert-warning.text-center.mt-0.mb-0
-              | Expiration de l'APRS&nbsp;
-              = timestampToDate($glider['aprsExpirationDate'])
-              br
-              = reverseTimeago($glider['aprsExpirationDate'])
-          else
-            .alert.alert-success.text-center.mt-0.mb-0
-              | Expiration de l'APRS&nbsp;
-              = timestampToDate($glider['aprsExpirationDate'])
-              br
-              = reverseTimeago($glider['aprsExpirationDate'])
+  .row.mt-2.mb-2
+    .col-4
+      if $glider['cenExpirationDate'] != null
+        if isBefore($glider['cenExpirationDate'], time())
+          .alert.alert-danger.text-center.mt-0.mb-0
+            | Expiration du CEN&nbsp;
+            = timestampToDate($glider['cenExpirationDate'])
+            br
+            = timeago($glider['cenExpirationDate'], 'expiré')
+        elseif isBefore($glider['cenExpirationDate'], $aprsCenWarningTimestamp)
+          .alert.alert-warning.text-center.mt-0.mb-0
+            | Expiration du CEN&nbsp;
+            = timestampToDate($glider['cenExpirationDate'])
+            br
+            = reverseTimeago($glider['cenExpirationDate'])
+        else
+          .alert.alert-success.text-center.mt-0.mb-0
+            | Expiration du CEN&nbsp;
+            = timestampToDate($glider['cenExpirationDate'])
+            br
+            = reverseTimeago($glider['cenExpirationDate'])
+      if $glider['aprsExpirationDate'] != null
+        if isBefore($glider['aprsExpirationDate'], time())
+          .alert.alert-danger.text-center.mt-0.mb-0
+            | Expiration de l'APRS&nbsp;
+            = timestampToDate($glider['aprsExpirationDate'])
+            br
+            = timeago($glider['aprsExpirationDate'], 'expiré')
+        elseif isBefore($glider['aprsExpirationDate'], $aprsCenWarningTimestamp)
+          .alert.alert-warning.text-center.mt-0.mb-0
+            | Expiration de l'APRS&nbsp;
+            = timestampToDate($glider['aprsExpirationDate'])
+            br
+            = reverseTimeago($glider['aprsExpirationDate'])
+        else
+          .alert.alert-success.text-center.mt-0.mb-0
+            | Expiration de l'APRS&nbsp;
+            = timestampToDate($glider['aprsExpirationDate'])
+            br
+            = reverseTimeago($glider['aprsExpirationDate'])
+      if $lastLog != null
         if ($lastLog['versionSoft'] != 'NA')
           if isAGoodFlarmVersion($lastLog['versionSoft']) == false
            .alert.alert-danger.text-center.mt-0.mb-0
@@ -89,18 +88,19 @@ block content
         if $flarmnetStatus
           .alert.alert-danger.text-center.mt-0.mb-0
             span= $flarmnetStatus
-        
-    .row.mt-2.mb-2
-      .col-4
-        ul
-          li
-            if $glider['comment'] == ''
-              i.bi.bi-chat.editComment
-            else
-              span.editComment(data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title=$glider['comment'].' ('.$glider['commentDetails'].')')
-                i.bi.bi-chat-fill.me-1
-                = $glider['comment']
 
+  .row.mt-2.mb-2
+    .col-4
+      ul
+        li
+          if $glider['comment'] == ''
+            i.bi.bi-chat.editComment
+          else
+            span.editComment(data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title=$glider['comment'].' ('.$glider['commentDetails'].')')
+              i.bi.bi-chat-fill.me-1
+              = $glider['comment']
+
+        if $lastLog != null
           li Id radio: #{lastLog['radioId']}
           li Stealth: #{tinyintVersText(lastLog['stealth'])}
           li No track: #{tinyintVersText(lastLog['noTrack'])}
@@ -112,7 +112,8 @@ block content
             li OGN: enregistré
           if $flarmnetStatus == null
             li Flarmnet: enregistré
-  
+
+  if $lastLog != null
     .row
       h3 Liste des enregistrements IGC analysés
       .col-12
