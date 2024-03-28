@@ -31,9 +31,10 @@ class Gliders {
     }
 
     public function list($onlyVisible = false) {
-        $q = "SELECT *, UNIX_TIMESTAMP(`cenExpirationDate`) AS `cenExpirationDate`, UNIX_TIMESTAMP(`aprsExpirationDate`) AS `aprsExpirationDate` FROM glider ORDER BY immat";
+        $q = "SELECT *, UNIX_TIMESTAMP(`cenExpirationDate`) AS `cenExpirationDate`, UNIX_TIMESTAMP(`aprsExpirationDate`) AS `aprsExpirationDate` FROM glider";
         if ($onlyVisible === true)
-            $q = "SELECT * FROM glider WHERE visible = 1 ORDER BY immat";
+            $q .= " WHERE visible = 1";
+        $q .= " ORDER BY immat";
         $sth = $this->conn->prepare($q);
         $sth->execute();
         $gliders = $sth->fetchAll(PDO::FETCH_ASSOC);
