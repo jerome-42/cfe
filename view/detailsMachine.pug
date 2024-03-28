@@ -12,7 +12,7 @@ block content
       = $glider['modele']
   if $lastLog != null
     .row
-      .col-1
+      .col-lg-1.col-sm-12.col-xs-12
         case $lastLog['versionHard']
           when 'Flarm05'
             img.img-fluid(src="/img/flarm_sans_sd.jpg")
@@ -25,7 +25,7 @@ block content
           default
             p Modèle de FLARM inconnu (#{$lastLog['versionHard']})
   .row.mt-2.mb-2
-    .col-4
+    .col-lg-4.col-sm-12.col-xs-12
       if $glider['cenExpirationDate'] != null
         if isBefore($glider['cenExpirationDate'], time())
           .alert.alert-danger.text-center.mt-0.mb-0
@@ -90,7 +90,7 @@ block content
             span= $flarmnetStatus
 
   .row.mt-2.mb-2
-    .col-4
+    .col-xl-4.col-sm-12.col-xs-12
       ul
         li
           if $glider['comment'] == ''
@@ -117,34 +117,35 @@ block content
     .row
       h3 Liste des enregistrements IGC analysés
       .col-12
-        table.table.table-striped#list
-          thead
-            tr
-              th Date
-              th Version FLARM
-              th Fichier
-              th Modèle
-              th Par
-              th Analyse de la portée
-          tbody
-            each line in $flarmLogs
+        .table-responsive
+          table.table.table-striped#list
+            thead
               tr
-                td= timestampToDate($line['when'])
-                td= $line['versionSoft']
-                td= $line['filename']
-                td= $line['versionHard']
-                td= $getMembreNameByGivavNumber($line['who'])
-                td
-                  if $line['flarmResultUrl']
-                    a(href=$line['flarmResultUrl'] target="_blank") Analyse de la portée
-          tfoot
-            tr
-              th Date
-              th Version FLARM
-              th Fichier
-              th Modèle
-              th Par
-              th Analyse de la portée
+                th Date
+                th Version FLARM
+                th Fichier
+                th Modèle
+                th Par
+                th Analyse de la portée
+            tbody
+              each line in $flarmLogs
+                tr
+                  td= timestampToDate($line['when'])
+                  td= $line['versionSoft']
+                  td= $line['filename']
+                  td= $line['versionHard']
+                  td= $getMembreNameByGivavNumber($line['who'])
+                  td
+                    if $line['flarmResultUrl']
+                      a(href=$line['flarmResultUrl'] target="_blank") Analyse de la portée
+            tfoot
+              tr
+                th Date
+                th Version FLARM
+                th Fichier
+                th Modèle
+                th Par
+                th Analyse de la portée
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
 
