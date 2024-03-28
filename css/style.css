@@ -31,3 +31,9 @@
 	display: none!important;
     }
 }
+
+@media print {
+    .d-print-50 {
+        zoom: 50%;
+    }
+}

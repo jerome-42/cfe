@@ -723,7 +723,7 @@ get('/listeMachines', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $g = new Gliders($conn);
-    $gliders = $g->listWithOGNAndFlarmnetStatus();
+    $gliders = $g->listWithOGNAndFlarmnetStatus(true);
     $vars = array_merge($_SESSION, [ 'gliders' => $gliders ]);
     $ogn = new OGN();
     $vars['ognDatabaseTimestamp'] = $ogn->getDatabaseCreationDate();

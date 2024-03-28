@@ -45,8 +45,8 @@ class Gliders {
         return $gliders;
     }
 
-    public function listWithOGNAndFlarmnetStatus() {
-        $gliders = $this->list();
+    public function listWithOGNAndFlarmnetStatus($onlyVisible = false) {
+        $gliders = $this->list($onlyVisible);
         $ogn = new OGN();
         $flarmnet = new Flarmnet();
         foreach ($gliders as &$glider) {

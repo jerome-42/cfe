@@ -7,7 +7,7 @@ block scripts
 block content
   .row
     h1 Liste des machines
-  .row
+  .row.d-print-none
     .col-md-3
       button.btn.btn-danger.back Retour
       button.btn.btn-info.parametrage Paramètrage
@@ -35,22 +35,22 @@ block content
           i.bi.bi-arrow-clockwise
   .row
     .col-12
-      .table-responsive-xxl
+      .table-responsive-xxl.d-print-50
         table.table.table-striped#list
           thead
             tr
-              th(width="5%") Voir
+              th.d-print-none(width="5%") Voir
               th(width="15%") Immatriculation
               th(width="10%") Expiration CEN
               th(width="10%") Expiration APRS
-                .small (de la visite annuelle), il peut y avoir des butées dépassées qui ne sont pas reprise ici
-              th(width="15%") Version FLARM
-              th(width="15%") Dernière vérification FLARM
-              th(width="30%") Détails
+                .small.d-print-none (de la visite annuelle), il peut y avoir des butées dépassées qui ne sont pas reprise ici
+              th.d-print-none(width="15%") Version FLARM
+              th.d-print-none(width="15%") Dernière vérification FLARM
+              th.d-print-none(width="30%") Détails
           tbody
             each glider in $gliders
               tr(x-num=$glider['id'] x-comment=$glider['comment'])
-                td
+                td.d-print-none
                   button.btn.btn-primary.displayDetails
                     i.bi.bi-eye
                     span.d-none.d-sm-block2 &nbsp;Détails
@@ -109,7 +109,7 @@ block content
                         br
                         = reverseTimeago($glider['aprsExpirationDate'], 'expire')
 
-                td
+                td.d-print-none
                   if $glider['versionSoft'] != ''
                     if isAGoodFlarmVersion($glider['versionSoft'])
                      .alert.alert-success.text-center.mt-0.mb-0
@@ -120,10 +120,10 @@ block content
                   else
                     .alert.alert-danger.text-center.mt-0.mb-0
                       | Pas de fichier IGC
-                td= timestampToDate($glider['when'])
+                td.d-print-none= timestampToDate($glider['when'])
                   if $glider['who'] != null
                     = ' (par '.$getMembreNameByGivavNumber($glider['who']).')'
-                td
+                td.d-print-none
                   if $glider['rangeBelowMinimum'] === 1
                     .alert.alert-danger.text-center.mt-0.mb-0
                       span Portée en deça du minimum (aéronefs volants à 250 km/h)
@@ -147,7 +147,7 @@ block content
                     .alert.alert-danger.text-center.mt-0.mb-0
                       span= $glider['flarmnetStatus']
 
-          tfoot
+          tfoot.d-print-none
             tr
               th Voir
               th Immatriculation
@@ -156,7 +156,7 @@ block content
               th Version FLARM
               th Dernière vérification FLARM
               th Détails
-  .hstack.gap-4.mb-3
+  .hstack.gap-4.mb-3.d-print-none
     button.btn.btn-danger.back Retour
     button.btn.btn-primary.addGlider Ajouter une machine
 
