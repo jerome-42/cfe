@@ -64,6 +64,11 @@ class Env {
                 return 'NA';
             return date('d/m/Y', intval($text));
         });
+        $this->pug->share('timestampToDateTime', function($text) {
+            if (is_numeric($text) === false)
+                return 'NA';
+            return date('d/m/Y H:m', intval($text));
+        });
         $this->pug->share('isAGoodFlarmVersion', function($version) {
             $settings = new Settings($this->mysql);
             $goodFlarmVersion = explode("\n", $settings->get('flarmGoodSoftVersion', ''));
