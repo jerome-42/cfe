@@ -8,8 +8,11 @@ block content
   .row
     h1 Liste des machines
   .row.d-none.d-print-block
-    p.small Date d'impression #{timestampToDate(time())}
-      | &nbsp;dernière mise à jour OSRT : #{timestampToDateTime($osrtDatabaseTimestamp)} (#{timeago($osrtDatabaseTimestamp)})
+    p.small Date d'impression&nbsp;
+      b= timestampToDate(time())
+      | &nbsp;dernière mise à jour OSRT :&nbsp;
+      b= timestampToDateTime($osrtDatabaseTimestamp)
+      | &nbsp;(#{timeago($osrtDatabaseTimestamp)})
   .row.d-print-none
     .col-md-3
       button.btn.btn-danger.back Retour
