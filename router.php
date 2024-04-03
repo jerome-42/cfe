@@ -26,7 +26,7 @@ function any($route, $fct) {
 function initPug() {
 }
 
-function doRoute($fct,) {
+function doRoute($fct, $apiMode) {
     // connexion mysql
     try {
         $env = new Env();
@@ -39,11 +39,14 @@ function doRoute($fct,) {
     $pug = $env->initPug();
 
     try {
-        // on met à jour admin
-        if (isset($_SESSION['auth']) && isset($_SESSION['givavNumber'])) {
-            $data = Personne::load($env->mysql, $_SESSION['givavNumber']);
-            $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
-            $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
+        if ($apiMode === false) {
+            session_start();
+            // on met à jour admin
+            if (isset($_SESSION['auth']) && isset($_SESSION['givavNumber'])) {
+                $data = Personne::load($env->mysql, $_SESSION['givavNumber']);
+                $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
+                $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
+            }
         }
         $fct($env->mysql, $pug, $env);
         $env->mysql->commit();
@@ -73,6 +76,9 @@ function route($route, $fct) {
       doRoute($fct);
       exit();
   }
+  $apiMode = false;
+  if (preg_match('/^\/api\//', $route))
+      $apiMode = true;
   $request_url = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
   $request_url = rtrim($request_url, '/');
   $request_url = strtok($request_url, '?');
@@ -81,7 +87,7 @@ function route($route, $fct) {
   array_shift($route_parts);
   array_shift($request_url_parts);
   if ($route_parts[0] == '' && count($request_url_parts) == 0){
-      doRoute($fct);
+      doRoute($fct, $apiMode);
       exit();
   }
   if (count($route_parts) != count($request_url_parts)){ return; }
@@ -97,7 +103,7 @@ function route($route, $fct) {
         return;
     }
   }
-  doRoute($fct);
+  doRoute($fct, $apiMode);
   exit; // permet de ne pas passer dans le handler qui gère le 404
 }
 

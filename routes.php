@@ -15,6 +15,11 @@ function displayError($pug, $message) {
     $pug->displayFile('view/error.pug', $vars);
 }
 
+function displayErrorInJSON($message) {
+    http_response_code(500);
+    echo json_encode([ 'error' => $message ]);
+}
+
 get('/', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
@@ -23,6 +28,26 @@ get('/', function($conn, $pug) {
     $vars = array_merge($_SESSION, $cfe->getStats($_SESSION['givavNumber'], getYear()));
     $vars['durationSubmitted'] = $cfe->getSubmittedDuration();
     $pug->displayFile('view/index.pug', $vars);
+});
+
+// login et password sont attendus
+post('/api/auth', function($conn) {
+    foreach ([ 'login', 'password' ] as $key) {
+        if (!isset($_POST[$key]) || $_POST[$key] === '')
+            return displayErrorInJSON($key." parameter is mandatory");
+    }
+    try {
+        $givav = new Givav($_POST['login'], $_POST['password']);
+        $givav->login();
+        $properties = $givav->getName();
+        $toRet = [ 'ok' => true, 'isAdmin' => false ];
+        if (Personne::estAdmin($conn, $properties['number']))
+            $toRet['isAdmin'] = true;
+        echo json_encode($toRet);
+    }
+    catch (Exception $e) {
+        return displayErrorInJSON($e->getMessage());
+    }
 });
 
 post('/ajoutMachine', function($conn, $pug) {
