@@ -40,7 +40,7 @@ post('/api/auth', function($conn) {
         $givav = new Givav($_POST['login'], $_POST['password']);
         $givav->login();
         $properties = $givav->getName();
-        $toRet = [ 'ok' => true, 'isAdmin' => false ];
+        $toRet = [ 'ok' => true, 'givavNumber' => $properties['number'], 'name' => $properties['name'], 'isAdmin' => false ];
         if (Personne::estAdmin($conn, $properties['number']))
             $toRet['isAdmin'] = true;
         echo json_encode($toRet);
