@@ -819,6 +819,11 @@ get('/refreshCache', function($conn, $pug, $env) {
     redirect('/listeMachines');
 });
 
+get('/robots.txt', function($conn) {
+    header('Content-Type: text/plain');
+    echo "User-agent: *".PHP_EOL."Disallow: /".PHP_EOL;
+});
+
 get('/validation', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
