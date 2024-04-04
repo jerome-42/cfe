@@ -25,7 +25,9 @@ class Personne {
         $query = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :num) ON DUPLICATE KEY UPDATE name = :name, email = :email";
         $sth = $conn->prepare($query);
         $sth->execute([ ':name' => $user['name'], ':email' => $user['mail'], ':num' => $user['number'] ]);
+        $data = self::load($conn, $user['number']);
         $conn->commit();
+        return $data; // on a besoin à minima d'id (pour /connexion)
     }
 
     static public function load($conn, $num) {

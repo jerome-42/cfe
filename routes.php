@@ -124,7 +124,7 @@ post('/connexion', function($conn, $pug) {
         $givav = new Givav($_POST['login'], $_POST['pass']);
         $givav->login();
         $user = $givav->getName();
-        Personne::creeOuMAJ($conn, $user);
+        $userData = Personne::creeOuMAJ($conn, $user);
         if (Personne::estAdmin($conn, $user['number']) === true) {
             $givav->getAndStoreGliders($conn);
         }
@@ -132,6 +132,7 @@ post('/connexion', function($conn, $pug) {
         $_SESSION['givavNumber'] = $user['number'];
         $_SESSION['name'] = $user['name'];
         $_SESSION['mail'] = $user['mail'];
+        $_SESSION['id'] = $userData['id'];
         syslog(LOG_INFO, "CFE ".getClientIP()." ".$user['number']." ".$user['name']." logged");
         return redirect('/');
     }
@@ -462,7 +463,7 @@ post('/declarerFLARM', function($conn, $pug) {
                 ':filename' => $file['name'],
                 ':versionSoft' => $softVersion,
                 ':versionHard' => $hardVersion,
-                ':who' => $_SESSION['givavNumber'],
+                ':who' => $_SESSION['id'],
                 ':stealth' => $details['stealth'],
                 ':noTrack' => $details['noTrack'],
                 ':radioId' => $details['radioId'],
