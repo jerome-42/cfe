@@ -793,6 +793,14 @@ get('/listeCFE', function($conn, $pug) {
     $pug->displayFile('view/listeCFE.pug', $vars);
 });
 
+get('/listeFormulaires', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $forms = new Forms($env);
+    $vars = array_merge($_SESSION, [ 'answers' => $forms->listAnswers() ]);
+    $pug->displayFile('view/listeFormulaires.pug', $vars);
+});
+
 get('/listeMachines', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

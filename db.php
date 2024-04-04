@@ -20,11 +20,14 @@ $tables = [
 
     'forms' => "CREATE TABLE `forms`(
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `when` date NOT NULL,
+  `when` datetime NOT NULL,
   `name` varchar(255) NOT NULL,
   `data` text NOT NULL,
   `ip` varchar(255) NOT NULL,
   `port` int NOT NULL,
+  `comment` text NULL,
+  `commentBy` int NULL,
+  `commentWhen` datetime NULL,
   PRIMARY KEY (`id`),
   INDEX `name`(`name`)
 ) ENGINE=InnoDB",
