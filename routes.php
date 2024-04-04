@@ -9,15 +9,15 @@ include_once __DIR__ . '/givav.php';
 include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
 
+function apiReturnError($message) {
+    http_response_code(400); // bad request
+    echo $message;
+}
+
 function displayError($pug, $message) {
     http_response_code(500);
     $vars = array_merge($_SESSION, [ 'message' => $message ]);
     $pug->displayFile('view/error.pug', $vars);
-}
-
-function displayErrorInJSON($message) {
-    http_response_code(500);
-    echo json_encode([ 'error' => $message ]);
 }
 
 get('/', function($conn, $pug) {
@@ -34,7 +34,7 @@ get('/', function($conn, $pug) {
 post('/api/auth', function($conn) {
     foreach ([ 'login', 'password' ] as $key) {
         if (!isset($_POST[$key]) || $_POST[$key] === '')
-            return displayErrorInJSON($key." parameter is mandatory");
+            return apiReturnError($key." parameter is mandatory");
     }
     try {
         $givav = new Givav($_POST['login'], $_POST['password']);
@@ -46,7 +46,8 @@ post('/api/auth', function($conn) {
         echo json_encode($toRet);
     }
     catch (Exception $e) {
-        return displayErrorInJSON($e->getMessage());
+        http_response_code(400); // bad request
+        echo $e->getMessage();
     }
 });
 
