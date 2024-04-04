@@ -255,7 +255,7 @@ class OSRT {
                     else
                         $setClauses[] = $key.' = NULL';
                 }
-                $q = "UPDATE glider SET ".implode(', ', $setClauses)." WHERE immat = :immat";
+                $q = "UPDATE glider SET ".implode(', ', $setClauses).", osrtUpdateDate = NOW() WHERE immat = :immat";
                 //DEBUG var_dump($q, $values);
                 $sth = $this->mysql->prepare($q);
                 $sth->execute($values);

@@ -47,6 +47,7 @@ $tables = [
   `aircraftType` varchar(255) NOT NULL,
   `cenExpirationDate` date NULL,
   `aprsExpirationDate` date NULL,
+  `osrtUpdateDate` date NULL,
   `visible` tinyint(1) DEFAULT '1' NOT NULL,
   `comment` text NULL,
   PRIMARY KEY (`id`),
