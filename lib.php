@@ -10,16 +10,6 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
 
-function getSessionKey() {
-    if (!isset($_SESSION['signKey']))
-        $_SESSION['signKey'] = randomString(16);
-    return $_SESSION['signKey'];
-}
-
-function getYear() {
-    return intval(date('Y'));
-}
-
 function exportAllData_getYears($conn) {
     $query = "SELECT CAST(replace(what, 'defaultCFE_TODO_', '') AS SIGNED) AS year FROM settings WHERE what LIKE 'defaultCFE_TODO_%'";
     $sth = $conn->prepare($query);
@@ -115,6 +105,16 @@ function getClientIP() {
     return $ipaddress;
 }
 
+function getSessionKey() {
+    if (!isset($_SESSION['signKey']))
+        $_SESSION['signKey'] = randomString(16);
+    return $_SESSION['signKey'];
+}
+
+function getYear() {
+    return intval(date('Y'));
+}
+
 function parseDateDDMMAAAA($date) {
     $d = explode(' ', $date);
     $elem = explode('/', $d[0]);
@@ -124,6 +124,14 @@ function parseDateDDMMAAAA($date) {
         return ['year' => $elem[2], 'month' => $elem[1], 'day' => $elem[0] ];
     else
         return ['year' => $elem[2], 'month' => $elem[1], 'day' => $elem[0], 'time' => $d[1] ];
+}
+
+function pluralize($n, $text) {
+    if ($n >= 2) {
+        if ($text[strlen($text)-1] != 's')
+            return $text.'s';
+    }
+    return $text;
 }
 
 function randomString($length) {
@@ -145,12 +153,4 @@ function redirect($to) {
 function renderHTML($file) {
     $content = file_get_contents($file);
     echo $content;
-}
-
-function pluralize($n, $text) {
-    if ($n >= 2) {
-        if ($text[strlen($text)-1] != 's')
-            return $text.'s';
-    }
-    return $text;
 }
