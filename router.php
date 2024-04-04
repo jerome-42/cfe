@@ -26,7 +26,7 @@ function any($route, $fct) {
 function initPug() {
 }
 
-function doRoute($fct, $apiMode) {
+function doRoute($fct, $apiMode = false, $parameters = []) {
     // connexion mysql
     try {
         $env = new Env();
@@ -48,7 +48,7 @@ function doRoute($fct, $apiMode) {
                 $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
             }
         }
-        $fct($env->mysql, $pug, $env);
+        $fct($env->mysql, $pug, $env, $parameters);
         $env->mysql->commit();
     }
     catch (Exception $e) {
@@ -106,7 +106,7 @@ function route($route, $fct) {
         return;
     }
   }
-  doRoute($fct, $apiMode);
+  doRoute($fct, $apiMode, $parameters);
   exit; // permet de ne pas passer dans le handler qui gère le 404
 }
 

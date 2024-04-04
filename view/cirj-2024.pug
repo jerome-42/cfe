@@ -1,0 +1,98 @@
+extends layout-forms.pug
+
+block scripts
+  title Championnat Inter-Régional Jeunes Chérence 2024
+  script(src="/js/cirj-2024.js")
+
+block content
+  .row
+    .col.text-center
+      .row
+        h1.display-4 Championnat Inter-Régional Jeunes Chérence 2024
+      .row
+        h3.display-6 Du 8 mai au 12 mai 2024
+      hr.border.border-primary.border-3
+      .row
+        h4 Inscrivez-vous pour participer au Championnat Inter-Régional Jeunes Chérence 2024 !
+      .row
+        h5 Tarifs
+        .row
+          .col-6
+            .alert.alert-primary.text-center Inscription -25 ans
+              br
+              b 100€
+          .col-6
+            .alert.alert-primary.text-center Par remorqué
+              br
+              b 32€
+          
+      .row
+        h5 Multiclasse
+        p Le championnat se déroulera conjointement au&nbsp;
+          a(href="http://aavo.free.fr/activite/scha2023.html") championnat amical Raymond Schalow.
+      .row
+        h5 Hébergement
+        .col-8.offset-3.text-start
+          div
+            b Sur place :&nbsp;
+            | un dortoir, 2 chambres et des emplacements pour des tentes, avec sanitaires, cuisine et toutes les commodités.
+          div
+            b Aux alentours :&nbsp;
+            | possibilité de louer des gites dans le Vexin
+    .col-2.offset-1.d-none.d-sm-block
+      .row
+        img.img-fluid(src="https://www.soaringspot.com/media/045/4583/gallery/30015.jpg")
+  hr.border.border-primary.border-3
+  if $stored === false
+    .row.mt-5
+      h5 Formulaire d'inscription :
+    form(method="POST")
+      .row.mb-2
+        .col
+          label.form-label(for="nom") Nom
+          input.form-control(type="text" name="nom" placeholder="Nom")
+        .col
+          label.form-label(for="nom") Prénom
+          input.form-control(type="text" name="prenom" placeholder="Prénom")
+      .row.mb-2
+        .col
+          label.form-label(for="email") Email
+          input.form-control(type="email" name="email" placeholder="Email")#email
+        .col
+          label.form-label(for="telephone") Téléphone
+          input.form-control(type="text" name="telephone" placeholder="Téléphone")
+      .mb-2
+        label.form-label(for="club") Club
+        input.form-control(type="text" name="club" placeholder="Club")
+      .mb-2
+        label.form-label(for="immatVoiture") Immatriculation voiture de dépannage
+        input.form-control(type="text" name="immatVoiture" placeholder="AA-123-BB")
+      .row.mb-2
+        .col
+          label.form-label(for="typePlaneur") Type de planeur
+          input.form-control(type="text" name="typePlaneur" placeholder="Pégase ...")
+        .col
+          label.form-label(for="immatPlaneur") Immatriculation du planeur
+          input.form-control(type="text" name="immatPlaneur" placeholder="F-CXXX")
+        .col
+          label.form-label(for="numConcours") Numéro de concours
+          input.form-control(type="text" name="numConcours" placeholder="")
+      .row.mb-2
+        .col
+          label.form-label(for="typeIGC") Type d'enregistreur de vol
+          input.form-control(type="text" name="typeIGC" placeholder="PowerFlarm / Oudie IGC")
+        .col
+          label.form-label(for="numIGC") Identifiant IGC de l'enregistreur
+          input.form-control(type="text" name="numIGC" placeholder="")
+      .mb-2
+        label.form-label(for="herbergement") Type d'hébergement
+        select.form-control(name="hebergement")
+          option(value="Hébergement extérieur") Hébergement extérieur
+          option(value="Tente") Tente
+      .mb-2.form-check
+        input.form-check-input(type="checkbox" name="valide")#valide
+        label.form-check-label(for="valide") Je m’engage sur l’honneur à être en règle avec l’administration en ce qui concerne ma licence de pilote, les papiers de mon planeur, ainsi que la licence assurance FFVV.
+      .mb-2
+        button.btn.btn-primary(type="submit" disabled)#submit Enregistrer
+  else
+    h3 Merci, nous avons enregistré votre inscription, nous vous recontacterons bientôt.

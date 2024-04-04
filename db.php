@@ -18,6 +18,17 @@ $tables = [
   INDEX `who`(`who`)
 ) ENGINE=InnoDB",
 
+    'forms' => "CREATE TABLE `forms`(
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `when` date NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `data` text NOT NULL,
+  `ip` varchar(255) NOT NULL,
+  `port` int NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `name`(`name`)
+) ENGINE=InnoDB",
+
     'flarm_logs' => "CREATE TABLE `flarm_logs`(
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `glider` bigint unsigned NOT NULL,

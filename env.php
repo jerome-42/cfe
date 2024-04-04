@@ -4,6 +4,7 @@ include_once __DIR__ . '/cache.php';
 include_once __DIR__ . '/db.php';
 include_once __DIR__ . '/flarm.php';
 include_once __DIR__ . '/flarmnet.php';
+include_once __DIR__ . '/forms.php';
 include_once __DIR__ . '/gliders.php';
 include_once __DIR__ . '/ogn.php';
 include_once __DIR__ . '/osrt.php';
