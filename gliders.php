@@ -59,8 +59,42 @@ class Gliders {
         return $gliders;
     }
 
-    public function getLastFlarmLog($gliderId) {
+    public function getLastFlarmLog($gliderId, $fetchCompleteDeclaration = true) {
         $q = "SELECT *, UNIX_TIMESTAMP(`when`) AS `when` FROM flarm_logs WHERE glider = :id ORDER BY `when` DESC LIMIT 1";
+        $sth = $this->conn->prepare($q);
+        $sth->execute([ ':id' => $gliderId ]);
+        if ($sth->rowCount() === 1) {
+            $line = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+            // si versionHard est NULL et who est OGN alors on essaye de compléter avec
+            // le dernier fichier fichier que l'on a analysé
+            $ognPersonne = Personne::loadOGN($this->conn); // OGN
+            if ($fetchCompleteDeclaration === true && $line['versionHard'] === null && $line['who'] == $ognPersonne['id']) {
+                $lastFileData = $this->getLastFlarmLogFromFile($gliderId);
+                if ($lastFileData != null) {
+                    // on a analysé un fichier igc, on remplace les données NULL d'OGN par celles-ci
+                    foreach ([ 'versionHard', 'stealth', 'noTrack', 'rangeDetails', 'rangeBelowMinimum', 'flarmResultUrl', 'flarmAircraftType' ] as $key) {
+                        $line[$key] = $lastFileData[$key];
+                    }
+                }
+            }
+            return [ 'versionSoft' => $line['versionSoft'],
+                     'versionHard' => $line['versionHard'],
+                     'when' => $line['when'],
+                     'who' => $line['who'],
+                     'stealth' => $line['stealth'],
+                     'noTrack' => $line['noTrack'],
+                     'radioId' => $line['radioId'],
+                     'rangeDetails' => $line['rangeDetails'],
+                     'rangeBelowMinimum' => $line['rangeBelowMinimum'],
+                     'flarmResultUrl' => $line['flarmResultUrl'],
+                     'flarmAircraftType' => $line['aircraftType'],
+            ];
+        }
+        return null;
+    }
+
+    private function getLastFlarmLogFromFile($gliderId) {
+        $q = "SELECT *, UNIX_TIMESTAMP(`when`) AS `when` FROM flarm_logs WHERE glider = :id AND versionHard IS NOT NULL ORDER BY `when` DESC LIMIT 1";
         $sth = $this->conn->prepare($q);
         $sth->execute([ ':id' => $gliderId ]);
         if ($sth->rowCount() === 1) {
@@ -103,13 +137,6 @@ class Gliders {
         $q = "INSERT INTO flarm_logs (glider, `when`, filename, versionSoft, versionHard, stealth, noTrack, radioId, rangeAvg, rangeDetails, rangeBelowMinimum, aircraftType, flarmResultUrl, who) VALUES (:glider, FROM_UNIXTIME(:when), :filename, :versionSoft, :versionHard, :stealth, :noTrack, :radioId, :rangeAvg, :rangeDetails, :rangeBelowMinimum, :aircraftType, :flarmResultUrl, :who) ON DUPLICATE KEY UPDATE versionSoft = :versionSoft, versionHard = :versionHard, who = :who, stealth = :stealth, noTrack = :noTrack, radioId = :radioId, rangeBelowMinimum = :rangeBelowMinimum, rangeAvg = :rangeAvg, rangeDetails = :rangeDetails, aircraftType = :aircraftType, flarmResultUrl = :flarmResultUrl";
         $sth = $this->conn->prepare($q);
         $sth->execute($data);
-    }
-
-    public function getFlarmLogs($gliderId) {
-        $q = "SELECT *, UNIX_TIMESTAMP(`when`) AS `when` FROM flarm_logs WHERE glider = :id ORDER BY `when` DESC";
-        $sth = $this->conn->prepare($q);
-        $sth->execute([ ':id' => $gliderId ]);
-        return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function updateDataFromOSRT($osrt, $mysql, $forceUpdate = false) {

@@ -24,7 +24,7 @@ $tables = [
   `when` date NOT NULL,
   `filename` varchar(255) NOT NULL,
   `versionSoft` varchar(255) NOT NULL,
-  `versionHard` varchar(255) NOT NULL,
+  `versionHard` varchar(255),
   `stealth` tinyint(1),
   `noTrack` tinyint(1),
   `radioId` varchar(255),
@@ -94,6 +94,12 @@ function checkDatabase($conn, $databaseName) {
     }
 }
 
+function createOGNUser($conn) {
+    $query = "INSERT IGNORE INTO personnes (name, givavNumber) VALUES ('OGN', 0)";
+    $sth = $conn->prepare($query);
+    $sth->execute();
+}
+
 function createTable($conn, $createTableStmts) {
     if (is_array($createTableStmts)) {
         foreach ($createTableStmts as $query) {
@@ -107,6 +113,7 @@ function createTable($conn, $createTableStmts) {
 function createTableIfNecessary($conn, $databaseName, $tableName, $createTableStmts) {
     if (doesTableExists($conn, $databaseName, $tableName) === false)
         createTable($conn, $createTableStmts);
+    createOGNUser($conn);
 }
 
 function doesTableExists($conn, $databaseName, $table) {

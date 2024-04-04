@@ -81,6 +81,13 @@ class Flarm {
         return $this->recupereResultats($flarmFilename, $url);
     }
 
+    public function getFlarmLogs($gliderId) {
+        $q = "SELECT *, UNIX_TIMESTAMP(`when`) AS `when` FROM flarm_logs WHERE glider = :id ORDER BY `when` DESC";
+        $sth = $this->conn->prepare($q);
+        $sth->execute([ ':id' => $gliderId ]);
+        return $sth->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     private function recupereResultats($flarmFilename, $flarmResultUrl) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://www.flarm.com/analyzer/parseIgc.php');
@@ -140,5 +147,30 @@ class Flarm {
             ]);
         }
         return $toRet;
+    }
+
+    // OGN nous envoie la version de tous les planeurs
+    public function pushFlarmVersionAndRadioIdFromOGN($immat, $radioId, $softwareVersion) {
+        $glider = new Gliders($this->conn);
+        $gliderData = $glider->getGliderByImmat($immat);
+        if ($gliderData == null) {
+            // OGN nous envoie tous les planeurs mais si le planeur n'existe pas chez nous on s'arrête ici
+            return;
+        }
+        $ognPersonne = Personne::loadOGN($this->conn); // OGN
+        // OGN va nous envoyer plusieurs fois par jour la version soft, on ne l'enregistre que si elle est différente de
+        // celle que l'on connaît
+        $currentData = $glider->getLastFlarmLog($gliderData['id'], false);
+        if ($currentData === null || // pas d'enregistrement flarm
+            ($currentData['versionSoft'] != $softwareVersion || // la version soft est différente
+             $currentData['radioId'] != $radioId)) {
+            $q = "INSERT INTO flarm_logs (glider, `when`, filename, versionSoft, radioId, who) VALUES (:glider, NOW(), 'OGN', :softVersion, :radioId, :who)";
+            $sth = $this->conn->prepare($q);
+            $sth->execute([ ':glider' => $gliderData['id'],
+                            ':softVersion' => $softwareVersion,
+                            ':radioId' => $radioId,
+                            ':who' => $ognPersonne['id'],
+            ]);
+        }
     }
 }

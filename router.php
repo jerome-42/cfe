@@ -66,7 +66,10 @@ function doRoute($fct, $apiMode) {
             $stack[] = $line;
         }
         $vars = [ 'message' => "Exception at ".$e->getFile().":".$e->getLine()." ".$e->getMessage(), 'stack' => implode("\n", $stack) ];
-        return $pug->displayFile('view/error.pug', $vars);
+        if ($apiMode === true)
+            echo $e->getMessage();
+        else
+            return $pug->displayFile('view/error.pug', $vars);
     }
 }
 

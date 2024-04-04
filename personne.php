@@ -1,6 +1,15 @@
 <?php
 
 class Personne {
+    static public function loadOGN($conn) {
+        $query = "SELECT * FROM personnes WHERE name = 'OGN'";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("L'utilisateur OGN n'existe pas");
+        return $sth->fetchAll()[0];
+    }
+
     static public function modifieStatutAdmin($conn, $num, $statut) {
         if ($statut === true)
             $query = "UPDATE personnes set isAdmin = true WHERE givavNumber = :num";
@@ -20,7 +29,7 @@ class Personne {
     }
 
     static public function load($conn, $num) {
-        $query = "SELECT * FROM personnes LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber WHERE givavNumber = :num";
+        $query = "SELECT *, personnes.id AS id FROM personnes LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber WHERE givavNumber = :num";
         $sth = $conn->prepare($query);
         $sth->execute([ ':num' => $num ]);
         if ($sth->rowCount() !== 1)

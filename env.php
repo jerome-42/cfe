@@ -53,6 +53,20 @@ class Env {
             $q = "SELECT name FROM personnes WHERE givavNumber = :givavNumber";
             $sth = $this->mysql->prepare($q);
             $sth->execute([ ':givavNumber' => $id ]);
+            if ($sth->rowCount() == 0)
+                return 'NA';
+            $name = $sth->fetchAll(PDO::FETCH_ASSOC)[0]['name'];
+            return $name;
+        });
+        $this->pug->share('getMembreNameById', function($text) {
+            if (is_numeric($text) === false)
+                return 'NA';
+            $id = intval($text);
+            $q = "SELECT name FROM personnes WHERE id = :id";
+            $sth = $this->mysql->prepare($q);
+            $sth->execute([ ':id' => $id ]);
+            if ($sth->rowCount() == 0)
+                return 'NA';
             $name = $sth->fetchAll(PDO::FETCH_ASSOC)[0]['name'];
             return $name;
         });

@@ -128,7 +128,7 @@ block content
                       | Pas de fichier IGC
                 td.d-print-none= timestampToDate($glider['when'])
                   if $glider['who'] != null
-                    = ' (par '.$getMembreNameByGivavNumber($glider['who']).')'
+                    = ' (par '.$getMembreNameById($glider['who']).')'
                 td.d-print-none
                   if $glider['rangeBelowMinimum'] === 1
                     .alert.alert-danger.text-center.mt-0.mb-0

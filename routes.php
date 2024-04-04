@@ -51,6 +51,20 @@ post('/api/auth', function($conn) {
     }
 });
 
+post('/api/pushSoftwareVersion', function($conn) {
+    foreach ([ 'immat', 'radioId', 'softwareVersion' ] as $key) {
+        if (!isset($_POST[$key]) || $_POST[$key] === '')
+            return apiReturnError($key." parameter is mandatory");
+    }
+    $flarm = new Flarm($conn);
+    $softwareVersion = $_POST['softwareVersion'];
+    if (preg_match('/^\d\.\d+$/', $softwareVersion) === 1)
+        $softwareVersion = 'Flarm0'.$softwareVersion;
+    $flarm->pushFlarmVersionAndRadioIdFromOGN($_POST['immat'], $_POST['radioId'], $softwareVersion);
+    echo json_encode([ 'ok' => true ]);
+});
+
+
 post('/ajoutMachine', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
@@ -388,6 +402,10 @@ post('/declarerFLARM', function($conn, $pug) {
                 }
                 if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.,]+)$/mi', $line, $matches) === 1) {
                     $softVersion = $matches[1][0];
+                    // powerflarm sort une version en FLARM,7.22 et on veut Flarm07.22
+                    if (preg_match_all('/^FLARM,([\d\.]+)$/', $softVersion, $matches) !== false) {
+                        $softVersion = 'Flarm0'.$matches[1][0];
+                    }
                     $subMessages[] = "la version logicielle ".$softVersion." a été détectée";
                 }
                 if (preg_match_all('/^HFRHWHARDWAREVERSION:([\w\-\.\s]+)$/mi', $line, $matches) === 1) {
@@ -526,7 +544,8 @@ get('/detailsMachine', function($conn, $pug) {
     $vars['lastLog'] = $gliders->getLastFlarmLog($id);
     if ($vars['glider'] === null)
         throw new Exception("Le numéro ".$id." ne correspond à aucun planeur dans la base de données");
-    $vars['flarmLogs'] = $gliders->getFlarmLogs($id);
+    $flarm = new Flarm($conn);
+    $vars['flarmLogs'] = $flarm->getFlarmLogs($id);
     $ogn = new OGN();
     if ($vars['lastLog'] !== null)
         $vars['ognStatus'] = $ogn->doesGliderIsRegistered($vars['glider']['immat'], $vars['lastLog']['radioId']);
