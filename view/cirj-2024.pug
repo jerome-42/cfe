@@ -20,11 +20,11 @@ block content
           .col-6
             .alert.alert-primary.text-center Inscription -25 ans
               br
-              b 100€
+              b 60€
           .col-6
             .alert.alert-primary.text-center Par remorqué
               br
-              b 32€
+              b 35€
           
       .row
         h5 Multiclasse
@@ -35,10 +35,10 @@ block content
         .col-8.offset-3.text-start
           div
             b Sur place :&nbsp;
-            | un dortoir, 2 chambres et des emplacements pour des tentes, avec sanitaires, cuisine et toutes les commodités.
+            | des emplacements pour des tentes (20€), un dortoir réaménagé et 2 chambres. Sanitaires, cuisine et toutes les commodités.
           div
             b Aux alentours :&nbsp;
-            | possibilité de louer des gites dans le Vexin
+            | possibilité de louer des gites dans le Vexin.
     .col-2.offset-1.d-none.d-sm-block
       .row
         img.img-fluid(src="https://www.soaringspot.com/media/045/4583/gallery/30015.jpg")
@@ -50,48 +50,60 @@ block content
       .row.mb-2
         .col
           label.form-label(for="nom") Nom
-          input.form-control(type="text" name="nom" placeholder="Nom")
+          input.form-control(type="text" name="nom" placeholder="Nom")#nom
         .col
           label.form-label(for="nom") Prénom
-          input.form-control(type="text" name="prenom" placeholder="Prénom")
+          input.form-control(type="text" name="prenom" placeholder="Prénom")#prenom
+        .col
+          label.form-label(for="dateNaissance") Date de naissance
+          input.form-control(type="date" name="dateNaissance" placeholder="01/01/2000")#dateNaissance
       .row.mb-2
         .col
           label.form-label(for="email") Email
           input.form-control(type="email" name="email" placeholder="Email")#email
         .col
           label.form-label(for="telephone") Téléphone
-          input.form-control(type="text" name="telephone" placeholder="Téléphone")
-      .mb-2
-        label.form-label(for="club") Club
-        input.form-control(type="text" name="club" placeholder="Club")
+          input.form-control(type="text" name="telephone" placeholder="Téléphone")#telephone
+      .row.mb-2
+        .col
+          label.form-label(for="club") Club
+          input.form-control(type="text" name="club" placeholder="Club")#club
+        .col
+          label.form-label(for="givav") Numéro GIVAV (si votre club fonctionne avec GIVAV)
+          input.form-control(type="text" name="givav" placeholder="12345")#givav
       .mb-2
         label.form-label(for="immatVoiture") Immatriculation voiture de dépannage
-        input.form-control(type="text" name="immatVoiture" placeholder="AA-123-BB")
+        input.form-control(type="text" name="immatVoiture" placeholder="AA-123-BB")#immatVoiture
       .row.mb-2
         .col
           label.form-label(for="typePlaneur") Type de planeur
-          input.form-control(type="text" name="typePlaneur" placeholder="Pégase ...")
+          input.form-control(type="text" name="typePlaneur" placeholder="Pégase ...")#typePlaneur
         .col
           label.form-label(for="immatPlaneur") Immatriculation du planeur
-          input.form-control(type="text" name="immatPlaneur" placeholder="F-CXXX")
+          input.form-control(type="text" name="immatPlaneur" placeholder="F-CXXX")#immatPlaneur
         .col
           label.form-label(for="numConcours") Numéro de concours
-          input.form-control(type="text" name="numConcours" placeholder="")
+          input.form-control(type="text" name="numConcours" placeholder="")#numConcours
       .row.mb-2
         .col
           label.form-label(for="typeIGC") Type d'enregistreur de vol
-          input.form-control(type="text" name="typeIGC" placeholder="PowerFlarm / Oudie IGC")
+          input.form-control(type="text" name="typeIGC" placeholder="PowerFlarm / Oudie IGC")#typeIGC
         .col
           label.form-label(for="numIGC") Identifiant IGC de l'enregistreur
-          input.form-control(type="text" name="numIGC" placeholder="")
+          input.form-control(type="text" name="numIGC" placeholder="")#numIGC
       .mb-2
         label.form-label(for="herbergement") Type d'hébergement
-        select.form-control(name="hebergement")
+        select.form-control(name="hebergement")#hebergement
           option(value="Hébergement extérieur") Hébergement extérieur
           option(value="Tente") Tente
+          option(value="Dortoir") Dortoir
+          option(value="Chambre") Chambre
       .mb-2.form-check
         input.form-check-input(type="checkbox" name="valide")#valide
         label.form-check-label(for="valide") Je m’engage sur l’honneur à être en règle avec l’administration en ce qui concerne ma licence de pilote, les papiers de mon planeur, ainsi que la licence assurance FFVV.
+      .mb-2.form-check
+        input.form-check-input(type="checkbox" name="accesGivav")#accesGivav
+        label.form-check-label(for="accesGivav") Si mon club utilise GIVAV j'autorise l'AAVO à me facturer les remorqués sur mon compte GIVAV.
       .mb-2
         button.btn.btn-primary(type="submit" disabled)#submit Enregistrer
   else
