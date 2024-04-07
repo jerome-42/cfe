@@ -1,8 +1,8 @@
 $(document).ready(function() {
     $('#inscription').change(function() {
-        console.log($(this).val());
         switch ($(this).val()) {
         case "en instruction":
+        case "instructeur":
             $('#typePlaneur').parents('.row').addClass('d-none');
             $('#typePlaneur').val('');
             $('#equipe').parents('.row').addClass('d-none');
