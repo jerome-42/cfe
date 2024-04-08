@@ -64,6 +64,28 @@ block content
           a(href="https://cfe.aavo.org/forms/cirj-2024") Championnat Inter-Régional Jeunes.
         p N'hésitez pas à venir en discuter avec les membres de la commission sportive : Alizée Petit, Charlotte Dubois, Florian Castel.
   hr.border.border-primary.border-3
+  .row
+    .col-6.offset-3
+      h5 Rejoignez ceux qui se sont déjà inscrits !
+
+  .row
+    .col-6.offset-3
+      .table-responsive-xxl.d-print-50
+        table.table.table-striped#list
+          thead
+            tr
+              th
+              th En tant que
+              th Sur
+          tbody
+            each answer in getAnswersByForm('schalow-2024')
+              tr
+                td= $answer['data']['nom']
+                td= $answer['data']['inscription']
+                td= $answer['data']['typePlaneur']
+
+  hr.border.border-primary.border-3
+
   if $stored === false
     .row.mt-5
       h5 Formulaire d'inscription :

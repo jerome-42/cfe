@@ -675,7 +675,7 @@ get('/forms/$what', function($conn, $pug, $env, $parameters) {
     $viewName = $parameters[0];
     $forms = new Forms($env);
     if ($forms->exists($viewName)) {
-        return Phug::displayFile('view/'.$viewName.'.pug', [ 'stored' => false ]);
+        return $pug->displayFile('view/'.$viewName.'.pug', [ 'stored' => false ]);
     } else {
         http_response_code(404);
         return Phug::displayFile('view/404.pug');
@@ -691,7 +691,7 @@ post('/forms/$what', function($conn, $pug, $env, $parameters) {
     $forms = new Forms($env);
     if ($forms->exists($viewName)) {
         $forms->storeAnswer($viewName, getClientIP(), $_SERVER['REMOTE_PORT'], $_POST);
-        return Phug::displayFile('view/'.$viewName.'.pug', [ 'stored' => true ]);
+        return $pug->displayFile('view/'.$viewName.'.pug', [ 'stored' => true ]);
     }
 });
 

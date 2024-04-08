@@ -71,6 +71,10 @@ class Env {
             $name = $sth->fetchAll(PDO::FETCH_ASSOC)[0]['name'];
             return $name;
         });
+        $this->pug->share('getAnswersByForm', function($text) {
+            $forms = new Forms($this);
+            return $forms->listAnswersbyForm($text);
+        });
         $this->pug->share('isBefore', function($t1, $t2) {
             return intval($t1) < intval($t2);
         });

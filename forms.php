@@ -30,10 +30,20 @@ class Forms {
     }
 
     public function listAnswers() {
-        $q = "SELECT forms.*, UNIX_TIMESTAMP(`when`) AS `when`, UNIX_TIMESTAMP(`commentWhen`) AS `commentWhen`, forms.name AS name, personnes.name AS commentBy FROM forms LEFT JOIN personnes ON personnes.id = forms.commentBy ORDER BY `when` DESC";
+        $q = "SELECT forms.*, UNIX_TIMESTAMP(`when`) AS `when`, UNIX_TIMESTAMP(`commentWhen`) AS `commentWhen`, forms.name AS name, personnes.name AS commentBy FROM forms LEFT JOIN personnes ON personnes.id = forms.commentBy ORDER BY `when` ASC";
         $sth = $this->env->mysql->prepare($q);
         $sth->execute();
         $answers = $sth->fetchAll(PDO::FETCH_ASSOC);
+        return $answers;
+    }
+
+    public function listAnswersbyForm($name) {
+        $q = "SELECT forms.*, UNIX_TIMESTAMP(`when`) AS `when`, UNIX_TIMESTAMP(`commentWhen`) AS `commentWhen` FROM forms WHERE name = :name ORDER BY `when` ASC";
+        $sth = $this->env->mysql->prepare($q);
+        $sth->execute([ ':name' => $name ]);
+        $answers = $sth->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($answers as &$answer)
+            $answer['data'] = json_decode($answer['data']);
         return $answers;
     }
 
