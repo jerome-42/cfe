@@ -3,6 +3,8 @@ extends layout.pug
 block scripts
   title Liste des réponses aux formulaires
   script(src="js/listeFormulaires.js")
+  script.
+    var answers = !{$answers};
 
 block content
   .row
@@ -11,60 +13,40 @@ block content
     p.small Date d'impression&nbsp;
       b= timestampToDate(time())
   .row.d-print-none
-    .col-md-3
+    .col-md-1
       button.btn.btn-danger.back Retour
-    .col-md-3
-      .row
-        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
-        .col-sm-9
-          input.form-control(type="text" placeholder="formulaire / nom / ...")#search
-  .row
+    .col-3.offset-5
+      label.col-sm-3.col-form-label(for="formSelection")
+        b Formulaire:&nbsp;&nbsp;
+      select.form-control#formSelection
+
+    .col-2.offset-1
+      label.col-sm-3.col-form-label(for="search")
+        b Recherche:&nbsp;&nbsp;
+      input.form-control(type="text" placeholder="formulaire / nom / ...")#search
+  .row.mt-4
     .col-12
       .table-responsive-xxl.d-print-50
         table.table.table-striped#list
-          thead
-            tr
-              th(width="10%") Comment
-              th(width="10%") Formulaire
-              th(width="10%") Quand
-              th(width="70%") Données
-              th.d-print-none(width="10%") Détails
-          tbody
-            each answer in $answers
-              tr(x-num=$answer['id'] x-comment=$answer['comment'])
-                td.d-print-none
-                  button.btn.btn-primary.displayDetails
-                    i.bi.bi-eye
-                    span.d-none.d-sm-block2 &nbsp;Détails
-                td= $answer['name']
-                td= timestampToDateTime($answer['when'])
-                td= $answer['data']
-
-          tfoot.d-print-none
-            tr
-              th Comment
-              th Formulaire
-              th Quand
-              th Données
-              th Détails
 
   .hstack.gap-4.mb-3.d-print-none
     button.btn.btn-danger.back Retour
+    button.btn.btn-primary.download Télécharger en CSV
 
-  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalEditComment
-    .modal-dialog
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalEdit
+    .modal-dialog.modal-lg
       .modal-content
         .modal-header
           h5 Editer le commentaire
           button.btn.btn-close(type="button" data-bs-dismiss="modal")
         .modal-body
-          form(method="POST" action="/editGliderComment")#formEditComment
-            input(type="hidden" name="id")#gliderId
-            .btn-group.mb-2(role="group")
-              button.btn.btn-outline-primary.clearComment(type="button") Supprimer le commentaire
+          form(method="POST" action="/editFormAnswer")#formEdit
+            input(type="hidden" name="id")#answerId
+            div#editControls
             .mb-3
-              label.form-label(for="comment") Commentaire
-              textarea.form-control(name="comment" placeholder="Commentaire" rows="5")#comment
+              label.form-label(for="comment") Commentaires
+              textarea.form-control(name="comment" placeholder="Commentaires" rows="5")#comment
         .modal-footer
           button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-danger(type="button")#deleteAnswer Supprimer
           button.btn.btn-primary(type="button")#addComment Enregistrer

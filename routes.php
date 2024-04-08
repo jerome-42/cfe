@@ -533,6 +533,18 @@ post('/deleteCFELine', function($conn, $pug) {
     echo "OK";
 });
 
+get('/deleteFormAnswer', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_GET['id']) || is_numeric($_GET['id']) === false)
+        return displayError($pug, "id n'existe pas hors il est obligatoire");
+    $id = $_GET['id'];
+    $forms = new Forms($env);
+    $answer = $forms->getAnswerById($id);
+    $forms->deleteAnswer($id);
+    redirect('/listeFormulaires?formulaire='.$answer['name']);
+});
+
 get('/detailsMachine', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
@@ -603,6 +615,22 @@ post('/editGliderComment', function($conn, $pug) {
         redirect('/detailsMachine?numero='.$_POST['id']);
     else
         redirect('/listeMachines');
+});
+
+post('/editFormAnswer', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_POST['id']) || is_numeric($_POST['id']) === false)
+        return displayError($pug, "id n'existe pas hors il est obligatoire");
+    $comment = $_POST['comment'];
+    $id = $_POST['id'];
+    unset($_POST['comment']);
+    unset($_POST['id']);
+    $data = json_encode($_POST);
+    $forms = new Forms($env);
+    $forms->updateAnswer($id, $data, $comment, $_SESSION['id']);
+    $answer = $forms->getAnswerById($id);
+    redirect('/listeFormulaires?formulaire='.$answer['name']);
 });
 
 get('/error', function($conn) {
@@ -797,7 +825,7 @@ get('/listeFormulaires', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
     $forms = new Forms($env);
-    $vars = array_merge($_SESSION, [ 'answers' => $forms->listAnswers() ]);
+    $vars = array_merge($_SESSION, [ 'answers' => json_encode($forms->listAnswers()) ]);
     $pug->displayFile('view/listeFormulaires.pug', $vars);
 });
 
