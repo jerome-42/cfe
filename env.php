@@ -102,6 +102,13 @@ class Env {
                 return $text;
             return substr($text, 0, $nbChar).'...';
         });
+        $this->pug->share('myPluralize', function($nb, $text) {
+            if (!is_numeric($nb))
+                return $text;
+            if (intval($nb) >= 2)
+                return $nb.' '.$text.'s';
+            return $nb.' '.$text;
+        });
         $this->pug->share('tinyintVersText', function($text) {
             if (intval($text) === 1)
                 return 'oui';

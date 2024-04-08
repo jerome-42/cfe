@@ -78,11 +78,15 @@ block content
               th En tant que
               th Sur
           tbody
-            each answer in getAnswersByForm('schalow-2024')
+            - $answers = getAnswersByForm('schalow-2024')
+            each answer in $answers
               tr
                 td= $answer['data']['nom']
                 td= $answer['data']['inscription']
                 td= $answer['data']['typePlaneur']
+            tr
+              td
+                b Il y a #{myPluralize(count($answers), 'inscrit')}, bientôt un de plus ?
 
   hr.border.border-primary.border-3
 
