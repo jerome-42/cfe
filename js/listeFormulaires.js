@@ -18,6 +18,8 @@ let download = function() {
     });
     csvContent += row.get().toString() + "\r\n";
     $('#list > tbody > tr').each(function() {
+        if ($(this).attr('x-sum') != undefined)
+            return;
 	var row = $(this).find('td:gt(0)').map(function(id) {
 	    return $(this).text();
 	});
@@ -126,7 +128,8 @@ let updateList = function() {
         .append(tbody)
         .append($('<tfoot>').append(header.clone()));
 
-    var search = $('#search').val().toLowerCase().replaceSpecialChars();
+    let search = $('#search').val().toLowerCase().replaceSpecialChars();
+    let nbLines = 0;
     $('#list > tbody > tr').each(function() {
 	var displayLine = false;
 	if (search === '')
@@ -139,9 +142,20 @@ let updateList = function() {
 	}
 	if (displayLine === false)
 	    $(this).hide();
-	else
+	else {
 	    $(this).show();
+            nbLines++;
+        }
     });
+    let nbColumns = $('#list > thead > tr > th').length;
+    let tr = $('<tr x-sum="1">')
+        .append($('<td>'))
+        .append($('<td>').
+                append($('<h5>').text('Total '+nbLines+' lignes')));
+    for (let i = 2; i < nbColumns; i++)
+        tr.append($('<td>'));
+    $('#list > tbody')
+        .append(tr);
 };
 
 $(document).ready(function() {
