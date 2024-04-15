@@ -119,6 +119,10 @@ block content
           option(value="tous les jours") Tous les jours
           option(value="1 jour sur 2") 1 jour sur 2
           option(value="c'est compliqué") C'est compliqué
+      .row.mb-2.d-none
+        .col
+          label.form-label(for="presenceDetails") Les jours où je serais présent
+          input.form-control(type="text" name="presenceDetails" placeholder="8, 9 et 11 mai")#presenceDetails
       .mb-2
         button.btn.btn-primary(type="submit")#submit Enregistrer
   else

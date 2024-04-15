@@ -19,4 +19,13 @@ $(document).ready(function() {
             break;
         }
     });
+    $('#presence').change(function() {
+        if ($(this).val() === "c'est compliqué") {
+            $('#presenceDetails').parents('.row').removeClass('d-none');
+            $('#presenceDetails').val('');
+        } else {
+            $('#presenceDetails').parents('.row').addClass('d-none');
+            $('#presenceDetails').val('');
+        }
+    });
 });
