@@ -51,7 +51,10 @@ block content
         h4 Le club vous propose les travaux du moment :
     .row.mb-3
       .col
-        each proposal in $proposals
+        each proposal, i in $proposals
+          if i % 3 == 0
+            .row.mb-2
+              .col
           if $proposal['isActive'] == '1'
             case $proposal['priority']
               when "Top priorité"
