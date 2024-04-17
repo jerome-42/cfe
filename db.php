@@ -18,6 +18,21 @@ $tables = [
   INDEX `who`(`who`)
 ) ENGINE=InnoDB",
 
+    'cfe_proposals' => "CREATE TABLE `cfe_proposals` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `who` bigint unsigned NOT NULL,
+  `registerDate` datetime NOT NULL,
+  `priority` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `workType` varchar(255) NOT NULL,
+  `beneficiary` varchar(255) NOT NULL,
+  `notValidAfterDate` date DEFAULT NULL,
+  `details` text,
+  `notes` text,
+  `isActive` bool,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB",
+
     'forms' => "CREATE TABLE `forms`(
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `when` datetime NOT NULL,

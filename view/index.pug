@@ -46,6 +46,25 @@ block content
         .alert.alert-info #{durationToHuman($submited)} en attente de validation
           small.text-muted &nbsp;(les heures sont généralement validées tous les 2 ou 3 jours)
 
+    .row
+      .col
+        h4 Le club vous propose les travaux du moment :
+    .row.mb-3
+      .col
+        each proposal in $proposals
+          if $proposal['isActive'] == '1'
+            case $proposal['priority']
+              when "Top priorité"
+                - $color = 'bg-danger'
+              when "Haute"
+                - $color = 'bg-warning'
+              when "Basse"
+                - $color = 'bg-success'
+              default
+                - $color = 'bg-info'
+
+            span.badge.text-black.rounded-pill.mx-2.px-2.py-2.proposal(class=$color x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-who=$proposal['who'] x-whoEmail=$proposal['whoEmail']) (#{proposal['priority']}) #{my_substr($proposal['title'], 30)}
+
     .row.d-block.d-sm-none.justify-content-md-center
       .btn-group-vertical(role="group")
         if $isAdmin
@@ -53,6 +72,7 @@ block content
             span= durationToHuman($durationSubmitted)
             | &nbsp;à valider
           button.btn.btn-primary.membres Liste des membres
+          button.btn.btn-secondary.propositions Je propose
         button.btn.btn-success.declaration Je déclare
         button.btn.btn-info.listeCFE Je consulte
         if $isAdmin
@@ -71,6 +91,7 @@ block content
               br
               à valider
           button.btn.btn-primary.membres Liste des membres
+          button.btn.btn-secondary.propositions Je propose
         button.btn.btn-success.declaration Je déclare
         button.btn.btn-info.listeCFE Je consulte
         if $isAdmin
@@ -80,3 +101,23 @@ block content
         .btn-group(role="group").mt-4
           button.btn.btn-primary.listeMachines Liste des machines
           button.btn.btn-success.listeFormulaires Liste des réponses aux formulaires
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalDisplayProposal
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modalProposalTitle
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          .row
+            .col
+              p.modalProposalWorktype
+          .row
+            .col
+              p.modalProposalDetails
+          .row
+            .col
+              p.modalProposalWho
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-primary(type="button")#addProposal J'ai participé et je déclare

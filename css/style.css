@@ -26,6 +26,11 @@
     }
 }
 
+.proposal {
+    cursor: pointer;
+    font-size: 1rem;
+}
+
 @media (max-width: 576px) {
     .d-sm-block2 {
 	display: none!important;

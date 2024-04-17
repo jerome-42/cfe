@@ -1,0 +1,140 @@
+extends layout.pug
+
+block scripts
+  title Liste des propositions
+  script(src="js/listePropositions.js")
+
+block content
+  .row
+    h1 Liste des propositions
+  .row.d-print-none
+    .col-md-3
+      button.btn.btn-danger.back Retour
+      button.btn.btn-success.enregistrerNouvelle Enregistrer une nouvelle proposition
+    .col-md-3
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="type / travaux")#search
+  .row
+    .col-12
+      .table-responsive-xxl.d-print-50
+        table.table.table-striped#list
+          thead
+            tr
+              th.d-print-none(width="10%")
+              th(width="5%") Visible
+              th(width="10%") Type
+              th(width="10%") Priorité
+              th(width="10%") Titre
+              th(width="15%") Détails
+              th(width="15%") Proposé par
+              th(width="10%") Date maxi
+              th(width="15%") Notes
+          tbody
+            each proposal in $proposals
+              tr(x-id=$proposal['id'], x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-notes=$proposal['notes'] x-priority=$proposal['priority'] x-isActive=$proposal['isActive'])
+                td.d-print-none
+                  button.btn.btn-secondary.displayDetails
+                    i.bi.bi-eye
+                    span.d-none.d-sm-block2 &nbsp;Détails
+                  button.btn.btn-primary.edit
+                    i.bi.bi-pencil
+                    span.d-none.d-sm-block2 &nbsp;Editer
+                td
+                  if $proposal['isActive']
+                    i.bi.bi-check-square
+                  else
+                    i.bi.bi-app
+                td= $proposal['workType']
+                td
+                  case $proposal['priority']
+                    when "Top priorité"
+                      .alert.alert-danger Top priorité
+                    when "Haute"
+                      .alert.alert-warning Haute
+                    when "Basse"
+                      .alert.alert-success Basse
+                    when "Au long cours"
+                      .alert.alert-info Au long cours
+                    default
+                      .alert.alert-info= $proposal['priority']
+                td= my_substr($proposal['title'], 100)
+                td= my_substr($proposal['details'], 100)
+                td= $proposal['who']
+                td= $proposal['notValidAfterDate']
+                td= my_substr($proposal['notes'], 100)
+
+          tfoot.d-print-none
+            tr
+              th
+              th Visible
+              th Type
+              th Priorité
+              th Titre
+              th Détails
+              th Proposé par
+              th Date maxi
+              th Notes
+  .hstack.gap-2.mb-3.d-print-none
+    button.btn.btn-danger.back Retour
+    button.btn.btn-success.enregistrerNouvelle Enregistrer une nouvelle proposition
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalEditProposal
+    .modal-dialog.modal-xl
+      .modal-content
+        .modal-header
+          h5.modalTitle Ajouter une proposition de CFE
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          form(method="POST" action="/editProposal")#formEditProposal
+            input(type="hidden" name="beneficiary" value="AAVO")
+            input(type="hidden" name="id")#id
+            input(type='hidden' name='notValidAfterDateTimestamp')#notValidAfterDateTimestamp
+            .mb-3
+              .form-check
+                input.form-check-input(type="checkbox" name="isActive")#isActive
+                label.form-check-label(for="isActive") Est visible
+            .mb-3
+              label.form-label(for='type') Type de travaux à réaliser
+              select.form-select(name="type" placeholder='Choisir...')#type
+                option(value='Entretien planeur') Entretien planeur
+                option(value='Entretien piste (clôture, tonte)') Entretien piste (clôture, tonte)
+                option(value='Entretien bâtiments intérieur') Entretien bâtiments intérieur
+                option(value='Entretien bâtiments extérieur') Entretien bâtiments extérieur
+                option(value='Entretien matériel roulant (tracteur, voiture ...)') Entretien matériel roulant (tracteur, voiture ...)
+                option(value='Entretien remorques') Entretien remorques
+                option(value='Espaces verts') Espaces verts
+                option(value='Entretien remorqueur') Entretien remorqueur
+                option(value='Pliage parachutes') Pliage parachutes
+                option(value='Entretien treuil') Entretien treuil
+                option(value='Administratif planeur (réglementation)') Administratif planeur (réglementation)
+                option(value='Administratif (secrétariat, accueil, compta)') Administratif (secrétariat, accueil, compta)
+                option(value='Informatique') Informatique
+                option(value='Autre') Autre
+            .mb-3
+              label.form-label(for="title") Titre des travaux à réaliser
+              input.form-control(type="text" name="title" placeholder="FI : visite annuelle / Refaire clôture anti-sanglier")#title
+            .mb-3
+              label.form-label(for="details") Détails
+              textarea.form-control(name="details" rows="5")#details
+            .mb-3
+              label.form-label(for='priority') Priorité
+              select.form-select(name="priority")#priority
+                option(value='Top priorité') Top priorité
+                option(value='Haute') Haute
+                option(value='Basse') Basse
+                option(value='Au long cours') Au long cours
+            .mb-3
+              label.form-label(for="notes") Notes (privées)
+              textarea.form-control(name="notes" rows="5")#notes
+            .mb-3
+              .form-check
+                input.form-check-input(type="checkbox")#withMaxDate
+                label.form-check-label(for="withMaxDate") Avec une date maximale
+            .mb-3.maxDate.visually-hidden
+              label.form-label(for='notValidAfterDate') Date de r&eacute;alisation maximale
+              input.form-control(type='date' name='notValidAfterDate')#notValidAfterDate
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
+          button.btn.btn-primary(type="button")#addProposal Ajouter cette tâche

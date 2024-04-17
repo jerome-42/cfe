@@ -20,7 +20,23 @@ $(document).ready(function() {
     $(".membres").click(function() {
         window.location = "/listeMembres";
     });
+    $(".propositions").click(function() {
+        window.location = "/listePropositions";
+    });
     $(".validation").click(function() {
         window.location = "/validation";
+    });
+
+    $('.proposal').click(function() {
+        let span = $(this);
+        $('.modalProposalTitle').text(span.attr('x-title'));
+        $('.modalProposalWorktype').text('Catégorie : '+span.attr('x-workType'));
+        $('.modalProposalDetails').text('Détails : '+span.attr('x-details'));
+        $('.modalProposalWho').html(
+            $('<div>')
+                .append($('<pan>').text('Proposé par : '))
+                .append($('<a>', { href: 'mailto:'+span.attr('x-whoemail') }).text(span.attr('x-who')))
+        );
+        $('#modalDisplayProposal').modal('show');
     });
 });

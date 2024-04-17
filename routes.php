@@ -20,13 +20,15 @@ function displayError($pug, $message) {
     $pug->displayFile('view/error.pug', $vars);
 }
 
-get('/', function($conn, $pug) {
+get('/', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
     $cfe = new CFE($conn);
     $vars = array_merge($_SESSION, $cfe->getStats($_SESSION['givavNumber'], getYear()));
     $vars['durationSubmitted'] = $cfe->getSubmittedDuration();
+    $proposals = new Proposals($env);
+    $vars['proposals'] = $proposals->list();
     $pug->displayFile('view/index.pug', $vars);
 });
 
@@ -484,9 +486,10 @@ post('/declarerFLARM', function($conn, $pug) {
 get('/deconnexion', function($conn) {
     if (isset($_SESSION['inSudo'])) {
         unset($_SESSION['inSudo']);
-        $previousUser = Personne::load($conn, $_SESSION['previousGivavNumber']);
-        unset($_SESSION['previousGivavNumber']);
+        $previousUser = Personne::getFromId($conn, $_SESSION['previousId']);
+        unset($_SESSION['previousId']);
         $_SESSION['givavNumber'] = $previousUser['givavNumber'];
+        $_SESSION['id'] = $previousUser['id'];
         $_SESSION['name'] = $previousUser['name'];
         $_SESSION['mail'] = $previousUser['mail'];
         return redirect('/listeMembres');
@@ -631,6 +634,34 @@ post('/editFormAnswer', function($conn, $pug, $env) {
     $forms->updateAnswer($id, $data, $comment, $_SESSION['id']);
     $answer = $forms->getAnswerById($id);
     redirect('/listeFormulaires?formulaire='.$answer['name']);
+});
+
+post('/editProposal', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    foreach ([ 'beneficiary', 'details', 'notes', 'priority', 'type', 'title' ] as $key) {
+        if (!isset($_POST[$key])) {
+            return displayError($pug, "missgin ".$key);
+        }
+    }
+    $proposals = new Proposals($env);
+    $data = [
+        'beneficiary' => $_POST['beneficiary'],
+        'details' => $_POST['details'],
+        'isActive' => (isset($_POST['isActive']) && $_POST['isActive'] === 'on') ? true : false,
+        'notes' => $_POST['notes'], 
+        'priority' => $_POST['priority'],
+        'title' => trim($_POST['title']),
+        'who' => $_SESSION['id'],
+        'workType' => $_POST['type'],
+   ];
+    if ($_POST['notValidAfterDateTimestamp'] !== '' && is_numeric($_POST['notValidAfterDateTimestamp']))
+        $data['notValidAfterDate'] = $_POST['notValidAfterDateTimestamp'];
+    if ($_POST['id'] !== '' && is_numeric($_POST['id']))
+        $proposals->update(intval($_POST['id']), $data);
+    else
+        $proposals->create($data);
+    redirect('/listePropositions');
 });
 
 get('/error', function($conn) {
@@ -865,6 +896,15 @@ get('/listeMembres', function($conn, $pug) {
     $pug->displayFile('view/listeMembres.pug', $vars);
 });
 
+get('/listePropositions', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $proposals = new Proposals($env);
+    $vars = array_merge($_SESSION, [ 'currentUser' => $_SESSION['givavNumber'],
+                                     'proposals' => $proposals->list(), ]);
+    $pug->displayFile('view/listePropositions.pug', $vars);
+});
+
 get('/parametresFlarm', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
@@ -1003,11 +1043,12 @@ get('/sudo', function($conn, $pug) {
         return displayError($pug, "Numéro attendu" );
     }
     $_SESSION['inSudo'] = true;
-    $_SESSION['previousGivavNumber'] = $_SESSION['givavNumber'];
+    $_SESSION['previousId'] = $_SESSION['id'];
     $newUser = Personne::load($conn, $_GET['numero']);
     $_SESSION['givavNumber'] = $newUser['givavNumber'];
     $_SESSION['name'] = $newUser['name'];
     $_SESSION['mail'] = $newUser['mail'];
+    $_SESSION['id'] = $newUser['id'];
     return redirect('/');
 });
 

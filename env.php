@@ -8,6 +8,7 @@ include_once __DIR__ . '/forms.php';
 include_once __DIR__ . '/gliders.php';
 include_once __DIR__ . '/ogn.php';
 include_once __DIR__ . '/osrt.php';
+include_once __DIR__ . '/proposals.php';
 include_once __DIR__ . '/settings.php';
 
 class Env {

@@ -30,6 +30,15 @@ class Personne {
         return $data; // on a besoin à minima d'id (pour /connexion)
     }
 
+    static public function getFromId($conn, $id) {
+        $query = "SELECT * FROM personnes WHERE id = :id";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':id' => $id ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("Utilisateur inconnu");
+        return $sth->fetchAll()[0];
+    }
+
     static public function load($conn, $num) {
         $query = "SELECT *, personnes.id AS id FROM personnes LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber WHERE givavNumber = :num";
         $sth = $conn->prepare($query);
