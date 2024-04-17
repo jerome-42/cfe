@@ -5,6 +5,15 @@ class Proposals {
         $this->env = $env;
     }
 
+    public function get($id) {
+        $query = 'SELECT cfe_proposals.*, UNIX_TIMESTAMP(cfe_proposals.notValidAfterDate) AS `notValidAfterDate`, personnes.name AS who, personnes.email AS `whoEmail` FROM cfe_proposals JOIN personnes ON personnes.id = cfe_proposals.who WHERE cfe_proposals.id = :id';
+        $sth = $this->env->mysql->prepare($query);
+        $sth->execute([ ':id' => $id ]);
+        if ($sth->rowCount() === 1)
+            return $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+        throw new Exception("pas de proposition n°".$id);
+    }
+
     public function list() {
         $query = 'SELECT cfe_proposals.*, personnes.name AS who, personnes.email AS `whoEmail` FROM cfe_proposals JOIN personnes ON personnes.id = cfe_proposals.who ORDER BY isActive DESC, registerDate DESC';
         $sth = $this->env->mysql->prepare($query);

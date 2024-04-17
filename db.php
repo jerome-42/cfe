@@ -3,6 +3,7 @@
 $tables = [
     'cfe_records' => "CREATE TABLE `cfe_records` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `proposal` bigint unsigned DEFAULT NULL,
   `who` bigint unsigned NOT NULL,
   `registerDate` datetime NOT NULL,
   `workDate` date NOT NULL,

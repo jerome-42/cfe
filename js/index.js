@@ -1,3 +1,5 @@
+var proposalId = null;
+
 $(document).ready(function() {
     $(".declaration").click(function() {
         window.location = "/declaration";
@@ -37,6 +39,11 @@ $(document).ready(function() {
                 .append($('<pan>').text('Proposé par : '))
                 .append($('<a>', { href: 'mailto:'+span.attr('x-whoemail') }).text(span.attr('x-who')))
         );
+        proposalId = span.attr('x-id');
         $('#modalDisplayProposal').modal('show');
+    });
+
+    $('#gotoProposalDeclare').click(function() {
+        window.location = '/declaration-proposition?num='+proposalId;
     });
 });

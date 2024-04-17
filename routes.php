@@ -187,15 +187,36 @@ get('/declaration', function($conn, $pug) {
     $pug->displayFile('view/declaration.pug', $vars);
 });
 
-post('/declaration', function($conn, $pug) {
+post('/declaration', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');
     }
     // vérification que tous les éléments du formulaire ont été saisi (dateCFE, type, beneficiaire, duree)
-    foreach ([ 'startDateCFE', 'stopDateCFE', 'type', 'beneficiary', 'durationHour', 'durationMinute' ] as $elem) {
+    foreach ([ 'startDateCFE', 'stopDateCFE', 'durationHour', 'durationMinute' ] as $elem) {
         if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
             return displayError($pug, $elem." n'est pas présent dans la requête");
         }
+    }
+    $proposals = new Proposals($env);
+    $proposal = null;
+    $type = null;
+    $beneficiary = null;
+    $details = null;
+    if (isset($_POST['proposal']) && is_numeric($_POST['proposal'])) {
+        $proposal = $proposals->get(intval($_POST['proposal']));
+        // on triche, on charge les valeurs depuis $proposal
+        $type = $proposal['workType'];
+        $beneficiary = $proposal['beneficiary'];
+        $details = $proposal['details'];
+    } else {
+        foreach ([ 'type', 'beneficiary' ] as $elem) {
+            if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+                return displayError($pug, $elem." n'est pas présent dans la requête");
+            }
+        }
+        $type = $_POST['type'];
+        $beneficiary = $_POST['beneficiary'];
+        $details = $_POST['details'];
     }
     $startDate = new DateTime();
     $stopDate = new DateTime();
@@ -222,6 +243,12 @@ post('/declaration', function($conn, $pug) {
     }
     if ($startDate != $stopDate && $_SESSION['enableMultiDateDeclaration'] === false) {
         return displayError($pug, "Vous n'avez pas le droit de déclarer plusieurs dates (enableMultiDateDeclaration)");
+    }
+    if ($proposal != null && $proposal['notValidAfterDate'] != null) {
+        $notValidAfter = new DateTime();
+        $notValidAfter->setTimestamp($proposal['notValidAfterDate']);
+        if ($stopDate > $notValidAfter)
+            return displayError($pug, "Date postérieure à la date limite de la tâche travaux");
     }
 
     // vérification heure
@@ -267,10 +294,10 @@ post('/declaration', function($conn, $pug) {
         $sth = $conn->prepare($query);
         $sth->execute([ ':id' => $line['id'],
                         ':workDate' => $startDate->format('Y-m-d'),
-                        ':workType' => $_POST['type'],
-                        ':beneficiary' => $_POST['beneficiary'],
+                        ':workType' => $type,
+                        ':beneficiary' => $beneficiary,
                         ':duration' => $duration,
-                        ':details' => $_POST['details'],
+                        ':details' => $details,
         ]);
         $newLine = $cfe->getLine(intval($id));
         foreach (array_keys($newLine) as $key) {
@@ -281,7 +308,9 @@ post('/declaration', function($conn, $pug) {
         return redirect("/declaration-complete");
     }
 
-    $query ="INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details)";
+    $query = "INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details)";
+    if ($proposal != null)
+        $query = "INSERT INTO cfe_records (who, registerDate, workDate, workType, beneficiary, duration, status, details, proposal) values (:num, NOW(), :workDate, :workType, :beneficiary, :duration, 'submitted', :details, :proposal)";
     $sth = $conn->prepare($query);
     $interval = DateInterval::createFromDateString('1 day');
     // DatePeriod::INCLUDE_END_DATE n'existe pas en PHP 8.1
@@ -294,13 +323,16 @@ post('/declaration', function($conn, $pug) {
     foreach ($period as $dt) {
         //DEBUG echo '<pre>';
         //DEBUG var_dump($_POST);
-        $sth->execute([ ':num' => $_SESSION['givavNumber'],
+        $vars = [ ':num' => $_SESSION['givavNumber'],
                         ':workDate' => $dt->format('Y-m-d'),
-                        ':workType' => $_POST['type'],
-                        ':beneficiary' => $_POST['beneficiary'],
+                        ':workType' => $type,
+                        ':beneficiary' => $beneficiary,
                         ':duration' => $duration,
-                        ':details' => $_POST['details'],
-        ]);
+                        ':details' => $details,
+        ];
+        if ($proposal != null)
+            $vars['proposal'] = $proposal['id'];
+        $sth->execute($vars);
         $sth2 = $conn->query("SELECT LAST_INSERT_ID() AS id");
         if ($sth2->rowCount() === 1) {
             $id = $sth2->fetchAll()[0]['id'];
@@ -310,6 +342,24 @@ post('/declaration', function($conn, $pug) {
         }
     }
     redirect("/declaration-complete");
+});
+
+get('/declaration-proposition', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth'])) {
+        return redirect('/connexion');
+    }
+    if (!isset($_GET['num']) || is_numeric($_GET['num']) === false)
+        return redirect('/');
+    $proposals = new Proposals($env);
+    $proposal = $proposals->get(intval($_GET['num']));
+    $vars = array_merge($_SESSION, [
+        'proposal' => $proposal,
+        'workDate' => date('Y-m-d'), // par défaut c'est la date du jour
+        'maxDate' => date('Y').'-12-31',
+    ]);
+    if ($proposal['notValidAfterDate'] != null)
+        $vars['maxDate'] = date('Y-m-d', $proposal['notValidAfterDate']+86400);
+    $pug->displayFile('view/declaration-proposition.pug', $vars);
 });
 
 get('/declaration-complete', function($conn, $pug) {

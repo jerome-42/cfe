@@ -66,7 +66,7 @@ block content
               default
                 - $color = 'bg-info'
 
-            span.badge.text-black.rounded-pill.mx-2.px-2.py-2.proposal(class=$color x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-who=$proposal['who'] x-whoEmail=$proposal['whoEmail']) (#{proposal['priority']}) #{my_substr($proposal['title'], 30)}
+            span.badge.text-black.rounded-pill.mx-2.px-2.py-2.proposal(class=$color x-id=$proposal['id'] x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-who=$proposal['who'] x-whoEmail=$proposal['whoEmail']) (#{proposal['priority']}) #{my_substr($proposal['title'], 30)}
 
     .row.d-block.d-sm-none.justify-content-md-center
       .btn-group-vertical(role="group")
@@ -123,4 +123,4 @@ block content
               p.modalProposalWho
         .modal-footer
           button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Annuler
-          button.btn.btn-primary(type="button")#addProposal J'ai participé et je déclare
+          button.btn.btn-primary(type="button")#gotoProposalDeclare J'ai participé et je déclare
