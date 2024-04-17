@@ -22,11 +22,12 @@ block content
         thead
           tr
             th Date
-            th(width="20%") Par
+            th(width="15%") Par
             th(width="10%") Statut
-            th(width="10%") Bénéficiaire
-            th(width="10%") Type
-            th(width="10%") Durée
+            th(width="15%") Travaux
+            th(width="5%") Bénéficiaire
+            th(width="7%") Type
+            th(width="7%") Durée
             th Détails
             th(width="10%") Cause du rejet
         tbody
@@ -35,12 +36,15 @@ block content
               td.date= $line['workDate']
               td #{$line['name']} (#{$line['givavNumber']})
               td.status(x-validated-by=$line['validatedName'])= $line['status']
+              td
+                a(href="/detailsProposition?num="+$line['proposalId']) #{$line['proposalTitle']}
               td= $line['beneficiary']
               td= $line['workType']
               td= durationToHuman($line['duration'])
               td.small= $line['details']
               td.small= $line['rejectedCause']
           tr.pt-5.sum
+            td
             td
             td
             td
@@ -55,6 +59,7 @@ block content
           tr
             th Date
             th Statut
+            th Travaux
             th Bénéficiaire
             th Type
             th Durée

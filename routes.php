@@ -653,6 +653,22 @@ post('/detailsMembreStats', function($conn, $pug) {
     echo json_encode($cfe->getStats($num, getYear()));
 });
 
+get('/detailsProposition', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    if (!isset($_GET['num']) || !is_numeric($_GET['num'])) {
+        return displayError($pug, "le paramètre num est obligatoire et doit être un entier" );
+    }
+    $id = intval($_GET['num']);
+    $proposals = new Proposals($env);
+    $proposal = $proposals->get($id);
+    $cfe = new CFE($conn);
+    $records = $cfe->getLinesOfProposal($id);
+    $vars = array_merge($_SESSION, [ 'proposal' => $proposal,
+                                     'records' => $records ]);
+    $pug->displayFile('view/detailsProposition.pug', $vars);
+});
+
 post('/editGliderComment', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');

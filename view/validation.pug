@@ -26,6 +26,7 @@ block content
             th Statut
             th Membre
             th Date
+            th Travaux
             th Bénéficiaire
             th Type
             th Durée
@@ -38,11 +39,14 @@ block content
               td.validation #{$line['status']}
               td #{$line['name']}  (#{$line['givavNumber']})
               td #{$line['workDate']}
+              td
+                a(href="/detailsProposition?num="+$line['proposalId']) #{$line['proposalTitle']}
               td #{$line['beneficiary']}
               td #{$line['workType']}
               td(x-value=$line['duration'])= durationToHuman($line['duration'])
               td #{$line['details']}
           tr.pt-5
+            td
             td
             td
             td
@@ -57,6 +61,7 @@ block content
             th Statut
             th Membre
             th Date
+            th Travaux
             th Bénéficiaire
             th Type
             th Durée

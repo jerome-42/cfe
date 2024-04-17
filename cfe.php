@@ -19,7 +19,15 @@ class CFE {
     }
 
     public function getLastRecords() {
-        $query = 'SELECT cfe_records.*, personnes.name, personnes.givavNumber, validated.name as validatedName FROM cfe_records JOIN personnes ON personnes.givavNumber = cfe_records.who LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE YEAR(workDate) = YEAR(NOW()) ORDER BY workDate DESC LIMIT 200';
+        $query = 'SELECT cfe_records.*, personnes.name, personnes.givavNumber, validated.name as validatedName,
+cfe_proposals.id AS `proposalId`,
+cfe_proposals.title AS `proposalTitle`
+FROM cfe_records
+JOIN personnes ON personnes.givavNumber = cfe_records.who
+LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho
+LEFT JOIN cfe_proposals ON cfe_proposals.id = cfe_records.proposal
+WHERE YEAR(workDate) = YEAR(NOW())
+ORDER BY workDate DESC LIMIT 200';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ]);
         $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -36,7 +44,13 @@ class CFE {
     }
 
     public function getLinesToValidate() {
-        $query = "SELECT cfe_records.*, personnes.name, personnes.givavNumber FROM cfe_records JOIN personnes ON cfe_records.who = personnes.givavNumber WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
+        $query = "SELECT cfe_records.*, personnes.name, personnes.givavNumber, cfe_proposals.title,
+cfe_proposals.id AS `proposalId`,
+cfe_proposals.title AS `proposalTitle`
+FROM cfe_records
+JOIN personnes ON cfe_records.who = personnes.givavNumber
+LEFT JOIN cfe_proposals ON cfe_proposals.id = cfe_records.proposal
+WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
         $sth = $this->conn->prepare($query);
         $sth->execute([]);
         $lines = $sth->fetchAll();
@@ -127,5 +141,18 @@ class CFE {
 
     public function getValidated($givavNumber, $year) {
         return floatval($this->getLines('validated', $givavNumber, $year));
+    }
+
+    public function getLinesOfProposal($proposalId) {
+        $query = 'SELECT cfe_records.*, personnes.name, personnes.givavNumber, validated.name as validatedName, YEAR(workDate) AS year
+FROM cfe_records
+JOIN personnes ON personnes.givavNumber = cfe_records.who
+LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho
+WHERE cfe_records.proposal = :id
+ORDER BY workDate DESC';
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ':id' => $proposalId ]);
+        $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
+        return $lines;
     }
 }

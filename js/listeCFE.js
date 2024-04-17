@@ -71,7 +71,6 @@ $(document).ready(function() {
 	});
 	csvContent += row.get().toString() + "\r\n";
 	$('#list > tbody > tr').each(function() {
-	    console.log($(this).attr('x-status'));
 	    if ($(this).attr('x-type') !== undefined)
 		return;
 	    var row = $(this).find('td').map(function(id) {

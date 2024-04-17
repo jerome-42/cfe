@@ -41,8 +41,8 @@ $(document).ready(function() {
     });
 
     $('.displayDetails').click(function() {
-	var id = $(this).parents('tr').attr('x-num');
-	window.location = '/detailsMachine?numero='+id;
+	var id = $(this).parents('tr').attr('x-id');
+	window.location = '/detailsProposition?num='+id;
     });
 
     $('.enregistrerNouvelle').click(function() {

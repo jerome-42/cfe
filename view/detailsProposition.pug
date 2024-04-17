@@ -1,0 +1,89 @@
+extends layout.pug
+
+block scripts
+  title Les déclarations de #{$proposal['title']}
+  script(src="js/detailsProposition.js")
+
+block content
+  .row
+    h1 Les déclarations de #{$proposal['title']}
+  .row.mb-3
+    .col
+      button.btn.btn-danger.back Retour
+  .row
+    .col
+      p Titre :&nbsp;
+        b= $proposal['title']
+      p Détails :&nbsp;
+        b= $proposal['details']
+      p Notes :&nbsp;
+        b= $proposal['notes']
+      p Responsable :&nbsp;
+        b
+          a(href="mailto:"+$proposal['whoEmail'])= $proposal['who']
+  .row
+    .col-md-3.offset-md-9
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="")#search
+  .row
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th Date
+            th Par
+            th Statut
+            th Durée
+            th Cause du rejet
+        tbody
+          - $total = []
+          - $currentYear = 0
+          each line in $records
+            $year = $line['year']
+            if array_key_exists($year, $total) == false
+              - $total[$year] = 0
+            if $line['status'] == 'validated'
+              - $total[$year] = $total[$year] + $line['duration']
+            if $line['year'] != $currentYear
+              if $currentYear != 0
+                tr.table-info(x-type="sum")
+                  td
+                  td
+                  td Total des CFE
+                    b  validées
+                    |  sur l'année 
+                    b= $currentYear
+                  td
+                    b= durationToHuman($total[$currentYear])
+                  td
+              $currentYear = $line['year']
+            tr
+              td.date= $line['workDate']
+              td #{$line['name']} (#{$line['givavNumber']})
+              td.status(x-validated-by=$line['validatedName'])= $line['status']
+              td(x-value=$line['duration'])= durationToHuman($line['duration'])
+              td.small= $line['rejectedCause']
+          if array_key_exists($currentYear, $total) == true
+            if $total[$currentYear] > 0
+              tr.table-info(x-type="sum")
+                td
+                td
+                td Total des CFE
+                  b  validées
+                  |  sur l'année 
+                  b= $currentYear
+                td
+                  b= durationToHuman($total[$currentYear])
+                td
+        tfoot
+          tr
+            th Date
+            th Statut
+            th Durée
+            th Cause du rejet
+  .row.mb-3
+    .col
+      button.btn.btn-danger.back Retour
+      button.btn.btn-primary.download(x-title=$proposal['title']) Télécharger en CSV
