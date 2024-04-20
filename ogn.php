@@ -34,8 +34,24 @@ class OGN {
         return "Non déclaré sur OGN";
     }
 
+    public function getGliderImmatFromRadioId($radioId) {
+        if ($this->database === null)
+            $this->parseDatabase();
+        foreach ($this->database['devices'] as $device) {
+            if ($device['device_id'] === $radioId) {
+                return $device['registration'];
+            }
+        }
+        return null;
+    }
+
     private function fetchAndParseDatabase($force = false) {
         $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://ddb.glidernet.org//download/?j=1', 7, $force);
+        $this->database = json_decode($data, true);
+    }
+
+    private function parseDatabase() {
+        $data = $this->cache->getContentFromCacheNoDownload($this->databaseFilename);
         $this->database = json_decode($data, true);
     }
 

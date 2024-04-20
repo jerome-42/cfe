@@ -42,6 +42,11 @@ class Cache {
         return file_get_contents($path);
     }
 
+    public function getContentFromCacheNoDownload($filename) {
+        $path = $this->getPath($filename);
+        return file_get_contents($path);
+    }
+
     private function download($filename, $url, $afterDownload) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
