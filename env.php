@@ -21,7 +21,7 @@ class Env {
         $dsn = join(';', [ 'host='.$this->config['database']['host'], 'dbname='.$this->config['database']['database'] ]);
         $this->mysql = new PDO("mysql:".$dsn, $this->config['database']['username'], $this->config['database']['password']);
         checkDatabase($this->mysql, $this->config['database']['database']);
-        $this->mysql->query("SET time_zone = 'Europe/Paris'");
+        $this->mysql->query("SET time_zone = 'UTC'");
         $this->mysql->beginTransaction();
         return $this;
     }
