@@ -424,6 +424,7 @@ post('/declarerFLARM', function($conn, $pug) {
             $hardVersion = null;
             $flarmType = null;
             $aircraftType = null;
+            $radioId = null;
             $lineNo = 0;
             $IGCType = false;
             $IGCContent = '';
@@ -456,7 +457,7 @@ post('/declarerFLARM', function($conn, $pug) {
                 if (preg_match_all('/^HFRFWFIRMWAREVERSION:([\w\-\.,]+)$/mi', $line, $matches) === 1) {
                     $softVersion = $matches[1][0];
                     // powerflarm sort une version en FLARM,7.22 et on veut Flarm07.22
-                    if (preg_match_all('/^FLARM,([\d\.]+)$/', $softVersion, $matches) !== false) {
+                    if (preg_match_all('/^FLARM,([\d\.]+)$/i', $softVersion, $matches) === 1) {
                         $softVersion = 'Flarm0'.$matches[1][0];
                     }
                     $subMessages[] = "la version logicielle ".$softVersion." a été détectée";
@@ -474,15 +475,23 @@ post('/declarerFLARM', function($conn, $pug) {
                     $aircraftType = Flarm::aircraftTypeToText($matches[1][0]);
                     $subMessages[] = "le type d'aéronef est ".Flarm::aircraftTypeToText($aircraftType);
                 }
+                if (preg_match_all('/LFLA\d+ID\s1\s(\w+)$/', $line, $matches) === 1) {
+                    $radioId = $matches[1][0];
+                }
             }
             // pour les powerflarm la rév hard est 1.0 et le modèle est dans HFFTYFRTYPE
             // donc on adapte
-            if ($flarmType !== null)
+            if ($flarmType !== null && $hardVersion === null)
                 $hardVersion = $flarmType;
             if ($IGCType === false) {
                 continue;
             }
 
+            if ($immat === null && $radioId !== null) {
+                // on essaye de trouver l'immat depuis OGN
+                $ogn = new OGN();
+                $immat = $ogn->getGliderImmatFromRadioId($radioId);
+            }
             if ($immat === null) {
                 $errors[] = "Dans le fichier ".$file['name']." l'immatriculation du planeur n'a pas été reconnue, est-ce un fichier IGC ?";
                 continue;
@@ -518,7 +527,7 @@ post('/declarerFLARM', function($conn, $pug) {
                 ':who' => $_SESSION['id'],
                 ':stealth' => $details['stealth'],
                 ':noTrack' => $details['noTrack'],
-                ':radioId' => $details['radioId'],
+                ':radioId' => $radioId,
                 ':rangeAvg' => $details['rangeAvg'],
                 ':rangeBelowMinimum' => $details['rangeBelowMinimum'],
                 ':rangeDetails' => $details['rangeDetails'],
