@@ -54,7 +54,7 @@ post('/api/auth', function($conn) {
 });
 
 post('/api/pushSoftwareVersion', function($conn) {
-    foreach ([ 'radioId', 'softwareVersion' ] as $key) {
+    foreach ([ 'immat', 'radioId', 'softwareVersion' ] as $key) {
         if (!isset($_POST[$key]) || $_POST[$key] === '')
             return apiReturnError($key." parameter is mandatory");
     }
@@ -62,7 +62,7 @@ post('/api/pushSoftwareVersion', function($conn) {
     $softwareVersion = $_POST['softwareVersion'];
     if (preg_match('/^\d\.\d+$/', $softwareVersion) === 1)
         $softwareVersion = 'Flarm0'.$softwareVersion;
-    $flarm->pushFlarmVersionAndRadioIdFromOGN($_POST['radioId'], $softwareVersion);
+    $flarm->pushFlarmVersionAndRadioIdFromOGN($_POST['immat'], $_POST['radioId'], $softwareVersion);
     echo json_encode([ 'ok' => true ]);
 });
 
