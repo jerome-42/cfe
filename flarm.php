@@ -152,10 +152,11 @@ class Flarm {
     // OGN nous envoie la version de tous les planeurs
     public function pushFlarmVersionAndRadioIdFromOGN($radioId, $softwareVersion) {
         $ogn = new OGN();
-        $immat = $ogn->getGliderByRadioId($radioId);
+        $immat = $ogn->getGliderImmatFromRadioId($radioId);
         if ($immat === null) {
             return;
         }
+        $glider = new Gliders($this->conn);
         $gliderData = $glider->getGliderByImmat($immat);
         if ($gliderData == null) {
             // OGN nous envoie tous les planeurs mais si le planeur n'existe pas chez nous on s'arrête ici
