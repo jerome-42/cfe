@@ -41,7 +41,7 @@ class Flarm {
     }
 
     public function checkRange($filename, $igcData) {
-        $url = 'https://www.flarm.com/support/tools-software/flarm-range-analyzer/range-analyzer-files-upload';
+        $url = 'https://shop.flarm.com/support/tools-software/flarm-range-analyzer/range-analyzer-files-upload';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -66,7 +66,7 @@ class Flarm {
         curl_close($ch);
         if ($http_code != 200)
             throw new Exception("Réponse inattendue de flarm.com");
-        $res = preg_match_all('/href="https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=(\w+\.IGC)"/m', $response, $matches);
+        $res = preg_match_all('/href="https:\/\/shop\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=(\w+\.IGC)"/m', $response, $matches);
         if ($res === false)
             throw new Exception("Réponse inattendue de flarm.com");
         // le fichier n'est pas géré par flarm
@@ -74,7 +74,7 @@ class Flarm {
             return [ 'stealth' => '0', 'noTrack' => '0', 'radioId' => 'NA', 'flarmResultUrl' => '', 'rangeAvg' => 0, 'rangeBelowMinimum' => 0, 'rangeDetails' => "flarm.com n'a pas réussi à analyser le fichier" ];
         $flarmFilename = $matches[1][0];
 
-        if (preg_match_all('/href="(https:\/\/www\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=\w+\.IGC)"/m', $response, $matches) === false)
+        if (preg_match_all('/href="(https:\/\/shop\.flarm\.com\/support\/tools-software\/flarm-range-analyzer\/range-analyzer-results\/\?0=\w+\.IGC)"/m', $response, $matches) === false)
             throw new Exception("Réponse inattendue de flarm.com");
 
         $url = $matches[1][0];
@@ -90,7 +90,7 @@ class Flarm {
 
     private function recupereResultats($flarmFilename, $flarmResultUrl) {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://www.flarm.com/analyzer/parseIgc.php');
+        curl_setopt($ch, CURLOPT_URL, 'https://shop.flarm.com/analyzer/parseIgc.php');
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, [ 'filesToProcess' => $flarmFilename ]);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
