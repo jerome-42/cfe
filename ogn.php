@@ -15,11 +15,13 @@ class OGN {
         $immatFound = false;
         $radioIdFound = false;
         $tracked = false;
-        if (isset($this->database['immat'][$immat]))
-            $immatFound = true;
-        if (isset($this->database['immat'][$radioId])) {
+        foreach ($this->database['radioId'] as $line) {
+            if ($line['registration'] == $immat)
+                $immatFound = true;
+        }
+        if (isset($this->database['radioId'][$radioId])) {
             $radioIdFound = true;
-            $device = $this->database['immat'][$radioId];
+            $device = $this->database['radioId'][$radioId];
             $tracked = $device['tracked'] === 'Y' ? true : false;
         }
         if ($immatFound === true && $radioIdFound === true && $tracked === true)
@@ -49,7 +51,7 @@ class OGN {
                 $radioId = $line['device_id'];
                 $database['radioId'][$radioId] = $line;
                 $immat = $line['registration'];
-                $database['immat'][$immat] = $line;
+                //$database['immat'][$immat] = $line; // plus de CPU et moins de RAM utilisé
             }
             return json_encode($database);
         });
