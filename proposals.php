@@ -5,6 +5,12 @@ class Proposals {
         $this->env = $env;
     }
 
+    public function doClose($id) {
+        $query = "UPDATE cfe_proposals SET isActive = false WHERE id = :id";
+        $sth = $this->env->mysql->prepare($query);
+        $sth->execute([ ':id' => $id ]);
+    }
+
     public function get($id) {
         $query = 'SELECT cfe_proposals.*, UNIX_TIMESTAMP(cfe_proposals.notValidAfterDate) AS `notValidAfterDate`, personnes.name AS who, personnes.email AS `whoEmail` FROM cfe_proposals JOIN personnes ON personnes.id = cfe_proposals.who WHERE cfe_proposals.id = :id';
         $sth = $this->env->mysql->prepare($query);
@@ -24,7 +30,8 @@ class Proposals {
 
     public function create($data) {
         $isActive = $data['isActive'] === true ? 'true' : 'false';
-        $query = "INSERT INTO cfe_proposals (who, registerDate, priority, title, workType, beneficiary, details, notes, isActive) VALUES (:who, NOW(), :priority, :title, :workType, :beneficiary, :details, :notes, ".$isActive.')';
+        $canBeClosedByMember = $data['canBeClosedByMember'] === true ? 'true' : 'false';
+        $query = "INSERT INTO cfe_proposals (who, registerDate, priority, title, workType, beneficiary, details, notes, canBeClosedByMember, isActive) VALUES (:who, NOW(), :priority, :title, :workType, :beneficiary, :details, :notes, ".$canBeClosedByMember.", ".$isActive.')';
         $params = [
             ':who' => $data['who'],
             ':priority' => $data['priority'],
@@ -36,7 +43,7 @@ class Proposals {
         ];
 
         if (isset($data['notValidAfterDate'])) {
-            $query = "INSERT INTO cfe_proposals (who, registerDate, priority, title, workType, beneficiary, details, notes, notValidAfterDate, isActive) VALUES (:who, NOW(), :priority, :title, :workType, :beneficiary, :details, :notes, FROM_UNIXTIME(:notValidAfterDate), ".$isActive.')';
+            $query = "INSERT INTO cfe_proposals (who, registerDate, priority, title, workType, beneficiary, details, notes, notValidAfterDate, canBeClosedByMember, isActive) VALUES (:who, NOW(), :priority, :title, :workType, :beneficiary, :details, :notes, FROM_UNIXTIME(:notValidAfterDate), ".$canBeClosedByMember.", ".$isActive.')';
             $params[':notValidAfterDate'] = $data['notValidAfterDate'];
         }
         $sth = $this->env->mysql->prepare($query);
@@ -45,7 +52,8 @@ class Proposals {
 
     public function update($id, $data) {
         $isActive = $data['isActive'] === true ? 'true' : 'false';
-        $query = "UPDATE cfe_proposals SET registerDate = NOW(), who = :who, priority = :priority, title = :title, workType = :workType, beneficiary = :beneficiary, details = :details, isActive = TRUE, notValidAfterDate = NULL, notes = :notes, isActive = ".$isActive." WHERE id = :id";
+        $canBeClosedByMember = $data['canBeClosedByMember'] === true ? 'true' : 'false';
+        $query = "UPDATE cfe_proposals SET registerDate = NOW(), who = :who, priority = :priority, title = :title, workType = :workType, beneficiary = :beneficiary, details = :details, isActive = TRUE, canBeClosedByMember = ".$canBeClosedByMember.", notValidAfterDate = NULL, notes = :notes, isActive = ".$isActive." WHERE id = :id";
         $params = [
             ':id' => $id,
             ':priority' => $data['priority'],
@@ -58,7 +66,7 @@ class Proposals {
         ];
 
         if (isset($data['notValidAfterDate'])) {
-            $query = "UPDATE cfe_proposals SET registerDate = NOW(), who = :who, priority = :priority, title = :title, workType = :workType, beneficiary = :beneficiary, details = :details, notes = :notes,isActive = ".$isActive.", notValidAfterDate = FROM_UNIXTIME(:notValidAfterDate) WHERE id = :id";
+            $query = "UPDATE cfe_proposals SET registerDate = NOW(), who = :who, priority = :priority, title = :title, workType = :workType, beneficiary = :beneficiary, details = :details, notes = :notes,isActive = ".$isActive.", canBeClosedByMember = ".$canBeClosedByMember.", notValidAfterDate = FROM_UNIXTIME(:notValidAfterDate) WHERE id = :id";
             $params[':notValidAfterDate'] = $data['notValidAfterDate'];
         }
         $sth = $this->env->mysql->prepare($query);

@@ -341,6 +341,9 @@ post('/declaration', function($conn, $pug, $env) {
             syslog(LOG_INFO, "CFE ".getClientIP()." ".$_SESSION['givavNumber']." ".$_SESSION['name']." declare cfe_records.id=".$id." record: ".json_encode($line));
         }
     }
+    if ($proposal != null && isset($_POST['closeProposal']) && $_POST['closeProposal'] === 'true') {
+        $proposals->doClose($proposal['id']);
+    }
     redirect("/declaration-complete");
 });
 
@@ -724,6 +727,7 @@ post('/editProposal', function($conn, $pug, $env) {
         'beneficiary' => $_POST['beneficiary'],
         'details' => $_POST['details'],
         'isActive' => (isset($_POST['isActive']) && $_POST['isActive'] === 'on') ? true : false,
+        'canBeClosedByMember' => (isset($_POST['canBeClosedByMember']) && $_POST['canBeClosedByMember'] === 'on') ? true : false,
         'notes' => $_POST['notes'], 
         'priority' => $_POST['priority'],
         'title' => trim($_POST['title']),

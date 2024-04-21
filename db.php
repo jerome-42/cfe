@@ -30,6 +30,7 @@ $tables = [
   `notValidAfterDate` date DEFAULT NULL,
   `details` text,
   `notes` text,
+  `canBeClosedByMember` bool,
   `isActive` bool,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB",

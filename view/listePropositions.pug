@@ -30,10 +30,10 @@ block content
               th(width="15%") Détails
               th(width="15%") Proposé par
               th(width="10%") Date maxi
-              th(width="15%") Notes
+              th(width="10%") Notes
           tbody
             each proposal in $proposals
-              tr(x-id=$proposal['id'], x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-notes=$proposal['notes'] x-priority=$proposal['priority'] x-isActive=$proposal['isActive'])
+              tr(x-id=$proposal['id'], x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-notes=$proposal['notes'] x-priority=$proposal['priority'] x-canBeClosedByMember=$proposal['canBeClosedByMember'] x-isActive=$proposal['isActive'])
                 td.d-print-none
                   button.btn.btn-secondary.displayDetails
                     i.bi.bi-eye
@@ -125,6 +125,10 @@ block content
                 option(value='Haute') Haute
                 option(value='Basse') Basse
                 option(value='Au long cours') Au long cours
+            .mb-3
+              .form-check
+                input.form-check-input(type="checkbox" name="canBeClosedByMember")#canBeClosedByMember
+                label.form-check-label(for="canBeClosedByMember") Est-ce que le membre peut clôturer la tâche ?
             .mb-3
               label.form-label(for="notes") Notes (privées)
               textarea.form-control(name="notes" rows="5")#notes

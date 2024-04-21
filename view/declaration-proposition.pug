@@ -45,11 +45,20 @@ block content
           input.form-control#durationMinute.form-control(type="number" name="minute" min="0" max="59"  placeholder="minutes" value=$line['durationMinute'])
           span.input-group-text Minute(s)
         div#durationError
+        if $proposal['canBeClosedByMember']
+          .row
+            .mb-3
+              p Je peux déclarer la tâche terminée et la fermer, pour cela je clique sur&nbsp;
+                b Enregistrer et clôturer
         .row.d-block.d-sm-none.justify-content-md-center
           .btn-group-vertical(role="group")
-            button.btn.btn-success#doRecord Enregistrer
+            if $proposal['canBeClosedByMember']
+              button.btn.btn-primary.doRecord.andClose Enregistrer et clôturer
+            button.btn.btn-success.doRecord Enregistrer
             button.btn.btn-danger#abandon Abandonner
         .row.d-none.d-sm-block.justify-content-md-center
           .btn-group
+            if $proposal['canBeClosedByMember']
+              button.btn.btn-primary.doRecord.andClose Enregistrer et clôturer
             button.btn.btn-success.doRecord Enregistrer
             button.btn.btn-danger.abandon Abandonner

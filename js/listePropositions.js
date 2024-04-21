@@ -51,6 +51,7 @@ $(document).ready(function() {
 	$('#title, #details, #notes, #id, #withMaxDate, #notValidAfterDate, #notValidAfterDateTimestamp').val('');
         $('#withMaxDate').prop('checked', false);
         $('#isActive').prop('checked', true);
+        $('#canBeClosedByMember').prop('checked', false);
         $('#notValidAfterDate').val('');
         $('.maxDate').addClass('visually-hidden');
 	$('#modalEditProposal').modal('show');
@@ -79,6 +80,11 @@ $(document).ready(function() {
             $('#isActive').prop('checked', true);
         else
             $('#isActive').prop('checked', false);
+        console.log(tr.attr('x-isActive'), tr.attr('x-canBeClosedByMember'));
+        if (tr.attr('x-canBeClosedByMember') === '1')
+            $('#canBeClosedByMember').prop('checked', true);
+        else
+            $('#canBeClosedByMember').prop('checked', false);
         $('#modalEditProposal').modal('show');
     });
     $('#modalEditProposal').on('shown.bs.modal', function() {

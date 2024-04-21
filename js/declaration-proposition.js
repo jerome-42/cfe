@@ -93,7 +93,10 @@ $(document).ready(function() {
 		stopDateCFE: (+stopDate)/1000,
 		durationHour: parseInt($('#durationHour').val()),
 		durationMinute: parseInt($('#durationMinute').val()),
+                closeProposal: false,
 	    };
+            if ($(this).hasClass('andClose'))
+                values.closeProposal = true;
 	    return nextWithPostData('/declaration', values);
 	}
     });
