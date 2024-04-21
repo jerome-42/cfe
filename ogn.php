@@ -15,13 +15,12 @@ class OGN {
         $immatFound = false;
         $radioIdFound = false;
         $tracked = false;
-        foreach ($this->database['devices'] as $device) {
-            if ($device['registration'] === $immat)
-                $immatFound = true;
-            if ($device['device_id'] === $radioId) {
-                $radioIdFound = true;
-                $tracked = $device['tracked'] === 'Y' ? true : false;
-            }
+        if (isset($this->database['immat'][$immat]))
+            $immatFound = true;
+        if (isset($this->database['immat'][$radioId])) {
+            $radioIdFound = true;
+            $device = $this->database['immat'][$radioId];
+            $tracked = $device['tracked'] === 'Y' ? true : false;
         }
         if ($immatFound === true && $radioIdFound === true && $tracked === true)
             return null;
@@ -37,16 +36,23 @@ class OGN {
     public function getGliderImmatFromRadioId($radioId) {
         if ($this->database === null)
             $this->parseDatabase();
-        foreach ($this->database['devices'] as $device) {
-            if ($device['device_id'] === $radioId) {
-                return $device['registration'];
-            }
-        }
+        if (isset($this->database['immat'][$radioId]))
+            return $this->database['immat'][$radioId]['registration'];
         return null;
     }
 
     private function fetchAndParseDatabase($force = false) {
-        $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://ddb.glidernet.org//download/?j=1', 7, $force);
+        $data = $this->cache->getContentFromCacheAndDownloadIfNecessary($this->databaseFilename, 'https://ddb.glidernet.org//download/?j=1', 7, $force, function($data) {
+            $data = json_decode($data, true);
+            $database = [ 'radioId' => [], 'immat' => [] ];
+            foreach ($data['devices'] as $line) {
+                $radioId = $line['device_id'];
+                $database['radioId'][$radioId] = $line;
+                $immat = $line['registration'];
+                $database['immat'][$immat] = $line;
+            }
+            return json_encode($database);
+        });
         $this->database = json_decode($data, true);
     }
 
