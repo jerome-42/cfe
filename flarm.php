@@ -171,6 +171,17 @@ class Flarm {
                             ':radioId' => $radioId,
                             ':who' => $ognPersonne['id'],
             ]);
+        } else if ($currentData != null && $currentData['versionSoft'] == $softwareVersion &&
+                   $currentData['radioId'] == $radioId) {
+            $ognPersonne = Personne::loadOGN($this->conn);
+            if ($currentData['who'] == $ognPersonne['id']) // si c'est une déclaration OGN on met à jour la date
+                $this->pushFlarmVersionAndRadioIdFromOGN_updateLastRecord($currentData);
         }
+    }
+
+    private function pushFlarmVersionAndRadioIdFromOGN_updateLastRecord($currentData) {
+        $q = "UPDATE flarm_logs SET `when` = NOW() WHERE id = :id";
+        $sth = $this->conn->prepare($q);
+        $sth->execute([ ':id' => $currentData['flarmLogId'] ]);
     }
 }

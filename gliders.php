@@ -77,17 +77,19 @@ class Gliders {
                     }
                 }
             }
-            return [ 'versionSoft' => $line['versionSoft'],
-                     'versionHard' => $line['versionHard'],
-                     'when' => $line['when'],
-                     'who' => $line['who'],
-                     'stealth' => $line['stealth'],
-                     'noTrack' => $line['noTrack'],
-                     'radioId' => $line['radioId'],
-                     'rangeDetails' => $line['rangeDetails'],
-                     'rangeBelowMinimum' => $line['rangeBelowMinimum'],
-                     'flarmResultUrl' => $line['flarmResultUrl'],
-                     'flarmAircraftType' => $line['aircraftType'],
+            return [
+                'flarmLogId' => $line['id'],
+                'versionSoft' => $line['versionSoft'],
+                'versionHard' => $line['versionHard'],
+                'when' => $line['when'],
+                'who' => $line['who'],
+                'stealth' => $line['stealth'],
+                'noTrack' => $line['noTrack'],
+                'radioId' => $line['radioId'],
+                'rangeDetails' => $line['rangeDetails'],
+                'rangeBelowMinimum' => $line['rangeBelowMinimum'],
+                'flarmResultUrl' => $line['flarmResultUrl'],
+                'flarmAircraftType' => $line['aircraftType'],
             ];
         }
         return null;
