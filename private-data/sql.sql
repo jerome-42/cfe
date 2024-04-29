@@ -185,17 +185,15 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 -- on retourne le id_tarif_type_date qui correspond à un vol
-CREATE OR REPLACE FUNCTION getTarifTypeDate(input_nom_type TEXT, input_id_aeronef INT, input_date_vol DATE) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION getTarifTypeCondId(input_id_aeronef INT, input_id_tarif_type INT, input_date_vol DATE) RETURNS NUMERIC AS $$
 DECLARE
   r record;
   last_id NUMERIC;
 BEGIN
-
   FOR r IN SELECT id_tarif_type_date, tarif_type_date.date_application FROM tarif_type_date
     JOIN tarif_cat_aeronef ON tarif_cat_aeronef.id_tarif_cat_aeronef = tarif_type_date.id_tarif_cat_aeronef
-    JOIN tarif_type ON tarif_type.id_tarif_type = tarif_type_date.id_tarif_type
     JOIN aeronef_situation ON aeronef_situation.id_tarif_cat_aeronef = tarif_type_date.id_tarif_cat_aeronef
-    WHERE aeronef_situation.id_aeronef = input_id_aeronef AND tarif_type.nom_type = input_nom_type
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef AND tarif_type_date.id_tarif_type = input_id_tarif_type
     ORDER BY date_application ASC
   LOOP
     IF r.date_application >= input_date_vol THEN
@@ -207,20 +205,82 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION calculePrixVol(input_id_tarif_type_date NUMERIC, temps_vol INTERVAL) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION getTarifDetails(input_id_aeronef INT, input_id_tarif_type INT, input_date_vol DATE) RETURNS INT AS $$
 DECLARE
+  r RECORD;
+  last_id INT;
+BEGIN
+  FOR r IN
+    SELECT id_tarif_type_date, tarif_type_date.date_application FROM tarif_type_date
+      JOIN tarif_cat_aeronef ON tarif_cat_aeronef.id_tarif_cat_aeronef = tarif_type_date.id_tarif_cat_aeronef
+      JOIN aeronef_situation ON aeronef_situation.id_tarif_cat_aeronef = tarif_type_date.id_tarif_cat_aeronef
+      WHERE aeronef_situation.id_aeronef = input_id_aeronef AND tarif_type.id_tarif_type = id_tarif_type
+      ORDER BY date_application ASC
+  LOOP
+    IF r.date_application >= input_date_vol THEN
+      RETURN last_id;
+    END IF;
+    last_id := r.id_tarif_type_date;
+  END LOOP;
+  RETURN last_id;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION getPrixHorairePourVol(input_nom_type VARCHAR, input_id_aeronef INT, input_date_vol DATE) RETURNS RECORD AS $$
+DECLARE
+  v_id_tarif_type INT := NULL;
+  v_parent_id INT;
+  r RECORD;
+  v_id_tarif_type_cond INT;
+  r_tarif_type_cond RECORD;
+  ret RECORD;
+BEGIN
+  SELECT INTO r id_tarif_type, id_tarif_type_maitre FROM tarif_type WHERE nom_type = input_nom_type LIMIT 1;
+  v_id_tarif_type := r.id_tarif_type;
+  v_parent_id := r.id_tarif_type_maitre;
+  RAISE NOTICE 'le tarif de base est: % (id: % parent: %)', input_nom_type, v_id_tarif_type, v_parent_id;
+  WHILE true LOOP
+    -- on charge id_tarif_type_cond
+    v_id_tarif_type_cond := getTarifTypeCondId(input_id_aeronef, v_id_tarif_type, input_date_vol);
+    RAISE NOTICE 'id_tarif_type_cond: %', v_id_tarif_type_cond;
+    -- on a peut-être un prix
+    SELECT * INTO r_tarif_type_cond FROM tarif_type_cond
+    JOIN tarif_type_vol ON tarif_type_vol.id_tarif_type_vol = tarif_type_cond.id_tarif_type_vol
+    WHERE id_tarif_type_date = v_id_tarif_type_cond AND tarif_type_vol.nom_type_vol = '1 Vol en solo' LIMIT 1;
+    IF FOUND THEN
+      RAISE NOTICE 'on a trouvé un prix %/heure et id_tarif_tranche_vol: %', r_tarif_type_cond.prix_heure, r_tarif_type_cond.id_tarif_tranche_vol;
+      ret := (r_tarif_type_cond.id_tarif_tranche_vol::INT, r_tarif_type_cond.prix_heure::NUMERIC);
+      RETURN ret;
+    END IF;
+    RAISE NOTICE 'pas de tarif pour ce vol on charge le tarif parent';
+
+    -- si on n'a pas trouvé, on charge le tarif parent
+    IF v_parent_id IS NULL THEN -- si pas de tarif parent, on ne peut pas caluler le tarif du vol !
+      RAISE EXCEPTION 'pas de tarif pour % % %', input_nom_type, input_id_aeronef, input_date_vol;
+    END IF;
+
+    -- on charge le tarif parent
+    SELECT INTO r id_tarif_type, id_tarif_type_maitre, nom_type FROM tarif_type WHERE id_tarif_type = v_parent_id LIMIT 1;
+    RAISE NOTICE '% chargé', r.nom_type;
+    v_id_tarif_type := r.id_tarif_type;
+    v_parent_id := r.id_tarif_type_maitre;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION calculPrixVol(input_nom_type VARCHAR, input_id_aeronef INT, input_date_vol DATE, temps_vol INTERVAL) RETURNS NUMERIC AS $$
+DECLARE
+  r_prix RECORD;
   r_tarif_type_cond record;
   r_tranche_item record;
   prix NUMERIC := 0;
   temps_vol_dans_item INTERVAL;
   tarif record;
 BEGIN
+  SELECT * INTO r_prix FROM getPrixHorairePourVol(input_nom_type, input_id_aeronef, input_date_vol) AS (id_tarif_tranche_vol INT, prix_heure NUMERIC);
+  RAISE NOTICE 'prix heure de vol: %', r_prix;
 
-  SELECT * INTO r_tarif_type_cond FROM tarif_type_cond
-    JOIN tarif_type_vol ON tarif_type_vol.id_tarif_type_vol = tarif_type_cond.id_tarif_type_vol
-    WHERE id_tarif_type_date = input_id_tarif_type_date AND tarif_type_vol.nom_type_vol = '1 Vol en solo' LIMIT 1;
-  RAISE NOTICE 'prix 1 heure de vol: %', r_tarif_type_cond.prix_heure;
-  FOR r_tranche_item IN SELECT * FROM tarif_tranche_item WHERE id_tarif_tranche = r_tarif_type_cond.id_tarif_tranche_vol
+  FOR r_tranche_item IN SELECT * FROM tarif_tranche_item WHERE id_tarif_tranche = r_prix.id_tarif_tranche_vol
   LOOP
     IF temps_vol > '0:0:0'::interval THEN
       IF temps_vol > r_tranche_item.plafond THEN
@@ -230,17 +290,16 @@ BEGIN
         temps_vol_dans_item := temps_vol;
         temps_vol := 0;
       END IF;
-      RAISE NOTICE 'prix pour % coef %: %', temps_vol_dans_item, r_tranche_item.coefficient, r_tarif_type_cond.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
-      prix := prix + r_tarif_type_cond.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
+      RAISE NOTICE 'prix pour % coef %: %', temps_vol_dans_item, r_tranche_item.coefficient, r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
+      prix := prix + r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
     END IF;
   END LOOP;
 
-  return prix;
+  return ROUND(prix, 2);
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
--- pour chaque vol où le tarif est à 0 car forfait
-CREATE OR REPLACE FUNCTION calculeTarifSiHordForfait(input_id_pilote INT, annee INT) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION calculVolsSiHorsForfait(input_id_pilote INT, annee INT) RETURNS NUMERIC AS $$
 DECLARE
   r_pilote record;
   nom_type TEXT;
@@ -258,15 +317,13 @@ BEGIN
     nom_type = 'Tarif général';
   END IF;
 
-  RAISE NOTICE '% categorie: %', input_id_pilote, nom_type;
+  RAISE NOTICE 'id_pilote=% categorie: %', input_id_pilote, nom_type;
+  -- prix_vol est à 0 lorsque le vol est gratuit et c'est saisi par les secrétaires (par exemple: casse cable, vol d'essai)
   FOR r_vol IN SELECT * FROM vfr_vol
-    WHERE saison = 2023 and id_cdt_de_bord = input_id_pilote and prix_vol_cdb = 0
+    WHERE saison = annee and id_cdt_de_bord = input_id_pilote and prix_vol_cdb = 0 AND prix_vol IS NULL
   LOOP
-    RAISE NOTICE 'calcul du prix pour % % %: %', r_vol.cdt_de_bord, r_vol.id_aeronef, r_vol.immatriculation, r_vol.temps_vol;
-    id_tarif_type_date := getTarifTypeDate(nom_type, r_vol.id_aeronef, r_vol.date_vol);
-    RAISE NOTICE 'id_tarif_type_date: %', id_tarif_type_date;
-    -- on récupère le tarif
-    prix_du_vol := calculePrixVol(id_tarif_type_date, r_vol.temps_vol);
+    RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r_vol.date_vol, r_vol.cdt_de_bord, r_vol.id_aeronef, r_vol.immatriculation, r_vol.temps_vol;
+    prix_du_vol := calculPrixVol(nom_type, r_vol.id_aeronef, r_vol.date_vol, r_vol.temps_vol);
     RAISE NOTICE 'prix_du_vol: %', prix_du_vol;
     prix_vols := prix_vols + prix_du_vol;
   END LOOP;
@@ -307,7 +364,7 @@ BEGIN
     date_fin := r_forfait.date_fin;
     montant_forfait := r_forfait.montant;
     conso_forfait := r_forfait.conso_hrs_cellule;
-    prix_vols := calculeTarifSiHordForfait(r_forfait.id_personne, annee);
+    prix_vols := calculVolsSiHorsForfait(r_forfait.id_personne, annee);
     pilote := CONCAT(r_forfait.prenom, ' ', r_forfait.nom)::varchar;
 
     -- CA élève
