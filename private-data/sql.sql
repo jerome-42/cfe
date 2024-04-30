@@ -410,18 +410,22 @@ CREATE OR REPLACE FUNCTION statsMembre(annee INT) returns table (
   ) AS
 $$
 DECLARE
-  r record;
-  r2 record;
-  prix_vol_si_machine_club NUMERIC := 0;
+  sub_json jsonb;
+  r RECORD;
+  r2 RECORD;
+  r_type_vol RECORD;
+  cout_vol_si_machine_club NUMERIC := 0;
   loyer NUMERIC;
   montant_vol NUMERIC;
   prix_du_vol NUMERIC;
   a_deduire NUMERIC;
+  nb_vols NUMERIC;
+  temps_vols INTERVAL;
 BEGIN
   FOR r IN SELECT pi.id_pilote, pe.id_personne, pe.nom, pe.prenom, pi.cat_age, pi.id_compte, pi.licence_saison, pi.licence_nom, pi.solde
     FROM vfr_pilote pi
     JOIN gv_personne pe ON pe.id_personne = pi.id_personne
-    WHERE pilote_actif_3 IS TRUE
+    WHERE pilote_actif_3 IS TRUE AND pi.id_compte = 2300
     ORDER BY pe.nom -- TODO randomize
     LOOP
     stats := '{}';
@@ -438,7 +442,7 @@ BEGIN
     -- 1/ TODO sortir les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant perçu par la location de la machine par les propriétaires
     -- 2/ TODO isoler les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant qu'aurait payé le propriétaire pour voler sur la machine si la machine était club
     -- pour chaque vol on va voir si le pilote est propriétaire de la machine
-    prix_vol_si_machine_club := 0;
+    cout_vol_si_machine_club := 0;
     loyer := 0;
     a_deduire := 0; -- le pilote a des retrocessions vers son propre compte
     -- c'est un jeu à somme nulle, donc on doit déduire ces montants
@@ -477,7 +481,7 @@ BEGIN
           RAISE NOTICE 'vol partagé donc prix_du_vol / 2';
           prix_du_vol := prix_du_vol / 2;
         END IF;
-        prix_vol_si_machine_club := prix_vol_si_machine_club + ROUND(prix_du_vol, 2);
+        cout_vol_si_machine_club := cout_vol_si_machine_club + ROUND(prix_du_vol, 2);
 
       ELSE -- le pilote n'est pas propriétaire donc c'est un loyer
         loyer := loyer + r2.montant;
@@ -501,14 +505,14 @@ BEGIN
       RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r2.date_vol, r2.cdt_de_bord, r2.id_aeronef, r2.immatriculation, r2.temps_vol;
       prix_du_vol := calculPrixVol(r.id_pilote, r2.id_aeronef, r2.date_vol, r2.temps_vol);
       RAISE NOTICE 'prix: %', prix_du_vol;
-      prix_vol_si_machine_club := prix_vol_si_machine_club + prix_du_vol;
+      cout_vol_si_machine_club := cout_vol_si_machine_club + prix_du_vol;
     END LOOP;
 
 
-    prix_vol_si_machine_club := ROUND(prix_vol_si_machine_club, 2);
-    IF prix_vol_si_machine_club > 0 THEN
+    cout_vol_si_machine_club := ROUND(cout_vol_si_machine_club, 2);
+    IF cout_vol_si_machine_club > 0 THEN
       -- combien le propriétaire payerait si sa machine appartenait au club
-      stats := setVarInData(stats, 'prix_vol_si_machine_club', prix_vol_si_machine_club);
+      stats := setVarInData(stats, 'cout_vol_si_machine_club', cout_vol_si_machine_club);
     END IF;
     SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
@@ -519,6 +523,62 @@ BEGIN
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
       WHERE id_compte = r.id_compte AND sens = 'C' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee;
     stats := setVarInData(stats, 'crédit', r2.montant - a_deduire);
+
+    nb_vols := 0;
+    temps_vols := 0;
+    FOR r_type_vol IN SELECT vfr_vol.nom_type_vol
+      FROM vfr_vol
+      WHERE EXTRACT(YEAR FROM date_vol) = annee
+      AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne)
+      GROUP BY vfr_vol.nom_type_vol
+    LOOP
+      sub_json := '{}';
+      -- heures de vols
+      SELECT INTO r2 COUNT(*) AS nombre, SUM(temps_vol) AS duree
+        FROM vfr_vol
+        WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne)
+        AND nom_type_vol = r_type_vol.nom_type_vol;
+
+      sub_json := setVarInData(sub_json, 'nb_vol', r2.nombre);
+      sub_json := setVarInData(sub_json, 'duree_vol', r2.duree);
+      stats := setVarInData(stats, r_type_vol.nom_type_vol, sub_json);
+      nb_vols := nb_vols + r2.nombre;
+      temps_vols := temps_vols + r2.duree;
+    END LOOP;
+    stats := setVarInData(stats, 'nb_vol', nb_vols);
+    stats := setVarInData(stats, 'duree_vol', temps_vols);
+
+    -- nombre de remorqués
+      SELECT INTO r2 COUNT(*) AS nombre
+        FROM vfr_vol
+        WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne)
+        AND mode_decollage = 'R';
+      IF r2.nombre > 0 THEN
+        stats := setVarInData(stats, 'nb_remorques', r2.nombre);
+      END IF;
+
+    -- nombre de treuillées
+      SELECT INTO r2 COUNT(*) AS nombre
+        FROM vfr_vol
+        WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne)
+        AND mode_decollage = 'T';
+      IF r2.nombre > 0 THEN
+        stats := setVarInData(stats, 'nb_treuillees', r2.nombre);
+      END IF;
+
+    -- nombre autonome
+      SELECT INTO r2 COUNT(*) AS nombre
+        FROM vfr_vol
+        WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne)
+        AND mode_decollage = 'M';
+      IF r2.nombre > 0 THEN
+        stats := setVarInData(stats, 'nb_autonome', r2.nombre);
+      END IF;
+
     RETURN next;
   END LOOP;
 END;
