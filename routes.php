@@ -483,6 +483,9 @@ post('/declarerFLARM', function($conn, $pug) {
                 if (preg_match_all('/LFLA\d+ID\s1\s(\w+)$/', $line, $matches) === 1) {
                     $radioId = $matches[1][0];
                 }
+                if (preg_match_all('/LLXVFLARM:LXV,[\d\.]+,(\w+)$/', $line, $matches) === 1) {
+                    $radioId = $matches[1][0];
+                }
             }
             // pour les powerflarm la rév hard est 1.0 et le modèle est dans HFFTYFRTYPE
             // donc on adapte
