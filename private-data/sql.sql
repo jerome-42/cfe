@@ -49,7 +49,7 @@ $$ LANGUAGE plpgsql VOLATILE;
 -- D-KBJP          | {"R": {"nb_vol": 2, "temps_vol": "09:02:00"}, "global": {"nb_vol": 2, "temps_vol": "09:02:00"}, "1 Vol en solo": {"nb_vol": 2, "temps_vol": "09:02:00"}}
 -- D-KOCM          | {"M": {"nb_vol": 3, "temps_vol": "06:38:00"}, "R": {"nb_vol": 2, "temps_vol": "06:27:00"}, "global": {"nb_vol": 5, "temps_vol": "13:05:00"}, "1 Vol en solo": {"nb_vol": 5, "temps_vol": "13:05:00"}}
 --  F-CHIC         | {"R": {"ca": 3605.72, "nb_vol": 89, "temps_vol": "47:18:00"}, "T": {"ca": 625.22, "nb_vol": 39, "temps_vol": "10:38:00"}, "global": {"ca": 4230.94, "nb_vol": 128, "temps_vol": "57:56:00"}, "41 VI perso": {"nb_vol": 1, "temps_vol": "00:21:00"}, "1 Vol en solo": {"nb_vol": 11, "temps_vol": "05:26:00"}, "3 Vol partagé": {"nb_vol": 4, "temps_vol": "03:57:00"}, "2 Vol d'instruction": {"nb_vol": 110, "temps_vol": "47:21:00"}, "9 Vol journée découverte": {"nb_vol": 2, "temps_vol": "00:51:00"}}
-create or replace function statsMachines(date_debut date, date_fin date) returns table (
+CREATE OR REPLACE FUNCTION statsMachines(date_debut date, date_fin date) returns table (
   immatriculation varchar,
   stats jsonb
   ) AS
@@ -125,6 +125,9 @@ BEGIN
         stats := setVarInData(stats, type_vol, sub_json);
       END IF;
     END LOOP;
+
+    -- TODO stats sur les vols propriétaires
+    -- TODO stats sur les vols au forfait
     return NEXT;
   END LOOP;
 END;
@@ -136,7 +139,7 @@ $$ LANGUAGE plpgsql VOLATILE;
 --  F-JDTX          | {"750m": {"ca": 79.80, "nb_vol": 3}, "global": {"ca": 585.00, "nb_vol": 26}, "Remorqué standard - 500m": {"ca": 505.20, "nb_vol": 23}}
 --  F-GEKY          | {"750m": {"ca": 2920.34, "nb_vol": 97}, "1000m": {"ca": 378.27, "nb_vol": 11}, "global": {"ca": 10479.80, "nb_vol": 405}, "voltige - 1300m": {"ca": 136.01, "nb_vol": 3}, "Demi-remorqué - 250m": {"ca": 164.43, "nb_vol": 11}, "Dépannage Etrépagny": {"ca": 58.00, "nb_vol": 1}, "Remorqué standard - 500m": {"ca": 6822.75, "nb_vol": 282}}
 --  treuil          | {"ca": 1308.00, "nb_vol": 165}
-create or replace function statsMisesEnLAir(date_debut date, date_fin date) returns table (
+CREATE OR REPLACE FUNCTION statsMisesEnLAir(date_debut date, date_fin date) returns table (
   immatriculation varchar,
   stats jsonb
   ) AS
@@ -238,38 +241,43 @@ BEGIN
   SELECT INTO r id_tarif_type, id_tarif_type_maitre FROM tarif_type WHERE nom_type = input_nom_type LIMIT 1;
   v_id_tarif_type := r.id_tarif_type;
   v_parent_id := r.id_tarif_type_maitre;
-  RAISE NOTICE 'le tarif de base est: % (id: % parent: %)', input_nom_type, v_id_tarif_type, v_parent_id;
+  --DEBUG RAISE NOTICE 'le tarif de base est: % (id: % parent: %)', input_nom_type, v_id_tarif_type, v_parent_id;
   WHILE true LOOP
     -- on charge id_tarif_type_cond
     v_id_tarif_type_cond := getTarifTypeCondId(input_id_aeronef, v_id_tarif_type, input_date_vol);
-    RAISE NOTICE 'id_tarif_type_cond: %', v_id_tarif_type_cond;
+    --DEBUG RAISE NOTICE 'id_tarif_type_cond: %', v_id_tarif_type_cond;
     -- on a peut-être un prix
     SELECT * INTO r_tarif_type_cond FROM tarif_type_cond
     JOIN tarif_type_vol ON tarif_type_vol.id_tarif_type_vol = tarif_type_cond.id_tarif_type_vol
     WHERE id_tarif_type_date = v_id_tarif_type_cond AND tarif_type_vol.nom_type_vol = '1 Vol en solo' LIMIT 1;
     IF FOUND THEN
-      RAISE NOTICE 'on a trouvé un prix %/heure et id_tarif_tranche_vol: %', r_tarif_type_cond.prix_heure, r_tarif_type_cond.id_tarif_tranche_vol;
+      --DEBUG RAISE NOTICE 'on a trouvé un prix %/heure et id_tarif_tranche_vol: %', r_tarif_type_cond.prix_heure, r_tarif_type_cond.id_tarif_tranche_vol;
       ret := (r_tarif_type_cond.id_tarif_tranche_vol::INT, r_tarif_type_cond.prix_heure::NUMERIC);
       RETURN ret;
     END IF;
-    RAISE NOTICE 'pas de tarif pour ce vol on charge le tarif parent';
+    --DEBUG RAISE NOTICE 'pas de tarif pour ce vol on charge le tarif parent';
 
     -- si on n'a pas trouvé, on charge le tarif parent
     IF v_parent_id IS NULL THEN -- si pas de tarif parent, on ne peut pas caluler le tarif du vol !
-      RAISE EXCEPTION 'pas de tarif pour % % %', input_nom_type, input_id_aeronef, input_date_vol;
+      SELECT * INTO r FROM aeronef WHERE id_aeronef = input_id_aeronef;
+      RAISE WARNING 'pas de tarif pour nom_type=% id_aeronef=% [% - %] date_vol=%', input_nom_type, input_id_aeronef, r.immatriculation, r.nom_type, input_date_vol;
+      RETURN NULL;
     END IF;
 
     -- on charge le tarif parent
     SELECT INTO r id_tarif_type, id_tarif_type_maitre, nom_type FROM tarif_type WHERE id_tarif_type = v_parent_id LIMIT 1;
-    RAISE NOTICE '% chargé', r.nom_type;
+    --DEBUG RAISE NOTICE '% chargé', r.nom_type;
     v_id_tarif_type := r.id_tarif_type;
     v_parent_id := r.id_tarif_type_maitre;
   END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION calculPrixVol(input_nom_type VARCHAR, input_id_aeronef INT, input_date_vol DATE, temps_vol INTERVAL) RETURNS NUMERIC AS $$
+-- TODO déplacer catégorie ici
+CREATE OR REPLACE FUNCTION calculPrixVol(input_id_pilote INT, input_id_aeronef INT, input_date_vol DATE, temps_vol INTERVAL) RETURNS NUMERIC AS $$
 DECLARE
+  nom_type TEXT;
+  r_pilote record;
   r_prix RECORD;
   r_tarif_type_cond record;
   r_tranche_item record;
@@ -277,8 +285,22 @@ DECLARE
   temps_vol_dans_item INTERVAL;
   tarif record;
 BEGIN
-  SELECT * INTO r_prix FROM getPrixHorairePourVol(input_nom_type, input_id_aeronef, input_date_vol) AS (id_tarif_tranche_vol INT, prix_heure NUMERIC);
+  -- on récupère la catégorie du pilote (-25 ans ou +25 ans)
+  SELECT * INTO r_pilote FROM vfr_pilote WHERE id_personne = input_id_pilote LIMIT 1;
+  --RAISE NOTICE 'categorie: % %: %', r_pilote.nom, r_pilote.prenom, r_pilote.cat_age;
+  IF r_pilote.cat_age = '-25 ans' THEN
+    nom_type = 'Tarif général junior';
+  ELSE
+    nom_type = 'Tarif général';
+  END IF;
+
+  RAISE NOTICE 'id_pilote=% categorie: %', input_id_pilote, nom_type;
+
+  SELECT * INTO r_prix FROM getPrixHorairePourVol(nom_type, input_id_aeronef, input_date_vol) AS (id_tarif_tranche_vol INT, prix_heure NUMERIC);
   RAISE NOTICE 'prix heure de vol: %', r_prix;
+  IF r_prix IS NULL THEN
+    RETURN 0;
+  END IF;
 
   FOR r_tranche_item IN SELECT * FROM tarif_tranche_item WHERE id_tarif_tranche = r_prix.id_tarif_tranche_vol
   LOOP
@@ -301,29 +323,17 @@ $$ LANGUAGE plpgsql VOLATILE;
 
 CREATE OR REPLACE FUNCTION calculVolsSiHorsForfait(input_id_pilote INT, annee INT) RETURNS NUMERIC AS $$
 DECLARE
-  r_pilote record;
-  nom_type TEXT;
   r_vol record;
   id_tarif_type_date NUMERIC;
   prix_vols NUMERIC := 0;
   prix_du_vol NUMERIC;
 BEGIN
-  -- on récupère la catégorie du pilote (-25 ans ou +25 ans)
-  SELECT * INTO r_pilote FROM vfr_pilote WHERE id_personne = input_id_pilote LIMIT 1;
-  --RAISE NOTICE 'categorie: % %: %', r_pilote.nom, r_pilote.prenom, r_pilote.cat_age;
-  IF r_pilote.cat_age = '-25 ans' THEN
-    nom_type = 'Tarif général junior';
-  ELSE
-    nom_type = 'Tarif général';
-  END IF;
-
-  RAISE NOTICE 'id_pilote=% categorie: %', input_id_pilote, nom_type;
   -- prix_vol est à 0 lorsque le vol est gratuit et c'est saisi par les secrétaires (par exemple: casse cable, vol d'essai)
   FOR r_vol IN SELECT * FROM vfr_vol
     WHERE saison = annee and id_cdt_de_bord = input_id_pilote and prix_vol_cdb = 0 AND prix_vol IS NULL
   LOOP
     RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r_vol.date_vol, r_vol.cdt_de_bord, r_vol.id_aeronef, r_vol.immatriculation, r_vol.temps_vol;
-    prix_du_vol := calculPrixVol(nom_type, r_vol.id_aeronef, r_vol.date_vol, r_vol.temps_vol);
+    prix_du_vol := calculPrixVol(r_vol.id_cdt_de_bord, r_vol.id_aeronef, r_vol.date_vol, r_vol.temps_vol);
     RAISE NOTICE 'prix_du_vol: %', prix_du_vol;
     prix_vols := prix_vols + prix_du_vol;
   END LOOP;
@@ -332,7 +342,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-create or replace function statsForfait(annee int) returns table (
+CREATE OR REPLACE FUNCTION statsForfait(annee int) returns table (
   nom_forfait varchar,
   date_debut date,
   date_fin date,
@@ -391,5 +401,179 @@ BEGIN
 
     RETURN next;
   END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION statsMembre(annee INT) returns table (
+  nom varchar,
+  stats jsonb
+  ) AS
+$$
+DECLARE
+  r record;
+  r2 record;
+  prix_vol_si_machine_club NUMERIC := 0;
+  loyer NUMERIC;
+  montant_vol NUMERIC;
+  prix_du_vol NUMERIC;
+  a_deduire NUMERIC;
+BEGIN
+  FOR r IN SELECT pi.id_pilote, pe.id_personne, pe.nom, pe.prenom, pi.cat_age, pi.id_compte, pi.licence_saison, pi.licence_nom, pi.solde
+    FROM vfr_pilote pi
+    JOIN gv_personne pe ON pe.id_personne = pi.id_personne
+    WHERE pilote_actif_3 IS TRUE
+    ORDER BY pe.nom -- TODO randomize
+    LOOP
+    stats := '{}';
+    -- TODO anonymisation
+    nom := r.nom;
+    IF r.prenom IS NOT NULL THEN
+      nom := r.prenom || ' ' || r.nom;
+    END IF;
+    RAISE NOTICE '%', nom;
+    stats := setVarInData(stats, 'solde', r.solde);
+    stats := setVarInData(stats, 'id_compte', r.id_compte);
+    -- pour les privés qui pratiquent la rétrocession, comme c'est un jeu à somme nulle, on la sort
+    -- des montants facturés
+    -- 1/ TODO sortir les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant perçu par la location de la machine par les propriétaires
+    -- 2/ TODO isoler les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant qu'aurait payé le propriétaire pour voler sur la machine si la machine était club
+    -- pour chaque vol on va voir si le pilote est propriétaire de la machine
+    prix_vol_si_machine_club := 0;
+    loyer := 0;
+    a_deduire := 0; -- le pilote a des retrocessions vers son propre compte
+    -- c'est un jeu à somme nulle, donc on doit déduire ces montants
+    FOR r2 IN SELECT
+        tv.nom_type_vol,
+        cp_piece_ligne.montant,
+        pvc.id_personne AS id_cdt_de_bord,
+        piloteEstProprietaireDeMachine(pvc.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS cdt_est_proprietaire,
+        piloteProprietaireDeMachinePourcentage(pvc.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS cdt_pourcentage,
+        pvo.id_personne AS id_co,
+        piloteEstProprietaireDeMachine(pvo.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS co_est_proprietaire,
+        piloteProprietaireDeMachinePourcentage(pvo.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS co_pourcentage,
+	vol.id_aeronef, vol_pilote.date_vol
+        FROM cp_piece
+        JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
+        JOIN vol_pilote ON vol_pilote.id_vol_pilote = cp_piece.id_vol_pilote
+        JOIN vol ON vol.id_vol = vol_pilote.id_vol
+        JOIN tarif_type_vol tv ON vol.id_tarif_type_vol = tv.id_tarif_type_vol
+        LEFT JOIN vol_pilote pvc ON vol_pilote.id_vol = pvc.id_vol AND pvc.fonction = 1
+        LEFT JOIN vol_pilote pvo ON vol_pilote.id_vol = pvo.id_vol AND pvo.fonction = 2
+        WHERE cp_piece_ligne.id_compte = r.id_compte AND sens = 'C'
+        AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee AND cp_piece.type = 'RETRO_CELLULE'
+    LOOP
+      --DEBUG RAISE NOTICE '%', r2;
+      IF r2.cdt_est_proprietaire IS TRUE OR r2.co_est_proprietaire IS TRUE THEN
+        a_deduire := a_deduire + r2.montant;
+        -- le pilote est propriaitaire donc on calcule le coût de ces vols
+        IF r2.cdt_est_proprietaire THEN
+          prix_du_vol := (100 * r2.montant) / r2.cdt_pourcentage;
+          RAISE NOTICE 'proprio cdb: % montant=% pourcentage=% prix_vol: %', r2, r2.montant, r2.cdt_pourcentage, prix_du_vol;
+        ELSE
+          prix_du_vol := (100 * r2.montant) / r2.co_pourcentage;
+          RAISE NOTICE 'proprio co: % montant=% pourcentage=% prix_vol: %', r2, r2.montant, r2.co_pourcentage, prix_du_vol;
+        END IF;
+        IF r2.nom_type_vol = '3 Vol partagé' THEN
+          RAISE NOTICE 'vol partagé donc prix_du_vol / 2';
+          prix_du_vol := prix_du_vol / 2;
+        END IF;
+        prix_vol_si_machine_club := prix_vol_si_machine_club + ROUND(prix_du_vol, 2);
+
+      ELSE -- le pilote n'est pas propriétaire donc c'est un loyer
+        loyer := loyer + r2.montant;
+      END IF;
+    END LOOP;
+    loyer := ROUND(loyer, 2);
+    IF loyer > 0 THEN
+      -- les pilotes non-propriétaires qui volent sur des machines proprio ont payés au proprio
+      stats := setVarInData(stats, 'loyer', loyer);
+    END IF;
+
+    -- pour ceux qui n'ont pas de rétrocession il faut calculer le prix de leur vol comme si leurs machines
+    -- étaient club
+    FOR r2 IN SELECT * FROM vfr_vol
+      WHERE saison = annee
+      AND id_cdt_de_bord = r.id_personne
+      AND prix_vol_cdb = 0
+      AND prix_vol IS NULL
+      AND piloteEstProprietaireDeMachine(id_cdt_de_bord, id_aeronef, date_vol) IS TRUE
+    LOOP
+      RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r2.date_vol, r2.cdt_de_bord, r2.id_aeronef, r2.immatriculation, r2.temps_vol;
+      prix_du_vol := calculPrixVol(r.id_pilote, r2.id_aeronef, r2.date_vol, r2.temps_vol);
+      RAISE NOTICE 'prix: %', prix_du_vol;
+      prix_vol_si_machine_club := prix_vol_si_machine_club + prix_du_vol;
+    END LOOP;
+
+
+    prix_vol_si_machine_club := ROUND(prix_vol_si_machine_club, 2);
+    IF prix_vol_si_machine_club > 0 THEN
+      -- combien le propriétaire payerait si sa machine appartenait au club
+      stats := setVarInData(stats, 'prix_vol_si_machine_club', prix_vol_si_machine_club);
+    END IF;
+    SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
+      JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
+      WHERE id_compte = r.id_compte AND sens = 'D' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee;
+    stats := setVarInData(stats, 'debit', r2.montant - a_deduire);
+
+    SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
+      JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
+      WHERE id_compte = r.id_compte AND sens = 'C' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee;
+    stats := setVarInData(stats, 'crédit', r2.montant - a_deduire);
+    RETURN next;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION piloteEstProprietaireDeMachine(input_id_personne INT, input_id_aeronef INT, input_date_vol DATE) RETURNS BOOLEAN AS $$
+DECLARE
+  r RECORD;
+  last_id_aeronef_situation NUMERIC;
+  v_id_aeronef_sitation NUMERIC;
+BEGIN
+  FOR r IN SELECT * FROM aeronef_situation
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef
+  LOOP
+    IF input_date_vol >= r.date_application THEN
+      v_id_aeronef_sitation = r.id_aeronef_situation;
+    END IF;
+  END LOOP;
+  IF v_id_aeronef_sitation IS NULL THEN
+    RETURN false;
+  END IF;
+  SELECT INTO r * FROM aeronef_situation_benef
+    WHERE aeronef_situation_benef.id_aeronef_situation = v_id_aeronef_sitation
+    AND aeronef_situation_benef.id_personne = input_id_personne;
+  --DEBUG RAISE NOTICE 'id_aeronef_situation: %: %', v_id_aeronef_sitation, r;
+  IF FOUND THEN
+    RETURN TRUE;
+  END IF;
+  RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION piloteProprietaireDeMachinePourcentage(input_id_personne INT, input_id_aeronef INT, input_date_vol DATE) RETURNS NUMERIC AS $$
+DECLARE
+  r RECORD;
+  last_id_aeronef_situation NUMERIC;
+  v_id_aeronef_sitation NUMERIC;
+BEGIN
+  FOR r IN SELECT * FROM aeronef_situation
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef
+  LOOP
+    IF input_date_vol >= r.date_application THEN
+      v_id_aeronef_sitation = r.id_aeronef_situation;
+    END IF;
+  END LOOP;
+  IF v_id_aeronef_sitation IS NULL THEN
+    RETURN 0;
+  END IF;
+  SELECT INTO r * FROM aeronef_situation_benef
+    WHERE aeronef_situation_benef.id_aeronef_situation = v_id_aeronef_sitation
+    AND aeronef_situation_benef.id_personne = input_id_personne;
+  --DEBUG RAISE NOTICE 'id_aeronef_situation: %: %', v_id_aeronef_sitation, r;
+  IF FOUND THEN
+    RETURN r.pourcentage;
+  END IF;
+  RETURN 0;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
