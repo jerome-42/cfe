@@ -38,8 +38,8 @@ class OGN {
     public function getGliderImmatFromRadioId($radioId) {
         if ($this->database === null)
             $this->parseDatabase();
-        if (isset($this->database['immat'][$radioId]))
-            return $this->database['immat'][$radioId]['registration'];
+        if (isset($this->database['radioId'][$radioId]))
+            return $this->database['radioId'][$radioId]['registration'];
         return null;
     }
 

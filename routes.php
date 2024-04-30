@@ -413,7 +413,7 @@ post('/declarerFLARM', function($conn, $pug) {
             $vars = array_merge($_SESSION, [ 'message' => "L'upload a échoué pour une raison inconnue" ]);
             return $pug->displayFile('view/error.pug', $vars);
         }
-        if ($file['size'] > 1000000) {
+        if ($file['size'] > 2000000) {
             $errors[] = "Le fichier ".$file['name']." est trop gros, il n'a pas été analysé";
             continue;
         }
@@ -463,6 +463,8 @@ post('/declarerFLARM', function($conn, $pug) {
                     if (preg_match_all('/^FLARM,([\d\.]+)$/i', $softVersion, $matches) === 1) {
                         $softVersion = 'Flarm0'.$matches[1][0];
                     }
+                    if (is_numeric($softVersion))
+                        $softVersion = 'Flarm0'.$softVersion;
                     $subMessages[] = "la version logicielle ".$softVersion." a été détectée";
                 }
                 if (preg_match_all('/^HFRHWHARDWAREVERSION:([\w\-\.\s]+)$/mi', $line, $matches) === 1) {
@@ -470,7 +472,7 @@ post('/declarerFLARM', function($conn, $pug) {
                     $subMessages[] = "le FLARM est un ".$hardVersion;
                 }
                 // uniquement pour les powerflarm
-                if (preg_match_all('/^HFFTYFRTYPE:([\w\-\.]+)$/mi', $line, $matches) === 1) {
+                if (preg_match_all('/^HFFTYFRTYPE:([\w\-\.\,]+)$/mi', $line, $matches) === 1) {
                     $flarmType = $matches[1][0];
                     $subMessages[] = "le FLARM est un ".$flarmType;
                 }
@@ -481,10 +483,13 @@ post('/declarerFLARM', function($conn, $pug) {
                 if (preg_match_all('/LFLA\d+ID\s1\s(\w+)$/', $line, $matches) === 1) {
                     $radioId = $matches[1][0];
                 }
+                if (preg_match_all('/LLXVFLARM:LXV,[\d\.]+,(\w+)$/', $line, $matches) === 1) {
+                    $radioId = $matches[1][0];
+                }
             }
             // pour les powerflarm la rév hard est 1.0 et le modèle est dans HFFTYFRTYPE
             // donc on adapte
-            if ($flarmType !== null && $hardVersion === null)
+            if ($flarmType !== null && ($hardVersion === null || is_numeric($hardVersion)))
                 $hardVersion = $flarmType;
             if ($IGCType === false) {
                 continue;
