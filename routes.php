@@ -413,7 +413,7 @@ post('/declarerFLARM', function($conn, $pug) {
             $vars = array_merge($_SESSION, [ 'message' => "L'upload a échoué pour une raison inconnue" ]);
             return $pug->displayFile('view/error.pug', $vars);
         }
-        if ($file['size'] > 1000000) {
+        if ($file['size'] > 2000000) {
             $errors[] = "Le fichier ".$file['name']." est trop gros, il n'a pas été analysé";
             continue;
         }
