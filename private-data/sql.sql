@@ -273,7 +273,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
--- TODO déplacer catégorie ici
 CREATE OR REPLACE FUNCTION calculPrixVol(input_id_pilote INT, input_id_aeronef INT, input_date_vol DATE, temps_vol INTERVAL) RETURNS NUMERIC AS $$
 DECLARE
   nom_type TEXT;
@@ -342,20 +341,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
+-- calcule des stats sur les forfaits
+
 CREATE OR REPLACE FUNCTION statsForfait(annee int) returns table (
   nom_forfait varchar,
   date_debut date,
   date_fin date,
   montant_forfait numeric,
+  cout_vol_sans_forfait NUMERIC, -- coût des vols si le membre n'avait pas pris le forfait
   conso_forfait interval,
-  prix_vols numeric,
+  id_personne INT,
   pilote varchar,
-  ca_eleve numeric,
-  ca_cdb numeric, -- prix mise en l'air + prix vols hors forfait
-  ca_co numeric,
-  ca_cette_annee numeric,
-  ca_si_pas_forfait numeric
-  ) AS
+  cout_horaire_vol_dans_forfait NUMERIC,
+  prix_cellule_sans_forfait NUMERIC,
+  temps_vol_sans_forfait INTERVAL -- en tant que cdb ou co pilote
+) AS
 $$
 DECLARE
   r_forfait record;
@@ -369,40 +369,35 @@ BEGIN
     JOIN vfr_gv_personne ON vfr_forfait_pilote.id_personne = vfr_gv_personne.id_personne
     WHERE EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = annee AND vfr_forfait_pilote.hrs_cellule = '999:00:00' ORDER BY vfr_forfait_pilote.nom_forfait
   LOOP
+    id_personne := r_forfait.id_personne;
     nom_forfait := r_forfait.nom_forfait;
     date_debut := r_forfait.date_debut;
     date_fin := r_forfait.date_fin;
     montant_forfait := r_forfait.montant;
     conso_forfait := r_forfait.conso_hrs_cellule;
-    prix_vols := calculVolsSiHorsForfait(r_forfait.id_personne, annee);
+    cout_vol_sans_forfait := calculVolsSiHorsForfait(r_forfait.id_personne, annee);
     pilote := CONCAT(r_forfait.prenom, ' ', r_forfait.nom)::varchar;
 
-    -- CA élève
-    SELECT INTO r_vol SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) AS ca
-    FROM vfr_vol
-    JOIN pilote ON pilote.id_personne = vfr_vol.id_eleve
-    WHERE saison = annee AND pilote.id_personne = r_forfait.id_personne;
-    ca_eleve := r_vol.ca;
+    -- calcul du coût horaire des vols dans le forfait
+    IF r_forfait.conso_hrs_cellule > '0:0:0'::interval THEN
+      cout_horaire_vol_dans_forfait := ROUND(r_forfait.montant / (EXTRACT(epoch FROM r_forfait.conso_hrs_cellule)/3600), 2);
+    END IF;
 
-    SELECT INTO r_vol SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) AS ca
-    FROM vfr_vol
-    JOIN pilote ON pilote.id_personne = vfr_vol.id_cdt_de_bord
-    WHERE saison = annee AND pilote.id_personne = r_forfait.id_personne;
-    ca_cdb := r_vol.ca;
-
-    SELECT INTO r_vol SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca
-    FROM vfr_vol
-    JOIN pilote ON pilote.id_personne = vfr_vol.id_co_pilote
-    WHERE saison = annee AND pilote.id_personne = r_forfait.id_personne;
-    ca_co := r_vol.ca;
-
-    ca_cette_annee := COALESCE(ca_eleve, 0) + COALESCE(ca_cdb, 0) + COALESCE(ca_co, 0) + COALESCE(montant_forfait, 0);
-    ca_si_pas_forfait := COALESCE(ca_eleve, 0) + COALESCE(ca_cdb, 0) + COALESCE(ca_co, 0) + COALESCE(prix_vols, 0);
+    -- calcul du nombre de vol et du nombre d'heure réalisées hors forfait (pour voir si le pilote vole sur des machines hors forfait)
+    SELECT INTO r_vol SUM(COALESCE(prix_vol_cdb, 0)) AS prix, SUM(temps_vol) AS duree FROM vfr_vol
+      WHERE vfr_vol.id_cdt_de_bord = r_forfait.id_personne AND vfr_vol.prix_vol_cdb > 0 AND saison = annee;
+    prix_cellule_sans_forfait := COALESCE(r_vol.prix, 0);
+    temps_vol_sans_forfait := r_vol.duree;
+    SELECT INTO r_vol SUM(COALESCE(prix_vol_co, 0)) AS prix, SUM(temps_vol) AS duree FROM vfr_vol
+      WHERE r_forfait.id_personne = id_co_pilote AND vfr_vol.prix_vol_co > 0 AND saison = annee;
+    prix_cellule_sans_forfait := prix_cellule_sans_forfait + COALESCE(r_vol.prix, 0);
+    temps_vol_sans_forfait := temps_vol_sans_forfait + r_vol.duree;
 
     RETURN next;
   END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+
 
 CREATE OR REPLACE FUNCTION statsMembre(annee INT) returns table (
   nom varchar,
@@ -439,8 +434,8 @@ BEGIN
     stats := setVarInData(stats, 'id_compte', r.id_compte);
     -- pour les privés qui pratiquent la rétrocession, comme c'est un jeu à somme nulle, on la sort
     -- des montants facturés
-    -- 1/ TODO sortir les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant perçu par la location de la machine par les propriétaires
-    -- 2/ TODO isoler les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant qu'aurait payé le propriétaire pour voler sur la machine si la machine était club
+    -- 1/ sortir les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant perçu par la location de la machine par les propriétaires
+    -- 2/ isoler les vols où c'est le propriétaire qui vole sur sa machine -> ça donne le montant qu'aurait payé le propriétaire pour voler sur la machine si la machine était club
     -- pour chaque vol on va voir si le pilote est propriétaire de la machine
     cout_vol_si_machine_club := 0;
     loyer := 0;
@@ -451,10 +446,10 @@ BEGIN
         cp_piece_ligne.montant,
         pvc.id_personne AS id_cdt_de_bord,
         piloteEstProprietaireDeMachine(pvc.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS cdt_est_proprietaire,
-        piloteProprietaireDeMachinePourcentage(pvc.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS cdt_pourcentage,
+        piloteProprietaireDeMachinePourcentageRetribution(pvc.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS cdt_pourcentage,
         pvo.id_personne AS id_co,
         piloteEstProprietaireDeMachine(pvo.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS co_est_proprietaire,
-        piloteProprietaireDeMachinePourcentage(pvo.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS co_pourcentage,
+        piloteProprietaireDeMachinePourcentageRetribution(pvo.id_personne, vol.id_aeronef, vol_pilote.date_vol) AS co_pourcentage,
 	vol.id_aeronef, vol_pilote.date_vol
         FROM cp_piece
         JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
@@ -514,6 +509,7 @@ BEGIN
       -- combien le propriétaire payerait si sa machine appartenait au club
       stats := setVarInData(stats, 'cout_vol_si_machine_club', cout_vol_si_machine_club);
     END IF;
+    -- TODO sortir les OD
     SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
       WHERE id_compte = r.id_compte AND sens = 'D' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee;
@@ -611,7 +607,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION piloteProprietaireDeMachinePourcentage(input_id_personne INT, input_id_aeronef INT, input_date_vol DATE) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION piloteProprietaireDeMachinePourcentageRetribution(input_id_personne INT, input_id_aeronef INT, input_date_vol DATE) RETURNS NUMERIC AS $$
 DECLARE
   r RECORD;
   last_id_aeronef_situation NUMERIC;
@@ -635,5 +631,20 @@ BEGIN
     RETURN r.pourcentage;
   END IF;
   RETURN 0;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+-- on prend d'octobre à octobre
+CREATE OR REPLACE FUNCTION statsInscriptionMembre(date_debut_commence DATE, date_debut_fini DATE, date_fin_commence DATE, date_fin_fini DATE) RETURNS TABLE (
+  d DATE,
+  stats JSONB
+  ) AS $$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN WITH d AS (SELECT t AS begin, t + interval '1 month' AS end FROM generate_series(DATE_TRUNC('day', now() - INTERVAL '12 months'), NOW(), interval '1 month') AS t(day)) SELECT * from d
+  LOOP
+    RAISE NOTICE '%', r;
+  END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
