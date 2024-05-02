@@ -149,6 +149,7 @@ DECLARE
   r_vol record;
   js jsonb;
   sub_js jsonb;
+  sub_js2 jsonb;
   machines TEXT[];
   sub_json jsonb;
 BEGIN
@@ -163,6 +164,7 @@ BEGIN
     sub_js := setVarInData(sub_js, 'nb_vol', r_vol.nb_vol);
     sub_js := setVarInData(sub_js, 'ca', r_vol.ca);
     stats := setVarInData(stats, 'global', sub_js);
+    sub_js2 := '{}';
     FOR r_vol IN SELECT libelle_remorque, COUNT(*) AS nb_vol,
       SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_remorque_co, 0)) AS ca FROM vfr_vol
         WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_remorqueur = r.id_aeronef GROUP BY libelle_remorque
@@ -170,8 +172,21 @@ BEGIN
       sub_js := '{}';
       sub_js := setVarInData(sub_js, 'nb_vol', r_vol.nb_vol);
       sub_js := setVarInData(sub_js, 'ca', r_vol.ca);
-      stats := setVarInData(stats, r_vol.libelle_remorque, sub_js);
+      sub_js2 := setVarInData(sub_js2, r_vol.libelle_remorque, sub_js);
     END LOOP;
+    stats := setVarInData(stats, 'type_mise_en_l_air', sub_js2);
+
+    sub_js2 := '{}';
+    FOR r_vol IN SELECT nom_type_vol, COUNT(*) AS nb_vol,
+      SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_remorque_co, 0)) AS ca FROM vfr_vol
+        WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_remorqueur = r.id_aeronef GROUP BY nom_type_vol
+    LOOP
+      sub_js := '{}';
+      sub_js := setVarInData(sub_js, 'nb_vol', r_vol.nb_vol);
+      sub_js := setVarInData(sub_js, 'ca', r_vol.ca);
+      sub_js2 := setVarInData(sub_js2, r_vol.nom_type_vol, sub_js);
+    END LOOP;
+    stats := setVarInData(stats, 'type_vol', sub_js2);
 
     return NEXT;
   END LOOP;
@@ -181,8 +196,23 @@ BEGIN
   SELECT INTO r_vol COUNT(*) AS nb_vol,
     SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_treuil_co, 0)) AS ca FROM vfr_vol
       WHERE date_vol BETWEEN date_debut AND date_fin AND mode_decollage = 'T';
-  stats := setVarInData(stats, 'nb_vol', r_vol.nb_vol);
-  stats := setVarInData(stats, 'ca', r_vol.ca);
+  sub_js := '{}';
+  sub_js := setVarInData(sub_js, 'nb_vol', r_vol.nb_vol);
+  sub_js := setVarInData(sub_js, 'ca', r_vol.ca);
+  stats := setVarInData(stats, 'global', sub_js);
+
+  sub_js2 := '{}';
+  FOR r_vol IN SELECT nom_type_vol, COUNT(*) AS nb_vol,
+    SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_treuil_co, 0)) AS ca FROM vfr_vol
+      WHERE date_vol BETWEEN date_debut AND date_fin AND mode_decollage = 'T' GROUP BY nom_type_vol
+  LOOP
+    sub_js := '{}';
+    sub_js := setVarInData(sub_js, 'nb_vol', r_vol.nb_vol);
+    sub_js := setVarInData(sub_js, 'ca', r_vol.ca);
+    sub_js2 := setVarInData(sub_js2, r_vol.nom_type_vol, sub_js);
+  END LOOP;
+  stats := setVarInData(stats, 'type_vol', sub_js2);
+
   return NEXT;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
@@ -420,7 +450,7 @@ BEGIN
   FOR r IN SELECT pi.id_pilote, pe.id_personne, pe.nom, pe.prenom, pi.cat_age, pi.id_compte, pi.licence_saison, pi.licence_nom, pi.solde
     FROM vfr_pilote pi
     JOIN gv_personne pe ON pe.id_personne = pi.id_personne
-    WHERE pilote_actif_3 IS TRUE AND pi.id_compte = 2300
+    WHERE pilote_actif_3 IS TRUE
     ORDER BY pe.nom -- TODO randomize
     LOOP
     stats := '{}';
@@ -509,15 +539,19 @@ BEGIN
       -- combien le propriétaire payerait si sa machine appartenait au club
       stats := setVarInData(stats, 'cout_vol_si_machine_club', cout_vol_si_machine_club);
     END IF;
-    -- TODO sortir les OD
+    -- on sort:
+    -- RE5_TIERS les remboursements de frais
+    -- TRCLU les transferts entre comptes
     SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
-      WHERE id_compte = r.id_compte AND sens = 'D' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee;
+      WHERE id_compte = r.id_compte AND sens = 'D' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee
+      AND type NOT IN ('RE5_TIERS', 'TRCLU');
     stats := setVarInData(stats, 'debit', r2.montant - a_deduire);
 
     SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
-      WHERE id_compte = r.id_compte AND sens = 'C' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee;
+      WHERE id_compte = r.id_compte AND sens = 'C' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee
+      AND type NOT IN ('RE5_TIERS', 'TRCLU');
     stats := setVarInData(stats, 'crédit', r2.montant - a_deduire);
 
     nb_vols := 0;
@@ -635,16 +669,248 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 -- on prend d'octobre à octobre
-CREATE OR REPLACE FUNCTION statsInscriptionMembre(date_debut_commence DATE, date_debut_fini DATE, date_fin_commence DATE, date_fin_fini DATE) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION statsAuCoursAnnee(annee int) RETURNS TABLE (
   d DATE,
   stats JSONB
   ) AS $$
 DECLARE
   r RECORD;
+  r2 RECORD;
+  r_vol RECORD;
+  sub_json JSONB;
+  mise_en_l_air TEXT;
+  mises_en_l_air TEXT[] := '{"R", "T", "M"}';
 BEGIN
-  FOR r IN WITH d AS (SELECT t AS begin, t + interval '1 month' AS end FROM generate_series(DATE_TRUNC('day', now() - INTERVAL '12 months'), NOW(), interval '1 month') AS t(day)) SELECT * from d
+  FOR r IN SELECT t AS start, t + interval '1 month' AS stop FROM generate_series(DATE_TRUNC('day', make_date(annee, 1, 1)), make_date(annee, 12, 31), interval '1 month') AS t(day)
   LOOP
-    RAISE NOTICE '%', r;
+    d := r.start;
+    stats := '{}';
+
+    IF EXTRACT(YEAR FROM d) = EXTRACT(YEAR FROM now()) THEN
+      SELECT INTO r2 COUNT(*) AS nb FROM pilote WHERE licence_debut >= r.start AND licence_debut < r.stop AND licence_nom = 'Passion -25 ans (Annuelle)';
+      sub_json := '{}';
+      sub_json := setVarInData(sub_json, 'nb_licence_moins25', r2.nb);
+      SELECT INTO r2 COUNT(*) AS nb FROM pilote WHERE licence_debut >= r.start AND licence_debut < r.stop AND licence_nom = 'Passion +25 ans (Annuelle)';
+      sub_json := setVarInData(sub_json, 'nb_licence_plus25', r2.nb);
+      sub_json := setVarInData(sub_json, 'nb_licence', (sub_json->>'nb_licence_moins25')::numeric + (sub_json->>'nb_licence_plus25')::numeric);
+      stats := setVarInData(stats, 'licence', sub_json);
+    END IF;
+
+
+    SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+      SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+      SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+      SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+      WHERE date_vol >= r.start AND date_vol < r.stop;
+    sub_json := '{}';
+    sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+    sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+    sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+    stats := setVarInData(stats, 'global', sub_json);
+
+
+    FOR r2 IN SELECT vfr_vol.nom_type_vol FROM vfr_vol WHERE date_vol >= r.start AND date_vol < r.stop GROUP BY vfr_vol.nom_type_vol
+    LOOP
+      SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+        SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+        SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+        SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+        WHERE date_vol >= r.start AND date_vol < r.stop AND vfr_vol.nom_type_vol = r2.nom_type_vol;
+      sub_json := '{}';
+      sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+      sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+      sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+      stats := setVarInData(stats, r2.nom_type_vol, sub_json);
+    END LOOP;
+
+    FOREACH mise_en_l_air IN ARRAY mises_en_l_air
+    LOOP
+      SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+        SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+        SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+        SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+        WHERE date_vol >= r.start AND date_vol < r.stop AND vfr_vol.mode_decollage = mise_en_l_air;
+      sub_json := '{}';
+      sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+      sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+      sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+      stats := setVarInData(stats, mise_en_l_air, sub_json);
+    END LOOP;
+
+    return NEXT;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+-- anonymisation de vfr_vol
+CREATE OR REPLACE FUNCTION anonymisationVol(annee INT, avec_anonymisation BOOLEAN) RETURNS TABLE (
+  id BIGINT,
+  aeronef VARCHAR,
+  date_vol DATE,
+  prix_vol NUMERIC,
+  prix_remorque NUMERIC,
+  prix_treuil NUMERIC,
+  prix_moteur NUMERIC,
+  mode_decollage CHARACTER,
+  libelle_remorque VARCHAR,
+  pilote_remorqueur VARCHAR,
+  cat_age_pilote_remorqueur VARCHAR,
+  treuilleur VARCHAR,
+  cat_age_treuilleur VARCHAR,
+  instructeur VARCHAR,
+  eleve VARCHAR,
+  cat_age_eleve VARCHAR,
+  prix_vol_elv NUMERIC,
+  prix_treuil_elv NUMERIC,
+  prix_remorque_elv NUMERIC,
+  prix_moteur_elv NUMERIC,
+  cdt_de_bord VARCHAR,
+  cat_age_cdb VARCHAR,
+  prix_vol_cdb NUMERIC,
+  prix_treuil_cdb NUMERIC,
+  prix_remorque_cdb NUMERIC,
+  prix_moteur_cdb NUMERIC,
+  co_pilote VARCHAR,
+  cat_age_co VARCHAR,
+  prix_vol_co NUMERIC,
+  prix_treuil_co NUMERIC,
+  prix_remorque_co NUMERIC,
+  prix_moteur_co NUMERIC,
+  nom_type_vol VARCHAR,
+  temps_vol INTERVAL,
+  immatriculation_remorqueur VARCHAR
+  ) AS $$
+DECLARE
+  r RECORD;
+  i INT;
+  chars TEXT[] := '{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f}';
+  salt TEXT;
+BEGIN
+  salt := '';
+  FOR i IN 1..16 LOOP
+    salt := salt || chars[1+random()*(array_length(chars, 1)-1)];
+  END LOOP;
+
+  i := 1;
+  FOR r IN SELECT vfr_vol.*,
+    instructeur_age.date_naissance AS instructeur_date_naissance,
+    eleve_age.date_naissance AS eleve_date_naissance,
+    cdb_age.date_naissance AS cdb_date_naissance,
+    co_age.date_naissance AS co_date_naissance,
+    remorqueur_age.date_naissance AS remorqueur_date_naissance,
+    treuilleur_age.date_naissance AS treuilleur_date_naissance
+    FROM vfr_vol
+    LEFT JOIN gv_personne instructeur_age ON instructeur_age.id_personne = vfr_vol.id_instructeur
+    LEFT JOIN gv_personne eleve_age ON eleve_age.id_personne = vfr_vol.id_eleve
+    LEFT JOIN gv_personne cdb_age ON cdb_age.id_personne = vfr_vol.id_cdt_de_bord
+    LEFT JOIN gv_personne co_age ON co_age.id_personne = vfr_vol.id_co_pilote
+    LEFT JOIN gv_personne remorqueur_age ON remorqueur_age.id_personne = vfr_vol.id_pilote_remorqueur
+    LEFT JOIN gv_personne treuilleur_age ON treuilleur_age.id_personne = vfr_vol.id_treuilleur
+    WHERE saison = annee ORDER BY date_vol ASC, decollage ASC
+  LOOP
+    IF avec_anonymisation IS false THEN
+      id := r.id_vol;
+    ELSE
+      id := i;
+    END IF;
+    i := i + 1;
+    aeronef := r.immatriculation;
+    IF avec_anonymisation IS false THEN
+      date_vol := r.date_vol;
+    ELSE
+      date_vol := DATE_TRUNC('month', r.date_vol);
+    END IF;
+    prix_vol := r.prix_vol;
+    prix_remorque := r.prix_remorque;
+    prix_treuil := r.prix_treuil;
+    prix_moteur := r.prix_moteur;
+    mode_decollage := r.mode_decollage;
+    libelle_remorque := r.libelle_remorque;
+    IF r.pilote_remorqueur IS NOT NULL AND avec_anonymisation IS true THEN
+      pilote_remorqueur := SUBSTRING(MD5(salt || r.pilote_remorqueur), 1, 6);
+    ELSE
+      pilote_remorqueur := r.pilote_remorqueur;
+    END IF;
+    IF r.remorqueur_date_naissance IS NOT NULL THEN
+      IF date_part('year', now()) - date_part('year', r.remorqueur_date_naissance) > 25 THEN
+        cat_age_pilote_remorqueur := '+25 ans';
+      ELSE
+        cat_age_pilote_remorqueur := '-25 ans';
+      END IF;
+    END IF;
+
+    IF r.treuilleur IS NOT NULL AND avec_anonymisation IS true THEN
+      treuilleur := SUBSTRING(MD5(salt || r.treuilleur), 1, 6);
+    ELSE
+      treuilleur := r.treuilleur;
+    END IF;
+    IF r.treuilleur_date_naissance IS NOT NULL THEN
+      IF date_part('year', now()) - date_part('year', r.treuilleur_date_naissance) > 25 THEN
+        cat_age_treuilleur := '+25 ans';
+      ELSE
+        cat_age_treuilleur := '-25 ans';
+      END IF;
+    END IF;
+
+    IF r.instructeur_date_naissance IS NOT NULL THEN
+      IF date_part('year', now()) - date_part('year', r.instructeur_date_naissance) > 25 THEN
+        cat_age_pilote_remorqueur := '+25 ans';
+      ELSE
+        cat_age_pilote_remorqueur := '-25 ans';
+      END IF;
+    END IF;
+    IF r.eleve IS NOT NULL AND avec_anonymisation IS true THEN
+      eleve := SUBSTRING(MD5(salt || r.eleve), 1, 6);
+    ELSE
+      eleve := r.eleve;
+    END IF;
+    IF r.eleve_date_naissance IS NOT NULL THEN
+      IF date_part('year', now()) - date_part('year', r.eleve_date_naissance) > 25 THEN
+        cat_age_eleve := '+25 ans';
+      ELSE
+        cat_age_eleve := '-25 ans';
+      END IF;
+    END IF;
+    prix_vol_elv := r.prix_vol_elv;
+    prix_treuil_elv := r.prix_treuil_elv;
+    prix_remorque_elv := r.prix_remorque_elv;
+    prix_moteur_elv := r.prix_moteur_elv;
+    IF r.cdt_de_bord IS NOT NULL AND avec_anonymisation IS true THEN
+      cdt_de_bord := SUBSTRING(MD5(salt || r.cdt_de_bord), 1, 6);
+    ELSE
+      cdt_de_bord := r.cdt_de_bord;
+    END IF;
+    IF r.cdb_date_naissance IS NOT NULL THEN
+      IF date_part('year', now()) - date_part('year', r.cdb_date_naissance) > 25 THEN
+        cat_age_cdb := '+25 ans';
+      ELSE
+        cat_age_cdb := '-25 ans';
+      END IF;
+    END IF;
+    prix_vol_cdb := r.prix_vol_cdb;
+    prix_remorque_cdb := r.prix_remorque_cdb;
+    prix_treuil_cdb := r.prix_treuil_cdb;
+    prix_moteur_cdb := r.prix_moteur_cdb;
+    IF r.co_pilote IS NOT NULL AND avec_anonymisation IS true THEN
+      co_pilote := SUBSTRING(MD5(salt || r.co_pilote), 1, 6);
+    ELSE
+      co_pilote := r.co_pilote;
+    END IF;
+    IF r.co_date_naissance IS NOT NULL THEN
+      IF date_part('year', now()) - date_part('year', r.co_date_naissance) > 25 THEN
+        cat_age_co := '+25 ans';
+      ELSE
+        cat_age_co := '-25 ans';
+      END IF;
+    END IF;
+    prix_vol_co := r.prix_vol_co;
+    prix_remorque_co := r.prix_remorque_co;
+    prix_treuil_co := r.prix_treuil_co;
+    prix_moteur_co := r.prix_moteur_co;
+    nom_type_vol := r.nom_type_vol;
+    temps_vol := r.temps_vol;
+    immatriculation_remorqueur := r.immatriculation_remorqueur;
+    return NEXT;
   END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
