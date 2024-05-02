@@ -7,5 +7,8 @@
     },
     "osrt": {
         "credentials": [ { "login": "", "password": "" } ]
+    },
+    "stats": {
+        "token": ""
     }
 }
