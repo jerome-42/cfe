@@ -405,14 +405,54 @@ get('/declaration-complete', function($conn, $pug) {
 get('/declarerFLARM', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
-    $vars = array_merge($_SESSION, [ 'messages' => [], 'errors' => [] ]);
+    $settings = new Settings($conn);
+    $flarmVersions = explode("\r\n", trim($settings->get('flarmGoodSoftVersion', '')));
+    $gliders = new Gliders($conn);
+    $vars = array_merge($_SESSION, [
+        'messages' => [],
+        'errors' => [],
+        'flarmGoodSoftVersions' => $flarmVersions,
+        'gliders' => $gliders->listWithOGNAndFlarmnetStatus(true),
+    ]);
     $pug->displayFile('view/declarerFLARM.pug', $vars);
 });
+
+function declarerFLARMManuel($conn, $pug, $gliderId, $version, $radioId) {
+    $gliders = new Gliders($conn);
+    $glider = $gliders->getGliderById($gliderId);
+    if ($glider === null)
+        return displayError("Machine inconnue");
+    $gliders->registerFlarmLog([
+        ':when' => time(),
+        ':glider' => $gliderId,
+        ':filename' => 'déclaration manuelle',
+        ':versionSoft' => $version,
+        ':versionHard' => 'inconnu',
+        ':who' => $_SESSION['id'],
+        ':stealth' => null,
+        ':noTrack' => null,
+        ':radioId' => $radioId,
+        ':rangeAvg' => null,
+        ':rangeBelowMinimum' => null,
+        ':rangeDetails' => '',
+        ':aircraftType' => '',
+        ':flarmResultUrl' => '',
+    ]);
+    $vars = array_merge($_SESSION, [
+        'messages' => [ "Déclaration enregistrée" ],
+        'errors' => [] ]);
+    $pug->displayFile('view/declarerFLARM.pug', $vars);
+};
 
 // trop long
 post('/declarerFLARM', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
+    if (isset($_POST['glider']) && $_POST['glider'] != '' &&
+        isset($_POST['version']) && $_POST['version'] != '')
+        return declarerFLARMManuel($conn, $pug,
+                                   $_POST['glider'], $_POST['version'], $_POST['radioId']);
+
     if (!isset($_FILES['igc']) || count($_FILES['igc']) === 0) {
         http_response_code(500);
         $vars = array_merge($_SESSION, [ 'message' => "Vous avez oublié de sélectionner un fichier" ]);

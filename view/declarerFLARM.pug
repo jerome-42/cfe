@@ -6,7 +6,7 @@ block scripts
 
 block content
   .row
-    h1 Déclaration d'un enregistrement FLARM
+    h1 Déclaration d'un FLARM
   if (count($messages) > 0) || (count($errors) > 0)
     .row.mb-4
       h4 Résultat de l'analyse:
@@ -16,22 +16,49 @@ block content
       alert.alert-danger
         each line in $errors
           p= $line
+  else
+    .row
+      .col-6
+        .card.mb-3
+          .card-header Uploader un fichier IGC
+          .card-body
+            p.card-text En téléchargeant des fichiers IGC le système est capable d'en extraire l'immatriculation et la version du logiciel.
+              br
+              | Ainsi le contrôle des FLARM est plus aisé et plus rapide.
+            .row.spinner.visually-hidden
+              .col-4.text-center
+                .spinner-border.text-primary(role="status")#spinner
+                br
+                span Upload en cours
+            .row
+              .col-4
+                .mb-3
+                  form(method="POST" enctype="multipart/form-data")#form
+                    label.form-label(for="upload") Sélectionner les fichiers à uploader
+                    input.form-control(type="file" name="igc[]" multiple)#upload
 
-  .row
-    p En téléchargeant des fichiers IGC le système est capable d'en extraire l'immatriculation et la version du logiciel.
-      br
-      | Ainsi le contrôle des FLARM est plus aisé et plus rapide.
-  .row.spinner.visually-hidden
-    .col-4.text-center
-      .spinner-border.text-primary(role="status")#spinner
-      br
-      span Upload en cours
-  
-  .row
-    .col-4
-      .mb-3
-        form(method="POST" enctype="multipart/form-data")#form
-          label.form-label(for="upload") Sélectionner les fichiers à uploader
-          input.form-control(type="file" name="igc[]" multiple)#upload
-  .hstack.gap-4.mb-3
+        .card
+          .card-header Déclarer manuellement un FARM
+          .card-body
+            p.card-text Je déclare manuellement un FLARM
+            form(method="POST")
+              .mb-3
+                label.form-label(for="glider") Machine :
+                select.form-select(name="glider")#glider
+                  each glider in gliders
+                    if (isset($glider['versionSoft']))
+                      option(value=$glider['id'])= $glider['immat'].' '.$glider['versionSoft']
+                    else
+                      option(value=$glider['id'])= $glider['immat']
+              .mb-3
+                label.form-label(for="version") Version du FLARM :
+                select.form-select(name="version")#version
+                  each version in flarmGoodSoftVersions
+                    option(value=$version)= $version
+              .mb-3
+                label.form-label(for="radioId") Identifiant radio (si connu) :
+                input.form-control(name="radioId" placeholder="38xxxx")#radioId
+              button.btn.btn-primary(type="submit") Déclarer
+
+  .hstack.gap-4.mt-3
     button.btn.btn-danger.back Retour
