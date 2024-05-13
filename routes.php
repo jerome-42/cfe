@@ -571,7 +571,7 @@ post('/declarerFLARM', function($conn, $pug) {
                 $immat = $ogn->getGliderImmatFromRadioId($radioId);
             }
             if ($immat === null) {
-                $errors[] = "Dans le fichier ".$file['name']." l'immatriculation du planeur n'a pas été reconnue, est-ce un fichier IGC ?";
+                $errors[] = "Dans le fichier ".$file['name']." l'immatriculation du planeur n'a pas été reconnue (HFGIDGLIDERID), est-ce un fichier IGC ?";
                 continue;
             }
             if ($hardVersion === null) {
