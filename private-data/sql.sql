@@ -46,6 +46,7 @@ $$ LANGUAGE plpgsql VOLATILE;
 -- date_debut est inclusif
 -- date_fin est inclusif
 -- select * from statsMachines('2024-01-01', '2024-12-31');
+-- ca correspond au chiffre d'affaire du club en fonction des prix renseignés sur la planche donc:
 -- D-KBJP          | {"R": {"nb_vol": 2, "temps_vol": "09:02:00"}, "global": {"nb_vol": 2, "temps_vol": "09:02:00"}, "1 Vol en solo": {"nb_vol": 2, "temps_vol": "09:02:00"}}
 -- D-KOCM          | {"M": {"nb_vol": 3, "temps_vol": "06:38:00"}, "R": {"nb_vol": 2, "temps_vol": "06:27:00"}, "global": {"nb_vol": 5, "temps_vol": "13:05:00"}, "1 Vol en solo": {"nb_vol": 5, "temps_vol": "13:05:00"}}
 --  F-CHIC         | {"R": {"ca": 3605.72, "nb_vol": 89, "temps_vol": "47:18:00"}, "T": {"ca": 625.22, "nb_vol": 39, "temps_vol": "10:38:00"}, "global": {"ca": 4230.94, "nb_vol": 128, "temps_vol": "57:56:00"}, "41 VI perso": {"nb_vol": 1, "temps_vol": "00:21:00"}, "1 Vol en solo": {"nb_vol": 11, "temps_vol": "05:26:00"}, "3 Vol partagé": {"nb_vol": 4, "temps_vol": "03:57:00"}, "2 Vol d'instruction": {"nb_vol": 110, "temps_vol": "47:21:00"}, "9 Vol journée découverte": {"nb_vol": 2, "temps_vol": "00:51:00"}}
@@ -64,47 +65,86 @@ DECLARE
   mise_en_l_air TEXT;
   mises_en_l_air TEXT[] := '{"R", "T", "M"}';
   sub_json jsonb;
+  frais_hangar NUMERIC;
 BEGIN
   FOR r IN SELECT vfr_vol.nom_type_vol FROM vfr_vol WHERE date_vol BETWEEN date_debut AND date_fin GROUP BY vfr_vol.nom_type_vol
   LOOP
     types_vol := array_append(types_vol, r.nom_type_vol);
   END LOOP;
 
-  FOR r IN SELECT vfr_vol.id_aeronef, vfr_vol.immatriculation FROM vfr_vol
+  FOR r IN SELECT vfr_vol.id_aeronef, vfr_vol.immatriculation,
+    CASE
+      WHEN aeronef_situation.situation = 'C' THEN false
+      when aeronef_situation.situation = 'B' THEN true
+    END AS machine_est_privee
+    FROM vfr_vol
     JOIN aeronef ON aeronef.id_aeronef = vfr_vol.id_aeronef
+    JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
     WHERE
-    date_fin BETWEEN date_debut AND date_fin AND aeronef.actif IS true
-    GROUP BY vfr_vol.id_aeronef, vfr_vol.immatriculation ORDER BY vfr_vol.immatriculation
+    date_fin BETWEEN date_debut AND date_fin
+    AND aeronef.actif IS true
+    AND aeronef_situation.situation IN ('B', 'C')
+    GROUP BY vfr_vol.id_aeronef, vfr_vol.immatriculation, aeronef_situation.situation ORDER BY vfr_vol.immatriculation
   LOOP
     immatriculation := r.immatriculation;
     stats := '{}';
 
     -- nb vol & CA global
-    SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
-      SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
-        SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
-        SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
-        WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
-        sub_json := '{}';
-        sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
-        sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-        sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
-        stats := setVarInData(stats, 'global', sub_json);
-
-    -- stats par moyen de mise en l'air
-    FOREACH mise_en_l_air IN ARRAY mises_en_l_air
-    LOOP
+    IF r.machine_est_privee IS false THEN -- machine club, on compte tout
       SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
         SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
           SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
           SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
-          WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.mode_decollage = mise_en_l_air;
-      IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
-        sub_json := '{}';
-        sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
-        sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-        sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
-        stats := setVarInData(stats, mise_en_l_air, sub_json);
+          WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+          sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+          stats := setVarInData(stats, 'global', sub_json);
+    ELSE -- privé, on ne compte pas l'heure de vol
+      SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+        SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+          SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+          SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+          WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+          sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+          frais_hangar := getFraisHangarParMachine(r.id_aeronef, EXTRACT(YEAR FROM date_debut));
+          sub_json := setVarInData(sub_json, 'frais_hangar', frais_hangar);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.ca + frais_hangar);
+          stats := setVarInData(stats, 'global', sub_json);
+    END IF;
+
+    -- stats par moyen de mise en l'air
+    FOREACH mise_en_l_air IN ARRAY mises_en_l_air
+    LOOP
+      IF r.machine_est_privee IS false THEN -- machine club, on compte tout
+        SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+          SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+            SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+            SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+            WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.mode_decollage = mise_en_l_air;
+        IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+          sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+          stats := setVarInData(stats, mise_en_l_air, sub_json);
+        END IF;
+      ELSE -- machine privée, on ne compte pas les heures de vol
+        SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+          SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+            SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+            SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+            WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.mode_decollage = mise_en_l_air;
+        IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+          sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+          stats := setVarInData(stats, mise_en_l_air, sub_json);
+        END IF;
       END IF;
     END LOOP;
       
@@ -112,17 +152,32 @@ BEGIN
     -- stats par type de vol
     FOREACH type_vol IN ARRAY types_vol
     LOOP
-      SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
-        SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
-          SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
-          SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
-          WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.nom_type_vol = type_vol;
-      IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
-        sub_json := '{}';
-        sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
-        sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-        sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
-        stats := setVarInData(stats, type_vol, sub_json);
+      IF r.machine_est_privee IS false THEN -- machine club, on compte tout
+        SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+          SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+            SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+            SUM(COALESCE(prix_vol_co, 0)) + SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+            WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.nom_type_vol = type_vol;
+        IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+          sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+          stats := setVarInData(stats, type_vol, sub_json);
+        END IF;
+      ELSE -- machine privée, on ne compte pas les heures de vol
+        SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
+          SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) + SUM(COALESCE(prix_moteur_elv, 0)) +
+            SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) +
+            SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS ca FROM vfr_vol
+            WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.nom_type_vol = type_vol;
+        IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
+          sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+          stats := setVarInData(stats, type_vol, sub_json);
+        END IF;
       END IF;
     END LOOP;
 
@@ -134,7 +189,8 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 -- select * from statsMisesEnLAir('2024-01-01', '2024-12-31');
---  immatriculation |                                                                                                                                                                     stats                                                                                                                                                                      
+-- ca comprend la mise en l'air et pas les heures de vol
+--  immatriculation |                                                                                                                                                                     stats
 -- -----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --  F-JDTX          | {"750m": {"ca": 79.80, "nb_vol": 3}, "global": {"ca": 585.00, "nb_vol": 26}, "Remorqué standard - 500m": {"ca": 505.20, "nb_vol": 23}}
 --  F-GEKY          | {"750m": {"ca": 2920.34, "nb_vol": 97}, "1000m": {"ca": 378.27, "nb_vol": 11}, "global": {"ca": 10479.80, "nb_vol": 405}, "voltige - 1300m": {"ca": 136.01, "nb_vol": 3}, "Demi-remorqué - 250m": {"ca": 164.43, "nb_vol": 11}, "Dépannage Etrépagny": {"ca": 58.00, "nb_vol": 1}, "Remorqué standard - 500m": {"ca": 6822.75, "nb_vol": 282}}
@@ -316,17 +372,17 @@ DECLARE
 BEGIN
   -- on récupère la catégorie du pilote (-25 ans ou +25 ans)
   SELECT * INTO r_pilote FROM vfr_pilote WHERE id_personne = input_id_pilote LIMIT 1;
-  --RAISE NOTICE 'categorie: % %: %', r_pilote.nom, r_pilote.prenom, r_pilote.cat_age;
+  --DEBUG RAISE NOTICE 'categorie: % %: %', r_pilote.nom, r_pilote.prenom, r_pilote.cat_age;
   IF r_pilote.cat_age = '-25 ans' THEN
     nom_type = 'Tarif général junior';
   ELSE
     nom_type = 'Tarif général';
   END IF;
 
-  RAISE NOTICE 'id_pilote=% categorie: %', input_id_pilote, nom_type;
+  --DEBUG RAISE NOTICE 'id_pilote=% categorie: %', input_id_pilote, nom_type;
 
   SELECT * INTO r_prix FROM getPrixHorairePourVol(nom_type, input_id_aeronef, input_date_vol) AS (id_tarif_tranche_vol INT, prix_heure NUMERIC);
-  RAISE NOTICE 'prix heure de vol: %', r_prix;
+  --DEBUG RAISE NOTICE 'prix heure de vol: %', r_prix;
   IF r_prix IS NULL THEN
     RETURN 0;
   END IF;
@@ -341,7 +397,7 @@ BEGIN
         temps_vol_dans_item := temps_vol;
         temps_vol := 0;
       END IF;
-      RAISE NOTICE 'prix pour % coef %: %', temps_vol_dans_item, r_tranche_item.coefficient, r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
+      --DEBUG RAISE NOTICE 'prix pour % coef %: %', temps_vol_dans_item, r_tranche_item.coefficient, r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
       prix := prix + r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
     END IF;
   END LOOP;
@@ -361,9 +417,9 @@ BEGIN
   FOR r_vol IN SELECT * FROM vfr_vol
     WHERE saison = annee and id_cdt_de_bord = input_id_pilote and prix_vol_cdb = 0 AND prix_vol IS NULL
   LOOP
-    RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r_vol.date_vol, r_vol.cdt_de_bord, r_vol.id_aeronef, r_vol.immatriculation, r_vol.temps_vol;
+    --RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r_vol.date_vol, r_vol.cdt_de_bord, r_vol.id_aeronef, r_vol.immatriculation, r_vol.temps_vol;
     prix_du_vol := calculPrixVol(r_vol.id_cdt_de_bord, r_vol.id_aeronef, r_vol.date_vol, r_vol.temps_vol);
-    RAISE NOTICE 'prix_du_vol: %', prix_du_vol;
+    --RAISE NOTICE 'prix_du_vol: %', prix_du_vol;
     prix_vols := prix_vols + prix_du_vol;
   END LOOP;
 
@@ -372,11 +428,29 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 -- calcule des stats sur les forfaits
-
-CREATE OR REPLACE FUNCTION statsForfait(annee int) returns table (
+--givav=> select * from statsForfait(2021);
+-- cout_vol_sans_forfait: montant que le pilote aurait payé s'il n'avait pas souscrit le forfait
+-- cout_horaire_vol_dans_forfait: on prend le montant du forfait que l'on divise par le nombre d'heure, ça donne le coût horaire des vols du pilote (grâce au forfait le pilote paye l'équivalent de xx € / h)
+-- prix_cellule_sans_forfait: montant que le pilote a payé pour ces vols hors forfait (lorsque le pilote a volé sur des machines qui n'était pas dans son forfait), ça répond à la question est-ce que le pilote vole exclusivement sur les machines comprises dans le forfait ou pas
+-- temps_vol_sans_forfait: idem que prix_cellule_sans_forfait mais au temps
+--       nom_forfait        | montant_forfait | cout_vol_sans_forfait | conso_forfait | id_personne |           pilote           | cout_horaire_vol_dans_forfait | prix_cellule_sans_forfait | temps_vol_sans_forfait
+----------------------------+-----------------+-----------------------+---------------+-------------+----------------------------+-------------------------------+---------------------------+------------------------
+-- Forfait école campagne   |         1100.00 |               1446.91 | 80:53:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         13.60 |                     79.08 |
+-- Forfait école campagne   |         1100.00 |                422.62 | 34:13:30      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         32.14 |                         0 |
+-- Forfait école de base    |         1000.00 |                     0 | 10:14:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         97.72 |                         0 |
+-- Forfait école de base    |         1000.00 |                     0 | 32:47:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         30.50 |                         0 |
+-- Forfait école de base    |         1000.00 |                     0 | 16:12:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         61.73 |                         0 |
+-- Forfait école de base    |         1000.00 |                     0 | 11:14:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         89.02 |                         0 |
+-- Forfait Loisir  Campagne |          900.00 |                948.36 | 45:25:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         19.82 |                         0 |
+-- Forfait Loisir  Campagne |          900.00 |               2056.55 | 82:29:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         10.91 |                    410.74 | 13:03:00
+-- Forfait Loisir  Campagne |          900.00 |                385.52 | 20:39:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         43.58 |                     12.90 |
+-- Forfait Loisir  Campagne |          900.00 |                 36.92 | 69:09:30      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         13.01 |                         0 |
+-- Forfait Loisir  Campagne |          900.00 |                492.54 | 34:39:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         25.97 |                    335.00 | 18:00:00
+-- Forfait Loisirs          |          520.00 |               1093.06 | 88:17:30      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                          5.89 |                     71.40 |
+-- Forfait Perfo            |         1300.00 |                111.87 | 28:35:00      |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         45.48 |                         0 |
+-- Forfait Perfo            |         1300.00 |               3363.02 | 125:40:30     |        xxxx | xxxxxxxxxxxxxxxxxxxxxxxx   |                         10.34 |                         0 |
+CREATE OR REPLACE FUNCTION statsForfait(input_annee int) returns table (
   nom_forfait varchar,
-  date_debut date,
-  date_fin date,
   montant_forfait numeric,
   cout_vol_sans_forfait NUMERIC, -- coût des vols si le membre n'avait pas pris le forfait
   conso_forfait interval,
@@ -397,15 +471,13 @@ BEGIN
   -- donc pour sortir les forfaits qui intéressant il faut filtrer par hrs_cellules
   FOR r_forfait IN SELECT * FROM vfr_forfait_pilote
     JOIN vfr_gv_personne ON vfr_forfait_pilote.id_personne = vfr_gv_personne.id_personne
-    WHERE EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = annee AND vfr_forfait_pilote.hrs_cellule = '999:00:00' ORDER BY vfr_forfait_pilote.nom_forfait
+    WHERE EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = input_annee AND vfr_forfait_pilote.hrs_cellule = '999:00:00' ORDER BY vfr_forfait_pilote.nom_forfait
   LOOP
     id_personne := r_forfait.id_personne;
     nom_forfait := r_forfait.nom_forfait;
-    date_debut := r_forfait.date_debut;
-    date_fin := r_forfait.date_fin;
     montant_forfait := r_forfait.montant;
     conso_forfait := r_forfait.conso_hrs_cellule;
-    cout_vol_sans_forfait := calculVolsSiHorsForfait(r_forfait.id_personne, annee);
+    cout_vol_sans_forfait := calculVolsSiHorsForfait(r_forfait.id_personne, input_annee);
     pilote := CONCAT(r_forfait.prenom, ' ', r_forfait.nom)::varchar;
 
     -- calcul du coût horaire des vols dans le forfait
@@ -415,11 +487,11 @@ BEGIN
 
     -- calcul du nombre de vol et du nombre d'heure réalisées hors forfait (pour voir si le pilote vole sur des machines hors forfait)
     SELECT INTO r_vol SUM(COALESCE(prix_vol_cdb, 0)) AS prix, SUM(temps_vol) AS duree FROM vfr_vol
-      WHERE vfr_vol.id_cdt_de_bord = r_forfait.id_personne AND vfr_vol.prix_vol_cdb > 0 AND saison = annee;
+      WHERE vfr_vol.id_cdt_de_bord = r_forfait.id_personne AND vfr_vol.prix_vol_cdb > 0 AND saison = input_annee;
     prix_cellule_sans_forfait := COALESCE(r_vol.prix, 0);
     temps_vol_sans_forfait := r_vol.duree;
     SELECT INTO r_vol SUM(COALESCE(prix_vol_co, 0)) AS prix, SUM(temps_vol) AS duree FROM vfr_vol
-      WHERE r_forfait.id_personne = id_co_pilote AND vfr_vol.prix_vol_co > 0 AND saison = annee;
+      WHERE r_forfait.id_personne = id_co_pilote AND vfr_vol.prix_vol_co > 0 AND saison = input_annee;
     prix_cellule_sans_forfait := prix_cellule_sans_forfait + COALESCE(r_vol.prix, 0);
     temps_vol_sans_forfait := temps_vol_sans_forfait + r_vol.duree;
 
@@ -459,7 +531,7 @@ BEGIN
     IF r.prenom IS NOT NULL THEN
       nom := r.prenom || ' ' || r.nom;
     END IF;
-    RAISE NOTICE '%', nom;
+    --DEBUG RAISE NOTICE '%', nom;
     stats := setVarInData(stats, 'solde', r.solde);
     stats := setVarInData(stats, 'id_compte', r.id_compte);
     -- pour les privés qui pratiquent la rétrocession, comme c'est un jeu à somme nulle, on la sort
@@ -497,13 +569,13 @@ BEGIN
         -- le pilote est propriaitaire donc on calcule le coût de ces vols
         IF r2.cdt_est_proprietaire THEN
           prix_du_vol := (100 * r2.montant) / r2.cdt_pourcentage;
-          RAISE NOTICE 'proprio cdb: % montant=% pourcentage=% prix_vol: %', r2, r2.montant, r2.cdt_pourcentage, prix_du_vol;
+          --DEBUG RAISE NOTICE 'proprio cdb: % montant=% pourcentage=% prix_vol: %', r2, r2.montant, r2.cdt_pourcentage, prix_du_vol;
         ELSE
           prix_du_vol := (100 * r2.montant) / r2.co_pourcentage;
-          RAISE NOTICE 'proprio co: % montant=% pourcentage=% prix_vol: %', r2, r2.montant, r2.co_pourcentage, prix_du_vol;
+          --DEBUG RAISE NOTICE 'proprio co: % montant=% pourcentage=% prix_vol: %', r2, r2.montant, r2.co_pourcentage, prix_du_vol;
         END IF;
         IF r2.nom_type_vol = '3 Vol partagé' THEN
-          RAISE NOTICE 'vol partagé donc prix_du_vol / 2';
+          --DEBUG RAISE NOTICE 'vol partagé donc prix_du_vol / 2';
           prix_du_vol := prix_du_vol / 2;
         END IF;
         cout_vol_si_machine_club := cout_vol_si_machine_club + ROUND(prix_du_vol, 2);
@@ -527,9 +599,9 @@ BEGIN
       AND prix_vol IS NULL
       AND piloteEstProprietaireDeMachine(id_cdt_de_bord, id_aeronef, date_vol) IS TRUE
     LOOP
-      RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r2.date_vol, r2.cdt_de_bord, r2.id_aeronef, r2.immatriculation, r2.temps_vol;
+      --DEBUG RAISE NOTICE 'calcul du prix pour date=% pilote=[%] id_aeronef=% (%): temps_vol=%', r2.date_vol, r2.cdt_de_bord, r2.id_aeronef, r2.immatriculation, r2.temps_vol;
       prix_du_vol := calculPrixVol(r.id_pilote, r2.id_aeronef, r2.date_vol, r2.temps_vol);
-      RAISE NOTICE 'prix: %', prix_du_vol;
+      --DEBUG RAISE NOTICE 'prix: %', prix_du_vol;
       cout_vol_si_machine_club := cout_vol_si_machine_club + prix_du_vol;
     END LOOP;
 
@@ -611,6 +683,52 @@ BEGIN
 
     RETURN next;
   END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+-- on retourne le montant des frais de hangar par machine
+-- comme il n'y a pas de relation entre le compte pilote et la machine
+-- - on compte le montant total des frais de hangar (au total)
+-- - on compte combien le propriétaire a de machine
+-- et on fait (montant total des frais de hangar) / (nombre de machine)
+-- mais comme un propriétaire n'a qu'une machine, on ne calcule pas le nombre de machine
+CREATE OR REPLACE FUNCTION getFraisHangarParMachine(input_id_aeronef INT, input_annee NUMERIC) RETURNS NUMERIC AS $$
+DECLARE
+  r RECORD;
+  r2 RECORD;
+  last_id_aeronef_situation NUMERIC;
+  v_id_aeronef_sitation NUMERIC;
+  montant_frais_hangar NUMERIC;
+  nb_machine NUMERIC;
+BEGIN
+  montant_frais_hangar := 0;
+  FOR r IN SELECT * FROM aeronef_situation
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef
+  LOOP
+    IF input_annee >= EXTRACT(YEAR FROM r.date_application) THEN
+      v_id_aeronef_sitation = r.id_aeronef_situation;
+    END IF;
+  END LOOP;
+  IF v_id_aeronef_sitation IS NULL THEN
+    RETURN 0;
+  END IF;
+
+  -- on cherche tous les propriétaires de cette machine
+  FOR r IN SELECT * FROM aeronef_situation_benef
+    WHERE aeronef_situation_benef.id_aeronef_situation = v_id_aeronef_sitation
+  LOOP
+    SELECT INTO r2 SUM(COALESCE(montant, 0)) AS montant FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN pilote ON pilote.id_compte = li.id_compte
+      WHERE pi.type = 'FVTE'
+        AND EXTRACT(YEAR FROM li.date_piece) = input_annee
+        AND pilote.id_personne = r.id_personne;
+    montant_frais_hangar := montant_frais_hangar + r2.montant;
+  END LOOP;
+
+  nb_machine := 1;
+
+  RETURN ROUND(montant_frais_hangar / nb_machine, 2);
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 

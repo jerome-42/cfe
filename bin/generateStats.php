@@ -5,9 +5,13 @@ $config = json_decode(file_get_contents(__DIR__.'/../config.json'), true);
 
 $output = [];
 $now = new DateTime();
-$dateDebut = $now->format('Y').'-1-1';
-$dateFin = $now->format('Y').'-12-31';
-$annee = $now->format('Y');
+$annee = intval($now->format('Y'));
+$dateDebut = $annee.'-1-1';
+$dateFin = $annee.'-12-31';
+$anneePrecedente = intval($annee)-1;
+$dateDebutPrecedente = $anneePrecedente.'-1-1';
+$dateFinPrecedente = $anneePrecedente.'-12-31';
+
 $dsn = join(';', [ 'host='.$config['givav']['host'], 'dbname='.$config['givav']['database'] ]);
 $db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['password']);
 
@@ -41,30 +45,55 @@ function uploadFile($config, $what, $file) {
         throw new Exception("Réponse inattendue de cfe.aavo.org: ".$http_code.': '.$body);
 }
 
-/*echo "statsMachines".PHP_EOL;
+echo "statsMachines".PHP_EOL;
 $q = 'SELECT * FROM statsMachines(:start, :end)';
 $sth = $db->prepare($q);
 $sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+foreach ($data as &$line) {
+    $line['stats'] = json_decode($line['stats']);
+}
 $output['statsMachines'] = [
     'params' => [
         'date_debut' => $dateDebut,
         'date_fin' => $dateFin,
     ],
     'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+    'data' => $data,
 ];
 
-echo "statsMisesEnLAir".PHP_EOL;
+echo "statsMisesEnLAir ".$annee.PHP_EOL;
 $q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
 $sth = $db->prepare($q);
 $sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+foreach ($data as &$line) {
+    $line['stats'] = json_decode($line['stats']);
+}
 $output['statsMisesEnLAir'] = [
     'params' => [
         'date_debut' => $dateDebut,
         'date_fin' => $dateFin,
     ],
     'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+    'data' => $data,
+];
+
+echo "statsMisesEnLAir ".$anneePrecedente.PHP_EOL;
+$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+$sth = $db->prepare($q);
+$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedente ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+foreach ($data as &$line) {
+    $line['stats'] = json_decode($line['stats']);
+}
+$output['statsMisesEnLAirAnneePrecedente'] = [
+    'params' => [
+        'date_debut' => $dateDebut,
+        'date_fin' => $dateFin,
+    ],
+    'requete' => $q,
+    'data' => $data,
 ];
 
 echo "statsForfait".PHP_EOL;
@@ -79,22 +108,42 @@ $output['statsForfait'] = [
     'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
 ];
 
-echo "statsAuCoursAnnee".PHP_EOL;
+echo "statsAuCoursAnnee ".$annee.PHP_EOL;
 $q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
 $sth = $db->prepare($q);
 $sth->execute([ ':annee' => $annee ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+foreach ($data as &$line) {
+    $line['stats'] = json_decode($line['stats']);
+}
 $output['statsAuCoursAnnee'] = [
     'params' => [
         'annee' => $annee,
     ],
     'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+    'data' => $data,
+];
+
+echo "statsAuCoursAnnee ".$anneePrecedente.PHP_EOL;
+$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
+$sth = $db->prepare($q);
+$sth->execute([ ':annee' => $anneePrecedente ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+foreach ($data as &$line) {
+    $line['stats'] = json_decode($line['stats']);
+}
+$output['statsAuCoursAnneePrecedente'] = [
+    'params' => [
+        'annee' => $annee,
+    ],
+    'requete' => $q,
+    'data' => $data,
 ];
 
 // CURLStringFile n'existe pas en php 7 donc on triche avec un fichier temporaire
 $fichierStats = tempnam(sys_get_temp_dir(), 'stats.js');
-file_put_contents($fichierStats, json_encode($output));
-*/
+file_put_contents($fichierStats, 'var stats = '.json_encode($output).';');
+
 
 echo "vols anonymisés".PHP_EOL;
 $q = 'SELECT * FROM anonymisationVol(:annee, true)';
@@ -125,7 +174,7 @@ foreach ($data as $line) {
 $csv = null; // free
 
 try {
-    //uploadFile($config, 'stats.js', $fichierStats);
+    uploadFile($config, 'stats.js', $fichierStats);
     uploadFile($config, 'vols-anonymises.csv', $fichierVolsAnonymises);
     uploadFile($config, 'vols.csv', $fichierVols);
     echo "ok fichiers uploadés".PHP_EOL;
