@@ -95,6 +95,17 @@ class Gliders {
         return null;
     }
 
+    private function getRadioId($gliderId) {
+        $q = "SELECT radioId FROM flarm_logs WHERE glider = :id AND radioId IS NOT NULL and radioId != '' ORDER BY `when` DESC LIMIT 1";
+        $sth = $this->conn->prepare($q);
+        $sth->execute([ ':id' => $gliderId ]);
+        if ($sth->rowCount() === 1) {
+            $line = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+            return $line['radioId'];
+        }
+        return null;
+    }
+
     private function getLastFlarmLogFromFile($gliderId) {
         $q = "SELECT *, UNIX_TIMESTAMP(`when`) AS `when` FROM flarm_logs WHERE glider = :id AND versionHard IS NOT NULL ORDER BY `when` DESC LIMIT 1";
         $sth = $this->conn->prepare($q);
@@ -107,7 +118,7 @@ class Gliders {
                      'who' => $line['who'],
                      'stealth' => $line['stealth'],
                      'noTrack' => $line['noTrack'],
-                     'radioId' => $line['radioId'],
+                     'radioId' => $this->getRadioId($gliderId),
                      'rangeDetails' => $line['rangeDetails'],
                      'rangeBelowMinimum' => $line['rangeBelowMinimum'],
                      'flarmResultUrl' => $line['flarmResultUrl'],

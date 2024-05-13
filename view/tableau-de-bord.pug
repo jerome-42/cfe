@@ -1,0 +1,15 @@
+extends layout.pug
+
+block scripts
+  title Tableau de bord
+  script(src="https://cdn.jsdelivr.net/npm/d3@7")
+  script(src="js/tableau-de-bord.js")
+  script(src="cache/stats.js")
+
+block content
+  .row
+    h1 Tableau de bord
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#lancements
