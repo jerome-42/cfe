@@ -2,12 +2,8 @@
 
 // from https://github.com/phprouter/main
 
-include_once __DIR__ . '/router.php';
-include_once __DIR__ . '/cfe.php';
-include_once __DIR__ . '/csv.php';
-include_once __DIR__ . '/givav.php';
-include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/vendor/autoload.php';
+include_once __DIR__ . '/router.php';
 
 function apiReturnError($message) {
     http_response_code(400); // bad request
