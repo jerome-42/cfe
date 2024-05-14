@@ -30,7 +30,7 @@ if ($password === '') {
 
 // try to login
 try {
-    $givav = new Givav($user, $password);
+    $givav = new SmartGlide($user, $password);
     $givav->login();
     $givav->getAndStoreGliders($env->mysql);
 }

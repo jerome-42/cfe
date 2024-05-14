@@ -39,7 +39,7 @@ post('/api/auth', function($conn) {
             return apiReturnError($key." parameter is mandatory");
     }
     try {
-        $givav = new Givav($_POST['login'], $_POST['password']);
+        $givav = new SmartGlide($_POST['login'], $_POST['password']);
         $givav->login();
         $properties = $givav->getName();
         $toRet = [ 'ok' => true, 'givavNumber' => $properties['number'], 'name' => $properties['name'], 'isAdmin' => false ];
@@ -153,7 +153,7 @@ post('/connexion', function($conn, $pug) {
         return $pug->displayFile('view/connexion.pug', $vars);
     }
     try {
-        $givav = new Givav($_POST['login'], $_POST['pass']);
+        $givav = new SmartGlide($_POST['login'], $_POST['pass']);
         $givav->login();
         $user = $givav->getName();
         $userData = Personne::creeOuMAJ($conn, $user);

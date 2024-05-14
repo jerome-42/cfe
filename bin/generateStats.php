@@ -108,6 +108,18 @@ $output['statsForfait'] = [
     'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
 ];
 
+echo "statsMembre".PHP_EOL;
+$q = 'SELECT * FROM statsMembre(:annee)';
+$sth = $db->prepare($q);
+$sth->execute([ ':annee' => $annee ]);
+$output['statsMembre'] = [
+    'params' => [
+        'annee' => $annee,
+    ],
+    'requete' => $q,
+    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+];
+
 echo "statsAuCoursAnnee ".$annee.PHP_EOL;
 $q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
 $sth = $db->prepare($q);

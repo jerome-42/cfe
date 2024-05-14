@@ -42,14 +42,24 @@ RETURN data;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
+CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value JSONB[]) RETURNS JSONB AS $$
+BEGIN
+IF value IS NULL THEN
+   data := data - key;
+ELSE
+   data := data || CONCAT('{"', key, '": ', to_json(value), '}')::jsonb;
+END IF;
+RETURN data;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 
 -- date_debut est inclusif
 -- date_fin est inclusif
 -- select * from statsMachines('2024-01-01', '2024-12-31');
--- ca correspond au chiffre d'affaire du club en fonction des prix renseignés sur la planche donc:
--- D-KBJP          | {"R": {"nb_vol": 2, "temps_vol": "09:02:00"}, "global": {"nb_vol": 2, "temps_vol": "09:02:00"}, "1 Vol en solo": {"nb_vol": 2, "temps_vol": "09:02:00"}}
--- D-KOCM          | {"M": {"nb_vol": 3, "temps_vol": "06:38:00"}, "R": {"nb_vol": 2, "temps_vol": "06:27:00"}, "global": {"nb_vol": 5, "temps_vol": "13:05:00"}, "1 Vol en solo": {"nb_vol": 5, "temps_vol": "13:05:00"}}
---  F-CHIC         | {"R": {"ca": 3605.72, "nb_vol": 89, "temps_vol": "47:18:00"}, "T": {"ca": 625.22, "nb_vol": 39, "temps_vol": "10:38:00"}, "global": {"ca": 4230.94, "nb_vol": 128, "temps_vol": "57:56:00"}, "41 VI perso": {"nb_vol": 1, "temps_vol": "00:21:00"}, "1 Vol en solo": {"nb_vol": 11, "temps_vol": "05:26:00"}, "3 Vol partagé": {"nb_vol": 4, "temps_vol": "03:57:00"}, "2 Vol d'instruction": {"nb_vol": 110, "temps_vol": "47:21:00"}, "9 Vol journée découverte": {"nb_vol": 2, "temps_vol": "00:51:00"}}
+-- ca correspond au chiffre d'affaire du club en fonction des prix renseignés sur la planche
+-- pour les privés ça dépend de la configuration (facturation de l'heure de vol ou pas lorsque
+-- le propriétaire vole dessus)
 CREATE OR REPLACE FUNCTION statsMachines(date_debut date, date_fin date) returns table (
   immatriculation varchar,
   stats jsonb
@@ -57,11 +67,14 @@ CREATE OR REPLACE FUNCTION statsMachines(date_debut date, date_fin date) returns
 $$
 DECLARE
   r record;
+  r2 RECORD;
   r_vol record;
   js jsonb;
   types_vol TEXT[];
   type_vol TEXT;
   machines TEXT[];
+  pilotes JSONB[];
+  somme_tous_les_vols INTERVAL;
   mise_en_l_air TEXT;
   mises_en_l_air TEXT[] := '{"R", "T", "M"}';
   sub_json jsonb;
@@ -181,8 +194,61 @@ BEGIN
       END IF;
     END LOOP;
 
-    -- TODO stats sur les vols propriétaires
-    -- TODO stats sur les vols au forfait
+
+    SELECT * INTO r2 FROM aeronef WHERE id_aeronef = r.id_aeronef;
+    -- on ne fait les stats sur les pilotes qui volent sur cette machine uniquement
+    -- sur les planeurs et pas les remorqueurs
+    IF r2.remorqueur IS false THEN
+      SELECT SUM(temps_vol) INTO somme_tous_les_vols
+        FROM vfr_vol
+        WHERE date_vol BETWEEN date_debut AND date_fin
+          AND id_aeronef = r.id_aeronef;
+      --DEBUG RAISE NOTICE '% %', r2.immatriculation, somme_tous_les_vols;
+      pilotes := '{}';
+      FOR r2 IN
+          WITH cdt AS (SELECT CONCAT(nom, ' ', prenom) AS nom, SUM(temps_vol) AS temps_vol
+            FROM vfr_vol
+            JOIN gv_personne ON gv_personne.id_personne = vfr_vol.id_cdt_de_bord
+            WHERE EXTRACT(YEAR FROM date_vol) = 2023
+              AND id_aeronef = r.id_aeronef
+              AND id_cdt_de_bord IS NOT NULL
+              GROUP BY nom, prenom
+              ORDER BY temps_vol DESC),
+          co AS (SELECT CONCAT(nom, ' ', prenom) AS nom, SUM(temps_vol) AS temps_vol
+            FROM vfr_vol
+            JOIN gv_personne ON gv_personne.id_personne = vfr_vol.id_co_pilote
+            WHERE EXTRACT(YEAR FROM date_vol) = 2023
+              AND id_aeronef = r.id_aeronef
+              AND id_co_pilote IS NOT NULL
+              GROUP BY nom, prenom
+              ORDER BY temps_vol DESC),
+          eleve AS (SELECT CONCAT(nom, ' ', prenom) AS nom, SUM(temps_vol) AS temps_vol
+            FROM vfr_vol
+            JOIN gv_personne ON gv_personne.id_personne = vfr_vol.id_eleve
+            WHERE EXTRACT(YEAR FROM date_vol) = 2023
+              AND id_aeronef = r.id_aeronef
+              AND id_eleve IS NOT NULL
+              GROUP BY nom, prenom
+              ORDER BY temps_vol DESC)
+           SELECT
+           COALESCE(cdt.nom, co.nom, eleve.nom) AS nom,
+           COALESCE(cdt.temps_vol, '0'::interval)+COALESCE(co.temps_vol, '0'::interval)+COALESCE(eleve.temps_vol, '0'::interval) AS temps_vol
+           FROM cdt
+           FULL JOIN co ON cdt.nom = co.nom
+           FULL JOIN eleve ON cdt.nom = eleve.nom
+           ORDER BY temps_vol DESC
+      LOOP
+        IF cardinality(pilotes) < 10 THEN
+          sub_json := '{}';
+          sub_json := setVarInData(sub_json, 'membre', r2.nom);
+          sub_json := setVarInData(sub_json, 'temps_vol', r2.temps_vol);
+          sub_json := setVarInData(sub_json, 'percent', ROUND((EXTRACT(EPOCH FROM r2.temps_vol) / EXTRACT(EPOCH FROM somme_tous_les_vols)) * 100, 0));
+          pilotes := array_append(pilotes, sub_json);
+        END IF;
+      END LOOP;
+      stats := setVarInData(stats, 'pilotes', pilotes);
+    END IF;
+
     return NEXT;
   END LOOP;
 END;
@@ -510,6 +576,7 @@ DECLARE
   sub_json jsonb;
   r RECORD;
   r2 RECORD;
+  somme_tous_les_vols INTERVAL;
   r_type_vol RECORD;
   cout_vol_si_machine_club NUMERIC := 0;
   loyer NUMERIC;
@@ -518,13 +585,24 @@ DECLARE
   a_deduire NUMERIC;
   nb_vols NUMERIC;
   temps_vols INTERVAL;
+  machines JSONB[];
+  nb_vol INT;
 BEGIN
   FOR r IN SELECT pi.id_pilote, pe.id_personne, pe.nom, pe.prenom, pi.cat_age, pi.id_compte, pi.licence_saison, pi.licence_nom, pi.solde
     FROM vfr_pilote pi
     JOIN gv_personne pe ON pe.id_personne = pi.id_personne
     WHERE pilote_actif_3 IS TRUE
+    --DEBUG AND pi.id_pilote = 811
     ORDER BY pe.nom -- TODO randomize
     LOOP
+    SELECT COUNT(*) INTO nb_vol
+      FROM vfr_vol
+      WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne);
+    IF nb_vol = 0 THEN
+      CONTINUE;
+    END IF;
+
     stats := '{}';
     -- TODO anonymisation
     nom := r.nom;
@@ -680,6 +758,28 @@ BEGIN
       IF r2.nombre > 0 THEN
         stats := setVarInData(stats, 'nb_autonome', r2.nombre);
       END IF;
+
+    -- sur quelles machines ce pilote vole-t'il le plus
+    -- on fait la somme des temps de vol sur toutes les machines dans somme_tous_les_vols
+    SELECT SUM(temps_vol) INTO somme_tous_les_vols
+      FROM vfr_vol
+      WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne);
+    machines := '{}';
+    FOR r2 IN SELECT immatriculation, SUM(temps_vol) AS temps_vol
+      FROM vfr_vol
+      WHERE EXTRACT(YEAR FROM date_vol) = annee
+        AND (id_cdt_de_bord = r.id_personne OR id_co_pilote = r.id_personne OR id_eleve = r.id_personne)
+        GROUP BY immatriculation
+        ORDER BY temps_vol DESC
+    LOOP
+      sub_json := '{}';
+      sub_json := setVarInData(sub_json, 'immatriculation', r2.immatriculation);
+      sub_json := setVarInData(sub_json, 'temps_vol', r2.temps_vol);
+      sub_json := setVarInData(sub_json, 'percent', ROUND((EXTRACT(EPOCH FROM r2.temps_vol) / EXTRACT(EPOCH FROM somme_tous_les_vols)) * 100, 0));
+      machines := array_append(machines, sub_json);
+    END LOOP;
+    stats := setVarInData(stats, 'machines', machines);
 
     RETURN next;
   END LOOP;
