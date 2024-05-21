@@ -209,7 +209,7 @@ BEGIN
           WITH cdt AS (SELECT CONCAT(nom, ' ', prenom) AS nom, SUM(temps_vol) AS temps_vol
             FROM vfr_vol
             JOIN gv_personne ON gv_personne.id_personne = vfr_vol.id_cdt_de_bord
-            WHERE EXTRACT(YEAR FROM date_vol) = 2023
+            WHERE date_vol BETWEEN date_debut AND date_fin
               AND id_aeronef = r.id_aeronef
               AND id_cdt_de_bord IS NOT NULL
               GROUP BY nom, prenom
@@ -217,7 +217,7 @@ BEGIN
           co AS (SELECT CONCAT(nom, ' ', prenom) AS nom, SUM(temps_vol) AS temps_vol
             FROM vfr_vol
             JOIN gv_personne ON gv_personne.id_personne = vfr_vol.id_co_pilote
-            WHERE EXTRACT(YEAR FROM date_vol) = 2023
+            WHERE date_vol BETWEEN date_debut AND date_fin
               AND id_aeronef = r.id_aeronef
               AND id_co_pilote IS NOT NULL
               GROUP BY nom, prenom
@@ -225,7 +225,7 @@ BEGIN
           eleve AS (SELECT CONCAT(nom, ' ', prenom) AS nom, SUM(temps_vol) AS temps_vol
             FROM vfr_vol
             JOIN gv_personne ON gv_personne.id_personne = vfr_vol.id_eleve
-            WHERE EXTRACT(YEAR FROM date_vol) = 2023
+            WHERE date_vol BETWEEN date_debut AND date_fin
               AND id_aeronef = r.id_aeronef
               AND id_eleve IS NOT NULL
               GROUP BY nom, prenom
