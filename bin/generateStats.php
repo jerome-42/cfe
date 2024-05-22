@@ -164,6 +164,17 @@ $output['statsAuCoursAnneePrecedente'] = [
     'data' => $data,
 ];
 
+echo "tableau de bord".PHP_EOL;
+$q = 'SELECT tableauDeBord() AS tdb';
+$sth = $db->prepare($q);
+$sth->execute();
+$data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+$data = json_decode($data['tdb']);
+$output['tableauDeBord'] = [
+    'requete' => $q,
+    'data' => $data,
+];
+
 // CURLStringFile n'existe pas en php 7 donc on triche avec un fichier temporaire
 $fichierStats = tempnam(sys_get_temp_dir(), 'stats.js');
 file_put_contents($fichierStats, 'var stats = '.json_encode($output).';');

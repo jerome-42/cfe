@@ -31,6 +31,17 @@ RETURN data;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
+CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value DATE) RETURNS JSONB AS $$
+BEGIN
+IF value IS NULL THEN
+   data := data - key;
+ELSE
+   data := data || CONCAT('{"', key, '": ', to_json(value), '}')::jsonb;
+END IF;
+RETURN data;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value JSONB) RETURNS JSONB AS $$
 BEGIN
 IF value IS NULL THEN
@@ -886,7 +897,123 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
--- on prend d'octobre à octobre
+-- on ne prend pas en compte les décollages autonomes, car ce qui nous intéresse pour les tableaux de bord
+-- ce sont les rentrées d'argent vu du club
+CREATE OR REPLACE FUNCTION tableauDeBord_mise_en_l_air(annee INT, pas_apres_cette_date DATE) RETURNS JSONB AS $$
+DECLARE
+  r_vol RECORD;
+  stats JSONB;
+  mise_en_l_air TEXT;
+  mises_en_l_air TEXT[] := '{"R", "T"}';
+BEGIN
+  stats := '{}';
+  FOREACH mise_en_l_air IN ARRAY mises_en_l_air
+  LOOP
+    SELECT INTO r_vol COUNT(*) AS nb_vol FROM vfr_vol WHERE saison = annee AND date_vol <= pas_apres_cette_date AND mode_decollage = mise_en_l_air;
+    stats := setVarInData(stats, mise_en_l_air, r_vol.nb_vol);
+  END LOOP;
+
+  RETURN stats;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+-- on calcule les heures de vol club et banalisé
+-- on ne prend que les heures "vol solo" et "vol partagé" pour les CDB
+CREATE OR REPLACE FUNCTION tableauDeBord_hdv(annee INT, pas_apres_cette_date DATE, inclure_banalise BOOLEAN) RETURNS JSONB AS $$
+DECLARE
+  r_vol RECORD;
+  stats JSONB;
+  situations TEXT[] := '{"C"}';
+BEGIN
+  IF inclure_banalise IS true THEN
+    situations := '{"C", "B"}';
+  END IF;
+  stats := '{}';
+
+  SELECT INTO r_vol SUM(temps_vol) AS duree FROM vfr_vol WHERE saison = annee AND date_vol <= pas_apres_cette_date AND situation = ANY(situations) AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
+  stats := setVarInData(stats, 'cdb', ROUND(EXTRACT(epoch FROM r_vol.duree)/3600));
+
+  SELECT INTO r_vol SUM(temps_vol) AS duree FROM vfr_vol WHERE saison = annee AND date_vol <= pas_apres_cette_date AND situation = ANY(situations) AND nom_type_vol = '2 Vol d''instruction';
+  stats := setVarInData(stats, 'instruction', ROUND(EXTRACT(epoch FROM r_vol.duree)/3600));
+  stats := setVarInData(stats, 'total', (stats->>'cbd')::numeric + (stats->>'instruction')::numeric);
+
+  RETURN stats;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION tableauDeBord() RETURNS JSONB AS $$
+DECLARE
+  stats JSONB;
+  r RECORD;
+  r2 RECORD;
+  r_vol RECORD;
+  sub_json JSONB;
+  mise_en_l_air TEXT;
+  mises_en_l_air TEXT[] := '{"R", "T", "M"}';
+  pas_apres_cette_date_cette_annee DATE;
+  pas_apres_cette_date_annee_derniere DATE;
+  pas_apres_cette_date_annee_derniere_complete DATE;
+  cette_annee INT;
+  annee_derniere INT;
+BEGIN
+  stats := '{}';
+
+  -- on regarde la date du dernier vol enregistré
+  SELECT INTO r MAX(date_vol) AS date_vol FROM vfr_vol WHERE saison = EXTRACT(YEAR FROM NOW());
+  pas_apres_cette_date_cette_annee := r.date_vol;
+  pas_apres_cette_date_annee_derniere := r.date_vol - INTERVAL '1 year';
+  cette_annee := EXTRACT(YEAR FROM NOW());
+  annee_derniere := EXTRACT(YEAR FROM pas_apres_cette_date_annee_derniere);
+  RAISE NOTICE 'cette_annee: % annee_derniere: %', cette_annee, annee_derniere;
+  pas_apres_cette_date_annee_derniere_complete := CONCAT(annee_derniere, '-12-31');
+  RAISE NOTICE 'pas_apres_cette_date_cette_annee: % pas_apres_cette_date_annee_derniere: % pas_apres_cette_date_annee_derniere_complete: %', pas_apres_cette_date_cette_annee, pas_apres_cette_date_annee_derniere, pas_apres_cette_date_annee_derniere_complete;
+  sub_json := '{}';
+  sub_json := setVarInData(sub_json, 'pas_apres_cette_date_cette_annee', pas_apres_cette_date_cette_annee);
+  sub_json := setVarInData(sub_json, 'pas_apres_cette_date_annee_derniere', pas_apres_cette_date_annee_derniere);
+  sub_json := setVarInData(sub_json, 'pas_apres_cette_date_annee_derniere_complete', pas_apres_cette_date_annee_derniere_complete);
+  stats := setVarInData(stats, 'dates', sub_json);
+
+  -- moyens de lancement
+  sub_json := tableauDeBord_mise_en_l_air(cette_annee, pas_apres_cette_date_cette_annee);
+  stats := setVarInData(stats, 'mise_en_l_air_cette_annee', sub_json);
+
+  sub_json := tableauDeBord_mise_en_l_air(annee_derniere, pas_apres_cette_date_annee_derniere);
+  stats := setVarInData(stats, 'mise_en_l_air_annee_derniere', sub_json);
+
+  sub_json := tableauDeBord_mise_en_l_air(annee_derniere, pas_apres_cette_date_annee_derniere_complete);
+  stats := setVarInData(stats, 'mise_en_l_air_annee_derniere_complete', sub_json);
+
+  -- heures de vol club + banalisé
+  sub_json := tableauDeBord_hdv(cette_annee, pas_apres_cette_date_cette_annee, true);
+  stats := setVarInData(stats, 'hdv_club_et_banalise_cette_annee', sub_json);
+  sub_json := tableauDeBord_hdv(annee_derniere, pas_apres_cette_date_annee_derniere, true);
+  stats := setVarInData(stats, 'hdv_club_et_banalise_annee_derniere', sub_json);
+  sub_json := tableauDeBord_hdv(annee_derniere, pas_apres_cette_date_annee_derniere_complete, true);
+  stats := setVarInData(stats, 'hdv_club_et_banalise_annee_derniere_complete', sub_json);
+
+  -- heures de vol club
+  sub_json := tableauDeBord_hdv(cette_annee, pas_apres_cette_date_cette_annee, false);
+  stats := setVarInData(stats, 'hdv_club_cette_annee', sub_json);
+  sub_json := tableauDeBord_hdv(annee_derniere, pas_apres_cette_date_annee_derniere, false);
+  stats := setVarInData(stats, 'hdv_club_annee_derniere', sub_json);
+  sub_json := tableauDeBord_hdv(annee_derniere, pas_apres_cette_date_annee_derniere_complete, false);
+  stats := setVarInData(stats, 'hdv_club_annee_derniere_complete', sub_json);
+
+  -- TODO licences
+  RETURN stats;
+
+  -- IF EXTRACT(YEAR FROM d) = EXTRACT(YEAR FROM now()) THEN
+  --   SELECT INTO r2 COUNT(*) AS nb FROM pilote WHERE licence_debut >= r.start AND licence_debut < r.stop AND licence_nom = 'Passion -25 ans (Annuelle)';
+  --   sub_json := '{}';
+  --   sub_json := setVarInData(sub_json, 'nb_licence_moins25', r2.nb);
+  --   SELECT INTO r2 COUNT(*) AS nb FROM pilote WHERE licence_debut >= r.start AND licence_debut < r.stop AND licence_nom = 'Passion +25 ans (Annuelle)';
+  --   sub_json := setVarInData(sub_json, 'nb_licence_plus25', r2.nb);
+  --   sub_json := setVarInData(sub_json, 'nb_licence', (sub_json->>'nb_licence_moins25')::numeric + (sub_json->>'nb_licence_plus25')::numeric);
+  --   stats := setVarInData(stats, 'licence', sub_json);
+  -- END IF;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 CREATE OR REPLACE FUNCTION statsAuCoursAnnee(annee int) RETURNS TABLE (
   d DATE,
   stats JSONB
