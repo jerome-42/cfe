@@ -2,7 +2,10 @@ extends layout.pug
 
 block scripts
   title Tableau de bord
-  script(src="https://cdn.jsdelivr.net/npm/d3@7")
+  //script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.min.js")
+  //script(type="module" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/helpers.min.js")
+  script(type="module" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js")
+  script(type="module" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0")
   script(src="js/tableau-de-bord.js")
   script(src="cache/stats.js")
 
@@ -20,3 +23,7 @@ block content
     .col
       div(style="width: 800px;")
         canvas#lancements
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdv_club_et_banalise

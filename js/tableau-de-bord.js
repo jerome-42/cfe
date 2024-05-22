@@ -2,23 +2,158 @@ let getStatsByMonth = function(s, mois) {
     if (mois < 10)
         mois = '0'+mois;
     for (let i = 0; i < s.data.length; i++) {
-        if (s.data[i].d.indexOf('-'+mois+'-')) {
+        if (s.data[i].d.indexOf('-'+mois+'-') !== -1) {
+            //DEBUG console.log(s.data[i].stats, i, mois);
             return s.data[i].stats;
         }
     }
     throw new Error("impossible de trouver le mois "+mois+" dans stats");
 };
 
+let getDateFromD = function(dString) {
+    let d = new Date(0);
+    let s = Date.parse(dString);
+    d.setUTCSeconds(s/1000);
+    return d;
+};
+
 let displayMoyensLancement = function() {
-    let getNbVols = function(s, mois) {
-        let s2 = getStatsByMonth(s, mois);
-        return s2.M.nb_vol + s2.R.nb_vol + s2.T.nb_vol;
-    };
-    let data = {
-        'février 2023': getNbVols(stats.statsAuCoursAnneePrecedente, 2),
-        'février 2024': getNbVols(stats.statsAuCoursAnnee, 2),
-    };
-    //console.log(data);
+    Chart.register(ChartDataLabels);
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('lancements').getContext('2d');
+    let dataCetteAnnee = [
+        stats.tableauDeBord.data.mise_en_l_air_cette_annee.T,
+        stats.tableauDeBord.data.mise_en_l_air_cette_annee.R,
+        stats.tableauDeBord.data.mise_en_l_air_cette_annee.T + stats.tableauDeBord.data.mise_en_l_air_cette_annee.R,
+    ];
+    let dataAnneeDerniere = [
+        stats.tableauDeBord.data.mise_en_l_air_annee_derniere.T,
+        stats.tableauDeBord.data.mise_en_l_air_annee_derniere.R,
+        stats.tableauDeBord.data.mise_en_l_air_annee_derniere.T + stats.tableauDeBord.data.mise_en_l_air_annee_derniere.R,
+    ];
+    let dataAnneeDerniereComplete = [
+        stats.tableauDeBord.data.mise_en_l_air_annee_derniere_complete.T,
+        stats.tableauDeBord.data.mise_en_l_air_annee_derniere_complete.R,
+        stats.tableauDeBord.data.mise_en_l_air_annee_derniere_complete.T + stats.tableauDeBord.data.mise_en_l_air_annee_derniere_complete.R,
+    ];
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'Treuillées',
+                'Remorqués',
+                'Total',
+            ],
+            datasets: [
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_cette_annee)),
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere)),
+                    data: dataAnneeDerniere,
+                },
+                {
+                    label: getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere).getFullYear(),
+                    data: dataAnneeDerniereComplete,
+                }
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Lancements hors autonomes',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayHdv = function() {
+    Chart.register(ChartDataLabels);
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('hdv_club_et_banalise').getContext('2d');
+    let dataCetteAnnee = [
+        stats.tableauDeBord.data.hdv_club_et_banalise_cette_annee.cdb,
+        stats.tableauDeBord.data.hdv_club_et_banalise_cette_annee.instruction,
+        stats.tableauDeBord.data.hdv_club_et_banalise_cette_annee.total,
+    ];
+    let dataAnneeDerniere = [
+        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere.cdb,
+        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere.instruction,
+        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere.total,
+    ];
+    let dataAnneeDerniereComplete = [
+        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere_complete.cdb,
+        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere_complete.instruction,
+        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere_complete.total,
+    ];
+    //DEBUG console.log(data);
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'CDB',
+                'Instruction',
+                'Total',
+            ],
+            datasets: [
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_cette_annee)),
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere)),
+                    data: dataAnneeDerniere,
+                },
+                {
+                    label: getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere).getFullYear(),
+                    data: dataAnneeDerniereComplete,
+                }
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Heures de vol club+banalisé',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
 };
 
 let resolvePtr = function(d, ptr) {
@@ -165,6 +300,7 @@ let findStats = function(s, masterKey, value) {
 
 $(document).ready(function() {
     displayMoyensLancement();
+    displayHdv();
 
     displayMisesEnLAir($('#misesEnLAir'), 'immatriculation', stats.statsMisesEnLAir, stats.statsMisesEnLAirAnneePrecedente);
 });
