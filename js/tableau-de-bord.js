@@ -17,8 +17,119 @@ let getDateFromD = function(dString) {
     return d;
 };
 
+let displayLicence = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('licence').getContext('2d');
+    const passion_plus_25 = 'Passion +25 ans (Annuelle)';
+    const passion_moins_25 = 'Passion -25 ans (Annuelle)';
+    const asso = 'Asso - Non volants (Annuelle)';
+    const duo = 'Duo (Annuelle)';
+    const decouverte_3j = 'Découverte 3 jours (consécutifs ou non)';
+    const decouverte_6j = 'Découverte 6 jours (consécutifs ou non)';
+    const decouverte_12j = 'Découverte 12 jours (consécutifs ou non)';
+    const esport = 'esport';
+    let dataCetteAnnee = [
+        stats.tableauDeBord.data.licence_cette_annee[passion_plus_25],
+        stats.tableauDeBord.data.licence_cette_annee[passion_moins_25],
+        stats.tableauDeBord.data.licence_cette_annee[asso],
+        stats.tableauDeBord.data.licence_cette_annee[duo],
+        stats.tableauDeBord.data.licence_cette_annee[decouverte_3j],
+        stats.tableauDeBord.data.licence_cette_annee[decouverte_6j],
+        stats.tableauDeBord.data.licence_cette_annee[decouverte_12j],
+        stats.tableauDeBord.data.licence_cette_annee[esport],
+    ];
+    dataCetteAnnee.push(dataCetteAnnee.reduce(function(accumulator, a) {
+        if (a !== undefined)
+            return accumulator + a;
+        return accumulator;
+    }, 0));
+    let dataAnneeDerniere = [
+        stats.tableauDeBord.data.licence_annee_derniere[passion_plus_25],
+        stats.tableauDeBord.data.licence_annee_derniere[passion_moins_25],
+        stats.tableauDeBord.data.licence_annee_derniere[asso],
+        stats.tableauDeBord.data.licence_annee_derniere[duo],
+        stats.tableauDeBord.data.licence_annee_derniere[decouverte_3j],
+        stats.tableauDeBord.data.licence_annee_derniere[decouverte_6j],
+        stats.tableauDeBord.data.licence_annee_derniere[decouverte_12j],
+        stats.tableauDeBord.data.licence_annee_derniere[esport],
+    ];
+    dataAnneeDerniere.push(dataAnneeDerniere.reduce(function(accumulator, a) {
+        if (a !== undefined)
+            return accumulator + a;
+        return accumulator;
+    }, 0));
+    let dataAnneeDerniereComplete = [
+        stats.tableauDeBord.data.licence_annee_derniere_complete[passion_plus_25],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[passion_moins_25],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[asso],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[duo],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[decouverte_3j],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[decouverte_6j],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[decouverte_12j],
+        stats.tableauDeBord.data.licence_annee_derniere_complete[esport],
+    ];
+    dataAnneeDerniereComplete.push(dataAnneeDerniereComplete.reduce(function(accumulator, a) {
+        if (a !== undefined)
+            return accumulator + a;
+        return accumulator;
+    }, 0));
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'Passion +25',
+                'Passion -25',
+                'Asso',
+                'Duo',
+                'Découverte 3j',
+                'Découverte 6j',
+                'Découverte 12j',
+                'Esport',
+                'Total',
+            ],
+            datasets: [
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_cette_annee)),
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere)),
+                    data: dataAnneeDerniere,
+                },
+                {
+                    label: getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere).getFullYear(),
+                    data: dataAnneeDerniereComplete,
+                }
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Licences',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
 let displayMoyensLancement = function() {
-    Chart.register(ChartDataLabels);
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('lancements').getContext('2d');
     let dataCetteAnnee = [
@@ -86,27 +197,26 @@ let displayMoyensLancement = function() {
     });
 };
 
-let displayHdv = function() {
-    Chart.register(ChartDataLabels);
+let displayHdv = function(subStats, target, title, max) {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('hdv_club_et_banalise').getContext('2d');
+    var ctx = document.getElementById(target).getContext('2d');
     let dataCetteAnnee = [
-        stats.tableauDeBord.data.hdv_club_et_banalise_cette_annee.cdb,
-        stats.tableauDeBord.data.hdv_club_et_banalise_cette_annee.instruction,
-        stats.tableauDeBord.data.hdv_club_et_banalise_cette_annee.total,
+        stats.tableauDeBord.data[subStats+'_cette_annee'].cdb,
+        stats.tableauDeBord.data[subStats+'_cette_annee'].instruction,
+        stats.tableauDeBord.data[subStats+'_cette_annee'].total,
     ];
     let dataAnneeDerniere = [
-        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere.cdb,
-        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere.instruction,
-        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere.total,
+        stats.tableauDeBord.data[subStats+'_annee_derniere'].cdb,
+        stats.tableauDeBord.data[subStats+'_annee_derniere'].instruction,
+        stats.tableauDeBord.data[subStats+'_annee_derniere'].total,
     ];
     let dataAnneeDerniereComplete = [
-        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere_complete.cdb,
-        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere_complete.instruction,
-        stats.tableauDeBord.data.hdv_club_et_banalise_annee_derniere_complete.total,
+        stats.tableauDeBord.data[subStats+'_annee_derniere_complete'].cdb,
+        stats.tableauDeBord.data[subStats+'_annee_derniere_complete'].instruction,
+        stats.tableauDeBord.data[subStats+'_annee_derniere_complete'].total,
     ];
     //DEBUG console.log(data);
-    new Chart(ctx, {
+    let opts = {
         type: 'bar',
         data: {
             labels: [
@@ -137,7 +247,70 @@ let displayHdv = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Heures de vol club+banalisé',
+                    text: title,
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    };
+    if (max !== undefined)
+        opts.options.scales = { y: { suggestedMax: max }};
+    return new Chart(ctx, opts);
+};
+
+let displayViClub = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('vi_club').getContext('2d');
+    let dataCetteAnnee = [
+        stats.tableauDeBord.data.vi_club_cette_annee.nb_vi,
+    ];
+    let dataAnneeDerniere = [
+        stats.tableauDeBord.data.vi_club_annee_derniere.nb_vi,
+    ];
+    let dataAnneeDerniereComplete = [
+        stats.tableauDeBord.data.vi_club_annee_derniere_complete.nb_vi,
+    ];
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'VI Club',
+            ],
+            datasets: [
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_cette_annee)),
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: formatter.format(getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere)),
+                    data: dataAnneeDerniere,
+                },
+                {
+                    label: getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_annee_derniere).getFullYear(),
+                    data: dataAnneeDerniereComplete,
+                }
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'VI CLUB',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -299,8 +472,12 @@ let findStats = function(s, masterKey, value) {
 };
 
 $(document).ready(function() {
+    Chart.register(ChartDataLabels);
+    displayLicence();
     displayMoyensLancement();
-    displayHdv();
+    let hdv_club_et_banalise = displayHdv('hdv_club_et_banalise', 'hdv_club_et_banalise', 'Heures de vol club+banalisé');
+    displayHdv('hdv_club', 'hdv_club', 'Heures de vol club', hdv_club_et_banalise.scales.y.max);
+    displayViClub();
 
     displayMisesEnLAir($('#misesEnLAir'), 'immatriculation', stats.statsMisesEnLAir, stats.statsMisesEnLAirAnneePrecedente);
 });
