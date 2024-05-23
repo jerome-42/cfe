@@ -13,6 +13,37 @@ block content
   .row
     h1 Tableau de bord
   .row
+    h2 Activité sur l'année complète
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#licenceAnnuel
+    p
+      i Ce sont les licences qui sont prises à Chérence, donc hors les quelques pilotes qui volent à Chérence mais qui prennent leurs licences ailleurs  
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubCDBAnnuel
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubInstructionAnnuel
+    p
+      i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseCDBAnnuel
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseInstructionAnnuel
+    p
+      i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
+  hr.mt-5
+  .row
+    h2 Activité au mois
+  .row
     .col
       div(style="width: 800px;")
         canvas#licence
