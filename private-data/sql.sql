@@ -1147,7 +1147,7 @@ BEGIN
       SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
         JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
         JOIN cp_piece pi ON pi.id_piece = li.id_piece
-        WHERE type = 'LICENCE_FFVP' AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+        WHERE (type = 'LICENCE_FFVP' OR type = 'LICVV') AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
         AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
       cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
       licences_n_anneesPrecedantes := array_append(licences_n_anneesPrecedantes, cumulLicenceAnneesPrecedantes);
