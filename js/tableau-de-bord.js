@@ -717,6 +717,211 @@ let displayHDVBanaliseInstructionAnnuel = function() {
     });
 };
 
+let displayHDVPilotesDansForfaitAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('hdvPilotesDansForfait').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVPilotesDansForfait;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVPilotesDansForfait_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'HDV des pilotes au forfait '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Heures de vol des pilotes au forfait sur les machines incluses dans le forfait (consommation des forfaits)',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayHDVPilotesHorsForfaitAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('hdvPilotesHorsForfait').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVPilotesHorsForfait;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVPilotesHorsForfait_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'HDV hors forfait '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Heures de vol hors forfait (vols solo, instruction, partagé, VI club, VI perso ...)',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayLancementRemorqueAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('lancementRemorqueAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.lancementR;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.lancementR_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Nombre de remorqué avec correction '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Nombre de remorqués corrigés',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayLancementAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('lancementAnnuel').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Nombre de remorqué avec correction '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.lancementR,
+                },
+                {
+                    label: 'Nombre de treuillées '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.lancementT,
+                },
+                {
+                    label: 'Nombre de lancement autonome '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.lancementA,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true,
+                },
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Nombre de remorqués corrigés',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
 
 $(document).ready(function() {
     Chart.register(ChartDataLabels);
@@ -732,5 +937,11 @@ $(document).ready(function() {
 
     displayHDVBanaliseCDBAnnuel();
     displayHDVBanaliseInstructionAnnuel();
+
+    displayHDVPilotesDansForfaitAnnuel();
+    displayHDVPilotesHorsForfaitAnnuel();
+
+    displayLancementRemorqueAnnuel();
+    displayLancementAnnuel();
 //displayMisesEnLAir($('#misesEnLAir'), 'immatriculation', stats.statsMisesEnLAir, stats.statsMisesEnLAirAnneePrecedente);
 });

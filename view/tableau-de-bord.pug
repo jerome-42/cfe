@@ -42,6 +42,28 @@ block content
       i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
   hr.mt-5
   .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvPilotesDansForfait
+      p
+        i Ce sont les heures de vol en tant que commandant de bord (vols solo) lorsque le commandant de bord vole sur une machine comprise dans son forfait
+    .col
+      div(style="width: 800px;")
+        canvas#hdvPilotesHorsForfait
+      p
+        i Ce sont les heures de vols qui ne sont pas au forfait (vols solo, partagé, instruction, VI perso, VI club ...)
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#lancementRemorqueAnnuel
+      p
+        i Les remorqués corrigés sont les remorqués en fonction de l'altitude de largage (0.5 pour les 250m, 1 pour les 500m, 1.5 pour les 750m et 2 pour les 1000m, les autres remorqués ne sont pas comptabilisés)
+    .col
+      div(style="width: 800px;")
+        canvas#lancementAnnuel
+  hr.mt-5
+  .row
     h2 Activité au mois
   .row
     .col
