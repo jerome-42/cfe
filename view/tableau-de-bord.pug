@@ -2,7 +2,10 @@ extends layout.pug
 
 block scripts
   title Tableau de bord
-  script(src="https://cdn.jsdelivr.net/npm/d3@7")
+  //script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.min.js")
+  //script(type="module" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/helpers.min.js")
+  script(type="module" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js")
+  script(type="module" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0")
   script(src="js/tableau-de-bord.js")
   script(src="cache/stats.js")
 
@@ -10,6 +13,63 @@ block content
   .row
     h1 Tableau de bord
   .row
+    h2 Activité sur l'année complète
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#licenceAnnuel
+    p
+      i Ce sont les licences qui sont prises à Chérence, donc hors les quelques pilotes qui volent à Chérence mais qui prennent leurs licences ailleurs  
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubCDBAnnuel
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubInstructionAnnuel
+    p
+      i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseCDBAnnuel
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseInstructionAnnuel
+    p
+      i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
+  hr.mt-5
+  .row
+    h2 Activité au mois
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#licence
+  hr.mt-5
+  .row
     .col
       div(style="width: 800px;")
         canvas#lancements
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdv_club_et_banalise
+    .col
+      div(style="width: 800px;")
+        canvas#hdv_club
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#vi_club
+  hr.mt-5
+  .row
+    .col
+      h3 Décollage jusqu'au
+        span#misesEnLAirTitle
+  .row
+    .col
+      table.table#misesEnLAir
