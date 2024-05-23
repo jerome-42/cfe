@@ -9,6 +9,17 @@ RETURN data;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
+CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value INT[]) RETURNS JSONB AS $$
+BEGIN
+IF value IS NULL THEN
+   data := data - key;
+ELSE
+   data := data || CONCAT('{"', key, '": ', to_json(value), '}')::jsonb;
+END IF;
+RETURN data;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value TEXT) RETURNS JSONB AS $$
 BEGIN
 IF value IS NULL THEN
@@ -1051,6 +1062,94 @@ BEGIN
   RETURN stats;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION tableauDeBordAnnuel(annee INT) RETURNS JSONB AS $$
+DECLARE
+  stats JSONB;
+  rDate RECORD;
+  r RECORD;
+  r_vol RECORD;
+  sub_json JSONB;
+  mise_en_l_air TEXT;
+  mises_en_l_air TEXT[] := '{"R", "T", "M"}';
+  cette_annee INT;
+  moyenne_sur_nb_annee INT := 5;
+  licences INT[] := '{}';
+  cumulLicence INT := 0;
+  licences_n_anneesPrecedantes INT[] := '{}';
+  cumulLicenceAnneesPrecedantes INT := 0;
+  HDVClubCDB INT[] := '{}';
+  cumulHDVClubCDB INT := 0;
+  HDVClubInstruction INT[] := '{}';
+  cumulHDVClubInstruction INT := 0;
+
+  HDVClubCDB_n_anneesPrecedantes INT[] := '{}';
+  cumulHDVClubCDB_n_anneesPrecedantes INT := 0;
+  HDVClubInstruction_n_anneesPrecedantes INT[] := '{}';
+  cumulHDVClubInstruction_n_anneesPrecedantes INT := 0;
+BEGIN
+  stats := '{}';
+  stats := setVarInData(stats, 'moyenne_sur_nb_annee', moyenne_sur_nb_annee);
+  FOR rDate IN SELECT t AS start, t + interval '1 month' - interval '1 second' AS stop FROM generate_series(DATE_TRUNC('day', make_date(annee, 1, 1)), make_date(annee, 12, 31), interval '1 month') AS t(day)
+  LOOP
+    cette_annee := EXTRACT(YEAR FROM rDate.start);
+
+    -- licence
+    SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
+      JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      WHERE type = 'LICENCE_FFVP' AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    cumulLicence := cumulLicence + r.nb;
+    licences := array_append(licences, cumulLicence);
+
+    -- moyenne des licences sur les 5 dernières années
+    SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
+      JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      WHERE type = 'LICENCE_FFVP' AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+      AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+    cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
+    licences_n_anneesPrecedantes := array_append(licences_n_anneesPrecedantes, cumulLicenceAnneesPrecedantes);
+
+    -- heures de vol club CDB
+    SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval)/3600)) AS duree FROM vfr_vol
+      WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
+    cumulHDVClubCDB := cumulHDVClubCDB + r.duree;
+    HDVClubCDB := array_append(HDVClubCDB, cumulHDVClubCDB);
+
+    -- heure de vol club CDB sur les 5 dernières années
+    SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee AS duree FROM vfr_vol
+      WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+      AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+      AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
+    cumulHDVClubCDB_n_anneesPrecedantes := cumulHDVClubCDB_n_anneesPrecedantes + r.duree;
+    HDVClubCDB_n_anneesPrecedantes := array_append(HDVClubCDB_n_anneesPrecedantes, cumulHDVClubCDB_n_anneesPrecedantes);
+
+    -- heures de vol club instruction
+    SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600) AS duree FROM vfr_vol
+      WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction';
+    cumulHDVClubInstruction := cumulHDVClubInstruction + r.duree;
+    HDVClubInstruction := array_append(HDVClubInstruction, cumulHDVClubCDB);
+
+    -- heure de vol club instruction sur les 5 dernières années
+    SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee AS duree FROM vfr_vol
+      WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+      AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+      AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction';
+    cumulHDVClubInstruction_n_anneesPrecedantes := cumulHDVClubInstruction_n_anneesPrecedantes + r.duree;
+    HDVClubInstruction_n_anneesPrecedantes := array_append(HDVClubInstruction_n_anneesPrecedantes, cumulHDVClubInstruction_n_anneesPrecedantes);
+  END LOOP;
+  stats := setVarInData(stats, 'licences', licences);
+  stats := setVarInData(stats, 'licences_n_annees_precedantes', licences_n_anneesPrecedantes);
+  stats := setVarInData(stats, 'HDVClubCDB', HDVClubCDB);
+  stats := setVarInData(stats, 'HDVClubCDB_n_anneesPrecedantes', HDVClubCDB_n_anneesPrecedantes);
+  stats := setVarInData(stats, 'HDVClubInstruction', HDVClubInstruction);
+  stats := setVarInData(stats, 'HDVClubInstruction_n_anneesPrecedantes', HDVClubInstruction_n_anneesPrecedantes);
+
+  RETURN stats;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 
 CREATE OR REPLACE FUNCTION statsAuCoursAnnee(annee int) RETURNS TABLE (
   d DATE,
