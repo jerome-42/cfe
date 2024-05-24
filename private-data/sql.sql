@@ -1138,19 +1138,38 @@ BEGIN
       SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
         JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
         JOIN cp_piece pi ON pi.id_piece = li.id_piece
-        WHERE (type = 'LICENCE_FFVP' OR type = 'LFFVV') AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
-      cumulLicence := cumulLicence + r.nb;
+        WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+      IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
+        cumulLicence := cumulLicence + r.nb;
+      END IF;
       IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
         licences := array_append(licences, cumulLicence);
       END IF;
 
       -- moyenne des licences sur les 5 dernières années
-      SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
-        JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-        JOIN cp_piece pi ON pi.id_piece = li.id_piece
-        WHERE (type = 'LICENCE_FFVP' OR type = 'LICVV') AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
-      cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
+      IF EXTRACT(MONTH FROM rDate.start) = 1 THEN
+        -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier
+        SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
+          JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+          JOIN cp_piece pi ON pi.id_piece = li.id_piece
+          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND
+          (
+            (EXTRACT(MONTH FROM li.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM li.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
+          OR
+          (
+            (EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start)))
+          );
+      ELSE
+        SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
+          JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+          JOIN cp_piece pi ON pi.id_piece = li.id_piece
+          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+          AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+      END IF;
+      IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
+        cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
+      END IF;
       licences_n_anneesPrecedantes := array_append(licences_n_anneesPrecedantes, cumulLicenceAnneesPrecedantes);
 
     -- ============ HEURES DE VOLS SUR LES MACHINES ============
