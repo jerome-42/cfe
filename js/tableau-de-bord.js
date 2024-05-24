@@ -875,15 +875,15 @@ let displayLancementAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Nombre de remorqué avec correction '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Nombre de remorqué '+stats.tableauDeBordAnnuel.params.annee,
                     data: stats.tableauDeBordAnnuel.data.lancementR,
                 },
                 {
-                    label: 'Nombre de treuillées '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Nombre de treuillées '+stats.tableauDeBordAnnuel.params.annee,
                     data: stats.tableauDeBordAnnuel.data.lancementT,
                 },
                 {
-                    label: 'Nombre de lancement autonome '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Nombre de lancement autonome '+stats.tableauDeBordAnnuel.params.annee,
                     data: stats.tableauDeBordAnnuel.data.lancementA,
                 },
             ],
@@ -904,7 +904,7 @@ let displayLancementAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Nombre de remorqués corrigés',
+                    text: 'Nombre de lancements',
                     font: { size: 24 },
                 },
                 datalabels: {
