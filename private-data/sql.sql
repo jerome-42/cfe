@@ -1134,10 +1134,11 @@ BEGIN
 
     -- ============ LICENCES ============
       -- licence
+      -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier, donc on fait un CASE dédié à ça
       SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
         JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
         JOIN cp_piece pi ON pi.id_piece = li.id_piece
-        WHERE (type = 'LICENCE_FFVP' OR 'LFFVV') AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+        WHERE (type = 'LICENCE_FFVP' OR type = 'LFFVV') AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
       cumulLicence := cumulLicence + r.nb;
       IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
         licences := array_append(licences, cumulLicence);
