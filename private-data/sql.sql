@@ -1132,248 +1132,250 @@ BEGIN
   LOOP
     cette_annee := EXTRACT(YEAR FROM rDate.start);
 
-    -- ============ LICENCES ============
-      -- licence
-      -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier, donc on fait un CASE dédié à ça
-      SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
-        JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-        JOIN cp_piece pi ON pi.id_piece = li.id_piece
-        WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
-      IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
-        cumulLicence := cumulLicence + r.nb;
-      END IF;
-      IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-        licences := array_append(licences, cumulLicence);
-      END IF;
-
-      -- moyenne des licences sur les 5 dernières années
-      IF EXTRACT(MONTH FROM rDate.start) = 1 THEN
-        -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier
-        SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
+    -- ============ ACTIVITES ============
+      -- ============ LICENCES ============
+        -- licence
+        -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier, donc on fait un CASE dédié à ça
+        SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
           JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
           JOIN cp_piece pi ON pi.id_piece = li.id_piece
-          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND
-          (
-            (EXTRACT(MONTH FROM li.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM li.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
-          OR
-          (
-            (EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start)))
-          );
-      ELSE
-        SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
-          JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-          JOIN cp_piece pi ON pi.id_piece = li.id_piece
-          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-          AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
-      END IF;
-      IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
-        cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
-      END IF;
-      licences_n_anneesPrecedantes := array_append(licences_n_anneesPrecedantes, cumulLicenceAnneesPrecedantes);
-
-    -- ============ HEURES DE VOLS SUR LES MACHINES ============
-      -- ============ MACHINES CLUB ============
-        -- heures de vol club CDB
-        SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval)/3600)) AS duree FROM vfr_vol
-          WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé')
-          AND categorie != 'U'; -- 'U' = remorqueur
-        cumulHDVClubCDB := cumulHDVClubCDB + r.duree;
+          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+        IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
+          cumulLicence := cumulLicence + r.nb;
+        END IF;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-          HDVClubCDB := array_append(HDVClubCDB, cumulHDVClubCDB);
+          licences := array_append(licences, cumulLicence);
         END IF;
 
-        -- heure de vol club CDB sur les 5 dernières années
-        SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
-          WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
-          AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-          AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé')
-          AND categorie != 'U'; -- 'U' = remorqueur
-        cumulHDVClubCDB_n_anneesPrecedantes := cumulHDVClubCDB_n_anneesPrecedantes + r.duree;
-        HDVClubCDB_n_anneesPrecedantes := array_append(HDVClubCDB_n_anneesPrecedantes, cumulHDVClubCDB_n_anneesPrecedantes);
+        -- moyenne des licences sur les 5 dernières années
+        IF EXTRACT(MONTH FROM rDate.start) = 1 THEN
+          -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier
+          SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND
+            (
+              (EXTRACT(MONTH FROM li.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM li.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
+            OR
+            (
+              (EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+              AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start)))
+            );
+        ELSE
+          SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+        END IF;
+        IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
+          cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
+        END IF;
+        licences_n_anneesPrecedantes := array_append(licences_n_anneesPrecedantes, cumulLicenceAnneesPrecedantes);
 
-        -- heures de vol club instruction
-        SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600) AS duree FROM vfr_vol
-          WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
-          AND categorie != 'U'; -- 'U' = remorqueur
-        cumulHDVClubInstruction := cumulHDVClubInstruction + r.duree;
+      -- ============ HEURES DE VOLS SUR LES MACHINES ============
+        -- ============ MACHINES CLUB ============
+          -- heures de vol club CDB
+          SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval)/3600)) AS duree FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé')
+            AND categorie != 'U'; -- 'U' = remorqueur
+          cumulHDVClubCDB := cumulHDVClubCDB + r.duree;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            HDVClubCDB := array_append(HDVClubCDB, cumulHDVClubCDB);
+          END IF;
+
+          -- heure de vol club CDB sur les 5 dernières années
+          SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé')
+            AND categorie != 'U'; -- 'U' = remorqueur
+          cumulHDVClubCDB_n_anneesPrecedantes := cumulHDVClubCDB_n_anneesPrecedantes + r.duree;
+          HDVClubCDB_n_anneesPrecedantes := array_append(HDVClubCDB_n_anneesPrecedantes, cumulHDVClubCDB_n_anneesPrecedantes);
+
+          -- heures de vol club instruction
+          SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600) AS duree FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
+            AND categorie != 'U'; -- 'U' = remorqueur
+          cumulHDVClubInstruction := cumulHDVClubInstruction + r.duree;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            HDVClubInstruction := array_append(HDVClubInstruction, cumulHDVClubCDB);
+          END IF;
+
+          -- heure de vol club instruction sur les 5 dernières années
+          SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
+            AND categorie != 'U'; -- 'U' = remorqueur
+          cumulHDVClubInstruction_n_anneesPrecedantes := cumulHDVClubInstruction_n_anneesPrecedantes + r.duree;
+          HDVClubInstruction_n_anneesPrecedantes := array_append(HDVClubInstruction_n_anneesPrecedantes, cumulHDVClubInstruction_n_anneesPrecedantes);
+
+        -- ============ MACHINES BANALISEES ============
+          -- heures de vol banalisé CDB
+          SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval)/3600)) AS duree FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
+          cumulHDVBanaliseCDB := cumulHDVBanaliseCDB + r.duree;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            HDVBanaliseCDB := array_append(HDVBanaliseCDB, cumulHDVBanaliseCDB);
+          END IF;
+
+          -- heure de vol club CDB sur les 5 dernières années
+          SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'B' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
+          cumulHDVBanaliseCDB_n_anneesPrecedantes := cumulHDVBanaliseCDB_n_anneesPrecedantes + r.duree;
+          HDVBanaliseCDB_n_anneesPrecedantes := array_append(HDVBanaliseCDB_n_anneesPrecedantes, cumulHDVBanaliseCDB_n_anneesPrecedantes);
+
+          -- heures de vol club instruction
+          SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600) AS duree FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
+          cumulHDVBanaliseInstruction := cumulHDVBanaliseInstruction + r.duree;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            HDVBanaliseInstruction := array_append(HDVBanaliseInstruction, cumulHDVBanaliseCDB);
+          END IF;
+
+          -- heure de vol club instruction sur les 5 dernières années
+          SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
+          cumulHDVBanaliseInstruction_n_anneesPrecedantes := cumulHDVBanaliseInstruction_n_anneesPrecedantes + r.duree;
+          HDVBanaliseInstruction_n_anneesPrecedantes := array_append(HDVBanaliseInstruction_n_anneesPrecedantes, cumulHDVBanaliseInstruction_n_anneesPrecedantes);
+
+      -- ============ HEURES DE VOLS PILOTE ============
+        -- heures de vol dans le forfait
+        SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600) AS duree FROM vfr_vol
+          JOIN vfr_forfait_pilote ON vfr_forfait_pilote.id_personne = vfr_vol.id_cdt_de_bord
+          WHERE vfr_vol.date_vol BETWEEN vfr_forfait_pilote.date_debut AND vfr_forfait_pilote.date_fin
+          AND EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = EXTRACT(YEAR FROM vfr_vol.date_vol)
+          AND date_vol BETWEEN rDate.start AND rDate.stop
+          AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
+          AND NOT EXISTS(
+            SELECT 1
+            FROM forfait_modele_aeronef_exclu
+            JOIN forfait_modele ON forfait_modele.id_forfait_modele = forfait_modele_aeronef_exclu.id_forfait_modele
+            JOIN aeronef ON aeronef.id_aeronef = forfait_modele_aeronef_exclu.id_aeronef
+            WHERE forfait_modele.id_forfait_modele = vfr_forfait_pilote.id_forfait_modele AND aeronef.id_aeronef = vfr_vol.id_aeronef);
+        cumulHDVPilotesDansForfait := cumulHDVPilotesDansForfait + r.duree;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-          HDVClubInstruction := array_append(HDVClubInstruction, cumulHDVClubCDB);
+          HDVPilotesDansForfait := array_append(HDVPilotesDansForfait, cumulHDVPilotesDansForfait);
         END IF;
 
-        -- heure de vol club instruction sur les 5 dernières années
-        SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
-          WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+        -- heures de vol dans le forfait sur les 5 dernières années
+        SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
+          JOIN vfr_forfait_pilote ON vfr_forfait_pilote.id_personne = vfr_vol.id_cdt_de_bord
+          WHERE vfr_vol.date_vol BETWEEN vfr_forfait_pilote.date_debut AND vfr_forfait_pilote.date_fin
+          AND EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
           AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-          AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
+          AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
+          AND NOT EXISTS(
+            SELECT 1
+            FROM forfait_modele_aeronef_exclu
+            JOIN forfait_modele ON forfait_modele.id_forfait_modele = forfait_modele_aeronef_exclu.id_forfait_modele
+            JOIN aeronef ON aeronef.id_aeronef = forfait_modele_aeronef_exclu.id_aeronef
+            WHERE forfait_modele.id_forfait_modele = vfr_forfait_pilote.id_forfait_modele AND aeronef.id_aeronef = vfr_vol.id_aeronef);
+        cumulHDVPilotesDansForfait_n_anneesPrecedantes := cumulHDVPilotesDansForfait_n_anneesPrecedantes + r.duree;
+        HDVPilotesDansForfait_n_anneesPrecedantes := array_append(HDVPilotesDansForfait_n_anneesPrecedantes, cumulHDVPilotesDansForfait_n_anneesPrecedantes);
+
+        -- heures de vol qui ne sont pas dans le forfait
+        SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600) AS duree FROM vfr_vol
+          WHERE date_vol BETWEEN rDate.start AND rDate.stop
+          AND (
+            (vfr_vol.prix_vol_cdb > 0 AND vfr_vol.id_cdt_de_bord IS NOT NULL)
+            OR (vfr_vol.prix_vol_elv IS NOT NULL)
+            OR (vfr_vol.prix_vol_co IS NOT NULL)
+          )
           AND categorie != 'U'; -- 'U' = remorqueur
-        cumulHDVClubInstruction_n_anneesPrecedantes := cumulHDVClubInstruction_n_anneesPrecedantes + r.duree;
-        HDVClubInstruction_n_anneesPrecedantes := array_append(HDVClubInstruction_n_anneesPrecedantes, cumulHDVClubInstruction_n_anneesPrecedantes);
-
-      -- ============ MACHINES BANALISEES ============
-        -- heures de vol banalisé CDB
-        SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval)/3600)) AS duree FROM vfr_vol
-          WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
-        cumulHDVBanaliseCDB := cumulHDVBanaliseCDB + r.duree;
+        cumulHDVPilotesHorsForfait := cumulHDVPilotesHorsForfait + r.duree;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-          HDVBanaliseCDB := array_append(HDVBanaliseCDB, cumulHDVBanaliseCDB);
+          HDVPilotesHorsForfait := array_append(HDVPilotesHorsForfait, cumulHDVPilotesHorsForfait);
         END IF;
 
-        -- heure de vol club CDB sur les 5 dernières années
-        SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
-          WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+        -- heures de vol qui ne sont pas dans le forfait sur les 5 dernières années
+        SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
+          WHERE EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
           AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-          AND situation = 'B' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
-        cumulHDVBanaliseCDB_n_anneesPrecedantes := cumulHDVBanaliseCDB_n_anneesPrecedantes + r.duree;
-        HDVBanaliseCDB_n_anneesPrecedantes := array_append(HDVBanaliseCDB_n_anneesPrecedantes, cumulHDVBanaliseCDB_n_anneesPrecedantes);
+          AND (
+            (vfr_vol.prix_vol_cdb > 0 AND vfr_vol.id_cdt_de_bord IS NOT NULL)
+            OR (vfr_vol.prix_vol_elv IS NOT NULL)
+            OR (vfr_vol.prix_vol_co IS NOT NULL)
+          )
+          AND categorie != 'U'; -- 'U' = remorqueur
+        cumulHDVPilotesHorsForfait_n_anneesPrecedantes := cumulHDVPilotesHorsForfait_n_anneesPrecedantes + r.duree;
+        HDVPilotesHorsForfait_n_anneesPrecedantes := array_append(HDVPilotesHorsForfait_n_anneesPrecedantes, cumulHDVPilotesHorsForfait_n_anneesPrecedantes);
 
-        -- heures de vol club instruction
-        SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600) AS duree FROM vfr_vol
-          WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
-        cumulHDVBanaliseInstruction := cumulHDVBanaliseInstruction + r.duree;
+      -- ============ MOYENS DE LANCEMENT ============
+        -- année n
+        SELECT INTO r SUM(CASE
+          WHEN libelle_remorque = 'Demi-remorqué - 250m' THEN 0.5
+          WHEN libelle_remorque = 'Remorqué standard - 500m' THEN 1
+          WHEN libelle_remorque = '750m' THEN 1.5
+          WHEN libelle_remorque = '1000m' THEN 2
+          ELSE 0 END) AS nbR, SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END) AS nbT, SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END) AS nbA
+          FROM vfr_vol
+          WHERE date_vol BETWEEN rDate.start AND rDate.stop
+          AND categorie != 'U'; -- 'U' = remorqueur
+        cumulLancementR := cumulLancementR + r.nbR;
+        cumulLancementT := cumulLancementT + r.nbT;
+        cumulLancementA := cumulLancementA + r.nbA;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-          HDVBanaliseInstruction := array_append(HDVBanaliseInstruction, cumulHDVBanaliseCDB);
+          lancementR := array_append(lancementR, cumulLancementR);
+          lancementT := array_append(lancementT, cumulLancementT);
+          lancementA := array_append(lancementA, cumulLancementA);
         END IF;
 
-        -- heure de vol club instruction sur les 5 dernières années
-        SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
-          WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+        -- années précédantes
+        SELECT INTO r ROUND(SUM(CASE
+              WHEN libelle_remorque = 'Demi-remorqué - 250m' THEN 0.5
+              WHEN libelle_remorque = 'Remorqué standard - 500m' THEN 1
+              WHEN libelle_remorque = '750m' THEN 1.5
+              WHEN libelle_remorque = '1000m' THEN 2
+              ELSE 0 END)/moyenne_sur_nb_annee) AS nbR,
+            ROUND(SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbT,
+            ROUND(SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbA
+          FROM vfr_vol
+          WHERE EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
           AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-          AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
-        cumulHDVBanaliseInstruction_n_anneesPrecedantes := cumulHDVBanaliseInstruction_n_anneesPrecedantes + r.duree;
-        HDVBanaliseInstruction_n_anneesPrecedantes := array_append(HDVBanaliseInstruction_n_anneesPrecedantes, cumulHDVBanaliseInstruction_n_anneesPrecedantes);
-
-    -- ============ HEURES DE VOLS PILOTE ============
-      -- heures de vol dans le forfait
-      SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600) AS duree FROM vfr_vol
-        JOIN vfr_forfait_pilote ON vfr_forfait_pilote.id_personne = vfr_vol.id_cdt_de_bord
-        WHERE vfr_vol.date_vol BETWEEN vfr_forfait_pilote.date_debut AND vfr_forfait_pilote.date_fin
-        AND EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = EXTRACT(YEAR FROM vfr_vol.date_vol)
-        AND date_vol BETWEEN rDate.start AND rDate.stop
-        AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
-        AND NOT EXISTS(
-          SELECT 1
-          FROM forfait_modele_aeronef_exclu
-          JOIN forfait_modele ON forfait_modele.id_forfait_modele = forfait_modele_aeronef_exclu.id_forfait_modele
-          JOIN aeronef ON aeronef.id_aeronef = forfait_modele_aeronef_exclu.id_aeronef
-          WHERE forfait_modele.id_forfait_modele = vfr_forfait_pilote.id_forfait_modele AND aeronef.id_aeronef = vfr_vol.id_aeronef);
-      cumulHDVPilotesDansForfait := cumulHDVPilotesDansForfait + r.duree;
-      IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-        HDVPilotesDansForfait := array_append(HDVPilotesDansForfait, cumulHDVPilotesDansForfait);
-      END IF;
-
-      -- heures de vol dans le forfait sur les 5 dernières années
-      SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
-        JOIN vfr_forfait_pilote ON vfr_forfait_pilote.id_personne = vfr_vol.id_cdt_de_bord
-        WHERE vfr_vol.date_vol BETWEEN vfr_forfait_pilote.date_debut AND vfr_forfait_pilote.date_fin
-        AND EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
-        AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-        AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
-        AND NOT EXISTS(
-          SELECT 1
-          FROM forfait_modele_aeronef_exclu
-          JOIN forfait_modele ON forfait_modele.id_forfait_modele = forfait_modele_aeronef_exclu.id_forfait_modele
-          JOIN aeronef ON aeronef.id_aeronef = forfait_modele_aeronef_exclu.id_aeronef
-          WHERE forfait_modele.id_forfait_modele = vfr_forfait_pilote.id_forfait_modele AND aeronef.id_aeronef = vfr_vol.id_aeronef);
-      cumulHDVPilotesDansForfait_n_anneesPrecedantes := cumulHDVPilotesDansForfait_n_anneesPrecedantes + r.duree;
-      HDVPilotesDansForfait_n_anneesPrecedantes := array_append(HDVPilotesDansForfait_n_anneesPrecedantes, cumulHDVPilotesDansForfait_n_anneesPrecedantes);
-
-      -- heures de vol qui ne sont pas dans le forfait
-      SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600) AS duree FROM vfr_vol
-        WHERE date_vol BETWEEN rDate.start AND rDate.stop
-        AND (
-          (vfr_vol.prix_vol_cdb > 0 AND vfr_vol.id_cdt_de_bord IS NOT NULL)
-          OR (vfr_vol.prix_vol_elv IS NOT NULL)
-          OR (vfr_vol.prix_vol_co IS NOT NULL)
-        )
-        AND categorie != 'U'; -- 'U' = remorqueur
-      cumulHDVPilotesHorsForfait := cumulHDVPilotesHorsForfait + r.duree;
-      IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-        HDVPilotesHorsForfait := array_append(HDVPilotesHorsForfait, cumulHDVPilotesHorsForfait);
-      END IF;
-
-      -- heures de vol qui ne sont pas dans le forfait sur les 5 dernières années
-      SELECT INTO r ROUND((EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0:0:0'::interval))/3600)/moyenne_sur_nb_annee) AS duree FROM vfr_vol
-        WHERE EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
-        AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-        AND (
-          (vfr_vol.prix_vol_cdb > 0 AND vfr_vol.id_cdt_de_bord IS NOT NULL)
-          OR (vfr_vol.prix_vol_elv IS NOT NULL)
-          OR (vfr_vol.prix_vol_co IS NOT NULL)
-        )
-        AND categorie != 'U'; -- 'U' = remorqueur
-      cumulHDVPilotesHorsForfait_n_anneesPrecedantes := cumulHDVPilotesHorsForfait_n_anneesPrecedantes + r.duree;
-      HDVPilotesHorsForfait_n_anneesPrecedantes := array_append(HDVPilotesHorsForfait_n_anneesPrecedantes, cumulHDVPilotesHorsForfait_n_anneesPrecedantes);
-
-    -- ============ MOYENS DE LANCEMENT ============
-      -- année n
-      SELECT INTO r SUM(CASE
-        WHEN libelle_remorque = 'Demi-remorqué - 250m' THEN 0.5
-        WHEN libelle_remorque = 'Remorqué standard - 500m' THEN 1
-        WHEN libelle_remorque = '750m' THEN 1.5
-        WHEN libelle_remorque = '1000m' THEN 2
-        ELSE 0 END) AS nbR, SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END) AS nbT, SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END) AS nbA
-        FROM vfr_vol
-        WHERE date_vol BETWEEN rDate.start AND rDate.stop
-        AND categorie != 'U'; -- 'U' = remorqueur
-      cumulLancementR := cumulLancementR + r.nbR;
-      cumulLancementT := cumulLancementT + r.nbT;
-      cumulLancementA := cumulLancementA + r.nbA;
-      IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-        lancementR := array_append(lancementR, cumulLancementR);
-        lancementT := array_append(lancementT, cumulLancementT);
-        lancementA := array_append(lancementA, cumulLancementA);
-      END IF;
-
-      -- années précédantes
-      SELECT INTO r ROUND(SUM(CASE
-            WHEN libelle_remorque = 'Demi-remorqué - 250m' THEN 0.5
-            WHEN libelle_remorque = 'Remorqué standard - 500m' THEN 1
-            WHEN libelle_remorque = '750m' THEN 1.5
-            WHEN libelle_remorque = '1000m' THEN 2
-            ELSE 0 END)/moyenne_sur_nb_annee) AS nbR,
-          ROUND(SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbT,
-          ROUND(SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbA
-        FROM vfr_vol
-        WHERE EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
-        AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
-        AND categorie != 'U'; -- 'U' = remorqueur
-      cumulLancementR_n_anneesPrecedantes := cumulLancementR_n_anneesPrecedantes + r.nbR;
-      cumulLancementT_n_anneesPrecedantes := cumulLancementT_n_anneesPrecedantes + r.nbT;
-      cumulLancementA_n_anneesPrecedantes := cumulLancementA_n_anneesPrecedantes + r.nbA;
-      lancementR_n_anneesPrecedantes := array_append(lancementR_n_anneesPrecedantes, cumulLancementR_n_anneesPrecedantes);
-      lancementT_n_anneesPrecedantes := array_append(lancementT_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
-      lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
+          AND categorie != 'U'; -- 'U' = remorqueur
+        cumulLancementR_n_anneesPrecedantes := cumulLancementR_n_anneesPrecedantes + r.nbR;
+        cumulLancementT_n_anneesPrecedantes := cumulLancementT_n_anneesPrecedantes + r.nbT;
+        cumulLancementA_n_anneesPrecedantes := cumulLancementA_n_anneesPrecedantes + r.nbA;
+        lancementR_n_anneesPrecedantes := array_append(lancementR_n_anneesPrecedantes, cumulLancementR_n_anneesPrecedantes);
+        lancementT_n_anneesPrecedantes := array_append(lancementT_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
+        lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
 
   END LOOP;
-  stats := setVarInData(stats, 'licences', licences);
-  stats := setVarInData(stats, 'licences_n_annees_precedantes', licences_n_anneesPrecedantes);
-  -- MACHINES CLUB
-  stats := setVarInData(stats, 'HDVClubCDB', HDVClubCDB);
-  stats := setVarInData(stats, 'HDVClubCDB_n_anneesPrecedantes', HDVClubCDB_n_anneesPrecedantes);
-  stats := setVarInData(stats, 'HDVClubInstruction', HDVClubInstruction);
-  stats := setVarInData(stats, 'HDVClubInstruction_n_anneesPrecedantes', HDVClubInstruction_n_anneesPrecedantes);
-  -- MACHINES BANALISEES
-  stats := setVarInData(stats, 'HDVBanaliseCDB', HDVBanaliseCDB);
-  stats := setVarInData(stats, 'HDVBanaliseCDB_n_anneesPrecedantes', HDVBanaliseCDB_n_anneesPrecedantes);
-  stats := setVarInData(stats, 'HDVBanaliseInstruction', HDVBanaliseInstruction);
-  stats := setVarInData(stats, 'HDVBanaliseInstruction_n_anneesPrecedantes', HDVBanaliseInstruction_n_anneesPrecedantes);
+  -- ============ ACTIVITES ============
+    stats := setVarInData(stats, 'licences', licences);
+    stats := setVarInData(stats, 'licences_n_annees_precedantes', licences_n_anneesPrecedantes);
+    -- MACHINES CLUB
+    stats := setVarInData(stats, 'HDVClubCDB', HDVClubCDB);
+    stats := setVarInData(stats, 'HDVClubCDB_n_anneesPrecedantes', HDVClubCDB_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'HDVClubInstruction', HDVClubInstruction);
+    stats := setVarInData(stats, 'HDVClubInstruction_n_anneesPrecedantes', HDVClubInstruction_n_anneesPrecedantes);
+    -- MACHINES BANALISEES
+    stats := setVarInData(stats, 'HDVBanaliseCDB', HDVBanaliseCDB);
+    stats := setVarInData(stats, 'HDVBanaliseCDB_n_anneesPrecedantes', HDVBanaliseCDB_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'HDVBanaliseInstruction', HDVBanaliseInstruction);
+    stats := setVarInData(stats, 'HDVBanaliseInstruction_n_anneesPrecedantes', HDVBanaliseInstruction_n_anneesPrecedantes);
 
-  -- HDV CDB PILOTES DANS FORFAIT
-  stats := setVarInData(stats, 'HDVPilotesDansForfait', HDVPilotesDansForfait);
-  stats := setVarInData(stats, 'HDVPilotesDansForfait_n_anneesPrecedantes', HDVPilotesDansForfait_n_anneesPrecedantes);
+    -- HDV CDB PILOTES DANS FORFAIT
+    stats := setVarInData(stats, 'HDVPilotesDansForfait', HDVPilotesDansForfait);
+    stats := setVarInData(stats, 'HDVPilotesDansForfait_n_anneesPrecedantes', HDVPilotesDansForfait_n_anneesPrecedantes);
 
-  -- HDV CDB PILOTES HORS FORFAIT
-  stats := setVarInData(stats, 'HDVPilotesHorsForfait', HDVPilotesHorsForfait);
-  stats := setVarInData(stats, 'HDVPilotesHorsForfait_n_anneesPrecedantes', HDVPilotesHorsForfait_n_anneesPrecedantes);
+    -- HDV CDB PILOTES HORS FORFAIT
+    stats := setVarInData(stats, 'HDVPilotesHorsForfait', HDVPilotesHorsForfait);
+    stats := setVarInData(stats, 'HDVPilotesHorsForfait_n_anneesPrecedantes', HDVPilotesHorsForfait_n_anneesPrecedantes);
 
-  -- MOYENS DE LANCEMENT
-  stats := setVarInData(stats, 'lancementR', lancementR);
-  stats := setVarInData(stats, 'lancementT', lancementT);
-  stats := setVarInData(stats, 'lancementA', lancementA);
-  stats := setVarInData(stats, 'lancementR_n_anneesPrecedantes', lancementR_n_anneesPrecedantes);
-  stats := setVarInData(stats, 'lancementT_n_anneesPrecedantes', lancementT_n_anneesPrecedantes);
-  stats := setVarInData(stats, 'lancementA_n_anneesPrecedantes', lancementA_n_anneesPrecedantes);
+    -- MOYENS DE LANCEMENT
+    stats := setVarInData(stats, 'lancementR', lancementR);
+    stats := setVarInData(stats, 'lancementT', lancementT);
+    stats := setVarInData(stats, 'lancementA', lancementA);
+    stats := setVarInData(stats, 'lancementR_n_anneesPrecedantes', lancementR_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementT_n_anneesPrecedantes', lancementT_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementA_n_anneesPrecedantes', lancementA_n_anneesPrecedantes);
   RETURN stats;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
