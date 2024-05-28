@@ -9,6 +9,17 @@ RETURN data;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
+CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value NUMERIC[]) RETURNS JSONB AS $$
+BEGIN
+IF value IS NULL THEN
+   data := data - key;
+ELSE
+   data := data || CONCAT('{"', key, '": ', to_json(value), '}')::jsonb;
+END IF;
+RETURN data;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value INT[]) RETURNS JSONB AS $$
 BEGIN
 IF value IS NULL THEN
@@ -1125,6 +1136,28 @@ DECLARE
   cumulLancementT_n_anneesPrecedantes INT := 0;
   lancementA_n_anneesPrecedantes INT[] := '{}';
   cumulLancementA_n_anneesPrecedantes INT := 0;
+
+  -- VALORISATION
+    -- cellule
+  valo_hdv NUMERIC[] := '{}';
+  valo_cumulHDV NUMERIC := 0;
+  valo_hdv_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulHDV_n_anneesPrecedantes NUMERIC := 0;
+    -- moteur
+  valo_moteur NUMERIC[] := '{}';
+  valo_cumulMoteur NUMERIC := 0;
+  valo_moteur_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulMoteur_n_anneesPrecedantes NUMERIC := 0;
+    -- forfait
+  valo_forfait NUMERIC[] := '{}';
+  valo_cumulForfait NUMERIC := 0;
+  valo_forfait_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulForfait_n_anneesPrecedantes NUMERIC := 0;
+    -- lancement
+  valo_lancement NUMERIC[] := '{}';
+  valo_cumulLancement NUMERIC := 0;
+  valo_lancement_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulLancement_n_anneesPrecedantes NUMERIC := 0;
 BEGIN
   stats := '{}';
   stats := setVarInData(stats, 'moyenne_sur_nb_annee', moyenne_sur_nb_annee);
@@ -1346,6 +1379,81 @@ BEGIN
         lancementT_n_anneesPrecedantes := array_append(lancementT_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
         lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
 
+    -- ============ VALORISATION ============
+      -- ============ COUT CELLULE ============
+        -- REVENU CELLULE des machines club
+          SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0) + COALESCE(prix_vol_elv, 0))) AS prix FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulHDV := valo_cumulHDV + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            valo_hdv := array_append(valo_hdv, valo_cumulHDV);
+          END IF;
+
+        -- REVENU CELLULE sur les 5 dernières années
+          SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0) + COALESCE(prix_vol_elv, 0))/moyenne_sur_nb_annee) AS prix FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulHDV_n_anneesPrecedantes := valo_cumulHDV_n_anneesPrecedantes + r.prix;
+          valo_hdv_n_anneesPrecedantes := array_append(valo_hdv_n_anneesPrecedantes, valo_cumulHDV_n_anneesPrecedantes);
+
+        -- REVENU MOTEUR des machines club
+          SELECT INTO r ROUND(SUM(COALESCE(prix_moteur_cdb, 0) + COALESCE(prix_moteur_co, 0) + COALESCE(prix_moteur_elv, 0))) AS prix FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulMoteur := valo_cumulMoteur + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            valo_moteur := array_append(valo_moteur, valo_cumulMoteur);
+          END IF;
+
+        -- REVENU MOTEUR sur les 5 dernières années
+          SELECT INTO r ROUND(SUM(COALESCE(prix_moteur_cdb, 0) + COALESCE(prix_moteur_co, 0) + COALESCE(prix_moteur_elv, 0))/moyenne_sur_nb_annee) AS prix FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulMoteur_n_anneesPrecedantes := valo_cumulMoteur_n_anneesPrecedantes + r.prix;
+          valo_moteur_n_anneesPrecedantes := array_append(valo_moteur_n_anneesPrecedantes, valo_cumulMoteur_n_anneesPrecedantes);
+
+        -- REVENU FORFAIT
+          SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
+            AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+          valo_cumulForfait := valo_cumulForfait + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            valo_forfait := array_append(valo_forfait, valo_cumulForfait);
+          END IF;
+
+        -- REVENU FORFAIT sur les 5 dernières années
+          SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
+            AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulForfait_n_anneesPrecedantes := valo_cumulForfait_n_anneesPrecedantes + r.prix;
+          valo_forfait_n_anneesPrecedantes := array_append(valo_forfait_n_anneesPrecedantes, valo_cumulForfait_n_anneesPrecedantes);
+
+        -- REVENU LANCEMENT
+          SELECT INTO r ROUND(SUM(COALESCE(prix_remorque_cdb, 0) + COALESCE(prix_remorque_co, 0) + COALESCE(prix_remorque_elv, 0) +
+            COALESCE(prix_treuil_cdb, 0) + COALESCE(prix_treuil_co, 0) + COALESCE(prix_treuil_elv, 0))) AS prix FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop;
+          valo_cumulLancement := valo_cumulLancement + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            valo_lancement := array_append(valo_lancement, valo_cumulLancement);
+          END IF;
+
+        -- REVENU LANCEMENT sur les 5 dernières années
+          SELECT INTO r ROUND((SUM(COALESCE(prix_remorque_cdb, 0) + COALESCE(prix_remorque_co, 0) + COALESCE(prix_remorque_elv, 0) +
+            COALESCE(prix_treuil_cdb, 0) + COALESCE(prix_treuil_co, 0) + COALESCE(prix_treuil_elv, 0)))/moyenne_sur_nb_annee) AS prix FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulLancement_n_anneesPrecedantes := valo_cumulLancement_n_anneesPrecedantes + r.prix;
+          valo_lancement_n_anneesPrecedantes := array_append(valo_lancement_n_anneesPrecedantes, valo_cumulLancement_n_anneesPrecedantes);
   END LOOP;
   -- ============ ACTIVITES ============
     stats := setVarInData(stats, 'licences', licences);
@@ -1376,6 +1484,20 @@ BEGIN
     stats := setVarInData(stats, 'lancementR_n_anneesPrecedantes', lancementR_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementT_n_anneesPrecedantes', lancementT_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementA_n_anneesPrecedantes', lancementA_n_anneesPrecedantes);
+
+  -- ============ ACTIVITES ============
+    -- CELLULE
+    stats := setVarInData(stats, 'valo_hdv', valo_hdv);
+    stats := setVarInData(stats, 'valo_hdv_n_anneesPrecedantes', valo_hdv_n_anneesPrecedantes);
+    -- MOTEUR
+    stats := setVarInData(stats, 'valo_moteur', valo_moteur);
+    stats := setVarInData(stats, 'valo_moteur_n_anneesPrecedantes', valo_moteur_n_anneesPrecedantes);
+    -- FORFAIT
+    stats := setVarInData(stats, 'valo_forfait', valo_forfait);
+    stats := setVarInData(stats, 'valo_forfait_n_anneesPrecedantes', valo_forfait_n_anneesPrecedantes);
+    -- LANCEMENT
+    stats := setVarInData(stats, 'valo_lancement', valo_lancement);
+    stats := setVarInData(stats, 'valo_lancement_n_anneesPrecedantes', valo_lancement_n_anneesPrecedantes);
   RETURN stats;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
