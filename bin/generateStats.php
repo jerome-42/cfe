@@ -3,17 +3,13 @@
 
 $config = json_decode(file_get_contents(__DIR__.'/../config.json'), true);
 
-$output = [];
-$now = new DateTime();
-$annee = intval($now->format('Y'));
-$dateDebut = $annee.'-1-1';
-$dateFin = $annee.'-12-31';
-$anneePrecedente = intval($annee)-1;
-$dateDebutPrecedente = $anneePrecedente.'-1-1';
-$dateFinPrecedente = $anneePrecedente.'-12-31';
-
-$dsn = join(';', [ 'host='.$config['givav']['host'], 'dbname='.$config['givav']['database'] ]);
-$db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['password']);
+function getDateOfLastFlight($db, $year) {
+    $q = "SELECT MAX(date_vol) AS d FROM vfr_vol WHERE EXTRACT(YEAR FROM date_vol) = :annee";
+    $sth = $db->prepare($q);
+    $sth->execute([ ':annee' => $year ]);
+    $data = $sth->fetchAll(PDO::FETCH_ASSOC);
+    return DateTime::createFromFormat('Y-m-d', $data[0]['d']);
+}
 
 function uploadFile($config, $what, $file) {
     $url = 'http://cfe-dev.aavo.org/api/pushStatsFile';
@@ -44,6 +40,22 @@ function uploadFile($config, $what, $file) {
     if ($http_code != 200)
         throw new Exception("Réponse inattendue de cfe.aavo.org: ".$http_code.': '.$body);
 }
+
+$dsn = join(';', [ 'host='.$config['givav']['host'], 'dbname='.$config['givav']['database'] ]);
+$db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['password']);
+
+$now = new DateTime();
+$annee = intval($now->format('Y'));
+// on va chercher la date de fin
+$dateOfLastFlight = getDateOfLastFlight($db, $annee);
+
+$output = [];
+$dateDebut = $annee.'-1-1';
+$dateFin = $dateOfLastFlight->format('Y-m-d');
+$anneePrecedente = intval($annee)-1;
+$dateDebutPrecedente = $anneePrecedente.'-1-1';
+$dateFinPrecedente = $dateOfLastFlight->modify("-1 year");
+$dateFinPrecedente = $dateFinPrecedente->format('Y-m-d');
 
 echo "statsMachines".PHP_EOL;
 $q = 'SELECT * FROM statsMachines(:start, :end)';
@@ -145,6 +157,31 @@ foreach ($data as &$line) {
     $line['stats'] = json_decode($line['stats']);
 }
 $output['statsAuCoursAnneePrecedente'] = [
+    'params' => [
+        'annee' => $annee,
+    ],
+    'requete' => $q,
+    'data' => $data,
+];
+
+echo "tableau de bord".PHP_EOL;
+$q = 'SELECT tableauDeBord() AS tdb';
+$sth = $db->prepare($q);
+$sth->execute();
+$data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+$data = json_decode($data['tdb']);
+$output['tableauDeBord'] = [
+    'requete' => $q,
+    'data' => $data,
+];
+
+echo "tableau de bord annuel".PHP_EOL;
+$q = 'SELECT tableauDeBordAnnuel(:annee) AS tdb';
+$sth = $db->prepare($q);
+$sth->execute([ ':annee' => $annee ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+$data = json_decode($data['tdb']);
+$output['tableauDeBordAnnuel'] = [
     'params' => [
         'annee' => $annee,
     ],
