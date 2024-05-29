@@ -584,7 +584,7 @@ let displayHDVClubCDBAnnuel = function() {
             ],
         },
         options: {
-            maintainAspectRatio: false,
+            //maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -634,7 +634,7 @@ let displayHDVClubInstructionAnnuel = function() {
             ],
         },
         options: {
-            maintainAspectRatio: false,
+            //maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -815,11 +815,9 @@ let displayHDVPilotesHorsForfaitAnnuel = function() {
     });
 };
 
-let displayLancementRemorqueAnnuel = function() {
+let displayLancementEtValoRemorqueAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('lancementRemorqueAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.lancementR;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.lancementR_n_anneesPrecedantes;
+    var ctx = document.getElementById('lancementEtValoRemorqueAnnuel').getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -829,23 +827,54 @@ let displayLancementRemorqueAnnuel = function() {
             datasets: [
                 {
                     label: 'Nombre de remorqué avec correction '+stats.tableauDeBordAnnuel.params.annee,
-                    data: dataCetteAnnee,
+                    data: stats.tableauDeBordAnnuel.data.lancementR,
+                    yAxisID: 'y',
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
+                    label: 'Moyenne de remorqué sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.lancementR_n_anneesPrecedantes,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Revenu moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_lancement,
+                    yAxisID: 'y1',
+                    currency: true,
+                },
+                {
+                    label: 'Moyenne revenus moyens de lancement sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.valo_lancement_n_anneesPrecedantes,
+                    yAxisID: 'y1',
+                    currency: true,
                 },
             ],
         },
         options: {
-            responsive: true,
+            scales: {
+                y: {
+                    position: 'left',
+                },
+                y1: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+            }, 
+           responsive: true,
             plugins: {
                 legend: {
                     position: 'top',
                 },
                 title: {
                     display: true,
-                    text: 'Nombre de remorqués corrigés',
+                    text: 'Nombre de remorqués et revenu de tous les lancements',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -856,6 +885,8 @@ let displayLancementRemorqueAnnuel = function() {
                         weight: 'bold',
                     },
                     formatter: function (value, context) {
+                        if (context.dataset.currency !== undefined)
+                            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
                         return value;
                     }
                 },
@@ -1064,65 +1095,6 @@ let displayValoMoteurAnnuel = function() {
     });
 };
 
-let displayValoLancementAnnuel = function() {
-    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('valoLancementAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_lancement;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_lancement_n_anneesPrecedantes;
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [
-                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
-            ],
-            datasets: [
-                {
-                    label: 'Revenu moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
-                    data: dataCetteAnnee,
-                },
-                {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
-                },
-            ],
-        },
-        options: {
-            scales: {
-                y: {
-                    ticks: {
-                        // Include a dollar sign in the ticks
-                        callback: function(value, index, ticks) {
-                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
-                        },
-                    },
-                },
-            },
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Revenu moyens de lancement',
-                    font: { size: 24 },
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    color: 'black',
-                    font: {
-                        weight: 'bold',
-                    },
-                    formatter: function (value, context) {
-                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-                    }
-                },
-            }
-        }
-    });
-};
-
 let saveFile = function(filename, data) {
     const blob = new Blob([data], {type: 'text/csv'});
     if(window.navigator.msSaveOrOpenBlob) {
@@ -1197,12 +1169,11 @@ $(document).ready(function() {
     displayHDVPilotesDansForfaitAnnuel();
     displayHDVPilotesHorsForfaitAnnuel();
 
-    displayLancementRemorqueAnnuel();
+    displayLancementEtValoRemorqueAnnuel();
     displayLancementAnnuel();
 
     displayValoCelluleEtForfaitAnnuel();
     displayValoMoteurAnnuel();
-    displayValoLancementAnnuel();
 
     $('#downloadDataSource').click(function() {
         downloadDataAsCSV();
