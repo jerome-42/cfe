@@ -1237,7 +1237,7 @@ BEGIN
             AND categorie != 'U'; -- 'U' = remorqueur
           cumulHDVClubInstruction := cumulHDVClubInstruction + r.duree;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-            HDVClubInstruction := array_append(HDVClubInstruction, cumulHDVClubCDB);
+            HDVClubInstruction := array_append(HDVClubInstruction, cumulHDVClubInstruction);
           END IF;
 
           -- heure de vol club instruction sur les 5 dernières années
@@ -1271,7 +1271,7 @@ BEGIN
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
           cumulHDVBanaliseInstruction := cumulHDVBanaliseInstruction + r.duree;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-            HDVBanaliseInstruction := array_append(HDVBanaliseInstruction, cumulHDVBanaliseCDB);
+            HDVBanaliseInstruction := array_append(HDVBanaliseInstruction, cumulHDVBanaliseInstruction);
           END IF;
 
           -- heure de vol club instruction sur les 5 dernières années
@@ -1370,6 +1370,7 @@ BEGIN
               WHEN libelle_remorque = 'Remorqué standard - 500m' THEN 1
               WHEN libelle_remorque = '750m' THEN 1.5
               WHEN libelle_remorque = '1000m' THEN 2
+              WHEN libelle_remorque = '1300m' THEN 2.6
               ELSE 0 END)/moyenne_sur_nb_annee) AS nbR,
             ROUND(SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbT,
             ROUND(SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbA
