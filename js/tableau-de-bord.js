@@ -387,82 +387,6 @@ let getColumns = function(columnsDefs, partialStats) {
     return columns;
 };
 
-// moche
-let displayMisesEnLAir = function(target, masterKey, partialStatsCurrentYear, partialStatsPreviousYear) {
-    let columnsDef = [
-        { 'label': "Immat", 'target': 'immatriculation' },
-        { 'label': 'Nombre', 'target': 'stats.global.nb_vol' },
-        { 'label': 'Type', 'targets': 'stats.type_mise_en_l_air', 'postfix': 'nb_vol', 'sortPriority': [ 'Remorqué standard - 500m', 'Demi-remorqué - 250m' ] },
-    ];
-    let columns = getColumns(columnsDef, partialStatsCurrentYear);
-    columns = getColumns(columns, partialStatsPreviousYear);
-    let thead = $('<tr>');
-    columns.forEach(function(col) {
-        thead.append($('<th>').text(col.label));
-    });
-    target.append($('<thead>').append(thead));
-    let tbody = $('<tbody>');
-    let sumCurrentYear = [];
-    let sumPreviousYear = [];
-    partialStatsCurrentYear.data.forEach(function(l) {
-        let tr = $('<tr>');
-        let lPreviousYear = findStats(partialStatsPreviousYear, masterKey, l[masterKey]);
-        columns.forEach(function(col, idx) {
-            if (sumCurrentYear[idx] === undefined) {
-                sumCurrentYear[idx] = 0;
-                sumPreviousYear[idx] = 0;
-            }
-            let dataCurrentYear = resolvePtr(l, col.target);
-            let dataPreviousYear = resolvePtr(lPreviousYear, col.target);
-            let text = '';
-            if (dataCurrentYear !== null) {
-                text = dataCurrentYear;
-                if ($.isNumeric(dataCurrentYear))
-                    sumCurrentYear[idx] += dataCurrentYear;
-            }
-            if (dataPreviousYear !== null) {
-                if ($.isNumeric(dataPreviousYear))
-                    sumPreviousYear[idx] += dataPreviousYear;
-                if (dataCurrentYear === null)
-                    text = '0 ('+dataPreviousYear+')';
-                else
-                    text += ' ('+dataPreviousYear+')';
-            }
-            tr.append($('<td>').text(text));
-        });
-        tbody.append(tr);
-    });
-    tr = $('<tr>');
-    for (let i = 0; i < sumCurrentYear.length; i++) {
-        let text = '';
-        if (i === 0)
-            text = 'Total';
-        else {
-            if (sumCurrentYear[i] !== undefined)
-                text += sumCurrentYear[i];
-            if (sumPreviousYear[i] !== undefined && sumPreviousYear[i] !== 0) {
-                if (sumCurrentYear[i] !== 0)
-                    text += ' ('+sumPreviousYear[i]+')';
-                else
-                    text += '0 ('+sumPreviousYear[i]+')';
-            }
-        }
-        tr.append($('<td>').append($('<b>').text(text)));
-    }
-    tbody.append(tr);
-    target.append(tbody);
-    target.append($('<tfoot>').append(thead.clone()));
-    let endDate = Date.parse(partialStatsCurrentYear.params.date_fin);
-    let d = new Date();
-    d.setTime(endDate);
-    let opt = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    };
-    $('#misesEnLAirTitle').text(' '+d.toLocaleDateString('fr-FR', opt));
-};
-
 let findStats = function(s, masterKey, value) {
     for (let i = 0; i < s.data.length; i++) {
         if (s.data[i][masterKey] === value)
@@ -495,6 +419,7 @@ let displayLicenceAnnuel = function() {
             ],
         },
         options: {
+            //maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -514,6 +439,66 @@ let displayLicenceAnnuel = function() {
                     },
                     formatter: function (value, context) {
                         return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayValoInfraAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('valoFraisInfraAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_revenu_infra_membre;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_revenu_infra_membre_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenu cotisations '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu cotisations',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
                     }
                 },
             }
@@ -544,6 +529,7 @@ let displayHDVClubCDBAnnuel = function() {
             ],
         },
         options: {
+            maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -593,6 +579,7 @@ let displayHDVClubInstructionAnnuel = function() {
             ],
         },
         options: {
+            maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -642,6 +629,7 @@ let displayHDVBanaliseCDBAnnuel = function() {
             ],
         },
         options: {
+            maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -691,6 +679,7 @@ let displayHDVBanaliseInstructionAnnuel = function() {
             ],
         },
         options: {
+            maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -904,7 +893,7 @@ let displayLancementAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Nombre de lancements',
+                    text: 'Détails par type de mise en l\'air',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -923,6 +912,248 @@ let displayLancementAnnuel = function() {
     });
 };
 
+let displayValoCelluleAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_hdv;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_hdv_n_anneesPrecedantes;
+    let opts = {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenu heure de vol '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu heure de vol',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function(value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    };
+    var ctx = document.getElementById('valoCelluleAnnuel').getContext('2d');
+    new Chart(ctx, opts);
+
+    ctx = document.getElementById('valoCelluleAnnuel2').getContext('2d');
+    opts.options.maintainAspectRatio = true;
+    new Chart(ctx, opts);
+};
+
+let displayValoForfaitAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('valoForfaitAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_forfait;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_forfait_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenu forfait '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu forfait',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function(value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayValoMoteurAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('valoMoteurAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_moteur;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_moteur_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenu temps moteur SF28 '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu temps moteur',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayValoLancementAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('valoLancementAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_lancement;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_lancement_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenu moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu moyens de lancement',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
 $(document).ready(function() {
     Chart.register(ChartDataLabels);
     displayLicence();
@@ -932,6 +1163,7 @@ $(document).ready(function() {
     displayViClub();
 
     displayLicenceAnnuel();
+    displayValoInfraAnnuel();
     displayHDVClubCDBAnnuel();
     displayHDVClubInstructionAnnuel();
 
@@ -943,5 +1175,9 @@ $(document).ready(function() {
 
     displayLancementRemorqueAnnuel();
     displayLancementAnnuel();
-//displayMisesEnLAir($('#misesEnLAir'), 'immatriculation', stats.statsMisesEnLAir, stats.statsMisesEnLAirAnneePrecedente);
+
+    displayValoCelluleAnnuel();
+    displayValoForfaitAnnuel();
+    displayValoMoteurAnnuel();
+    displayValoLancementAnnuel();
 });

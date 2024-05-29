@@ -16,29 +16,37 @@ block content
     h2 Activité sur l'année complète
   .row
     .col
-      div(style="width: 800px;")
+      div(style="width: 800px")
         canvas#licenceAnnuel
-    p
-      i Ce sont les licences qui sont prises à Chérence, donc hors les quelques pilotes qui volent à Chérence mais qui prennent leurs licences ailleurs  
+      p.mt-3
+        i Ce sont les licences qui sont prises à Chérence, donc hors les quelques pilotes qui volent à Chérence mais qui prennent leurs licences ailleurs  
+    .col
+      div(style="width: 800px")
+        canvas#valoFraisInfraAnnuel
+      p.mt-3
+        i Cotisations annuelles, frais technique, taxe hangar & remorque et nuits en dortoir
   hr.mt-5
   .row
     .col
-      div(style="width: 800px;")
+      div(style="width: 500px; height: 500px;")
         canvas#hdvClubCDBAnnuel
     .col
-      div(style="width: 800px;")
+      div(style="width: 500px; height: 500px;")
         canvas#hdvClubInstructionAnnuel
-    p
-      i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
-  hr.mt-5
-  .row
     .col
-      div(style="width: 800px;")
+      div(style="width: 500px; height: 500px;")
+        canvas#valoCelluleAnnuel
+    p.mt-3
+      i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...). Les vols compris dans un forfait comptent pour x heures de vol mais 0 € de revenu
+  hr.mt-5
+  .row.text-center
+    .col
+      div(style="width: 500px; height: 500px;")
         canvas#hdvBanaliseCDBAnnuel
     .col
-      div(style="width: 800px;")
+      div(style="width: 500px; height: 500px;")
         canvas#hdvBanaliseInstructionAnnuel
-    p
+    p.mt-3
       i Heures de vol au départ de LFFC (ce sont les vols qui apparaissent sur la planche GIVAV de Chérence). CDB = Vols en solo et Vols partagés (donc hors VI Club, VI Perso, Vols d'essai ...)
   hr.mt-5
   .row
@@ -49,19 +57,42 @@ block content
         i Ce sont les heures de vol en tant que commandant de bord (vols solo) lorsque le commandant de bord vole sur une machine comprise dans son forfait
     .col
       div(style="width: 800px;")
+        canvas#valoForfaitAnnuel
+      p Selon la date d'achat des forfaits. Ne sont pas comptabilisé les forfaits journées découvertes, stage et forfait école (années 2020 et 2021)
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
         canvas#hdvPilotesHorsForfait
-      p
-        i Ce sont les heures de vols qui ne sont pas au forfait (vols solo, partagé, instruction, VI perso, VI club ...)
+    .col
+      div(style="width: 800px;")
+        canvas#valoCelluleAnnuel2
+    p
+      i Ce sont les vols qui ne sont pas au forfait (vols solo, partagé, instruction, VI perso, VI club ...)
   hr.mt-5
   .row
     .col
       div(style="width: 800px;")
         canvas#lancementRemorqueAnnuel
-      p
+      p.mt-3
         i Les remorqués corrigés sont les remorqués en fonction de l'altitude de largage (0.5 pour les 250m, 1 pour les 500m, 1.5 pour les 750m et 2 pour les 1000m, les autres remorqués ne sont pas comptabilisés)
     .col
       div(style="width: 800px;")
+        canvas#valoLancementAnnuel
+      p.mt-3
+        i Ne sont pas comptés les lancements autonomes transformées en treuillées
+  hr.mt-5
+  .row  
+    .col
+      div(style="width: 800px;")
         canvas#lancementAnnuel
+  hr.mt-5
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#valoMoteurAnnuel
+      p Il s'agit du temps moteur du F-CPPM (SF28)
+  .row
   hr.mt-5
   .row
     h2 Activité au mois
@@ -78,20 +109,12 @@ block content
   .row
     .col
       div(style="width: 800px;")
-        canvas#hdv_club_et_banalise
+        canvas#hdv_club
     .col
       div(style="width: 800px;")
-        canvas#hdv_club
+        canvas#hdv_club_et_banalise
   hr.mt-5
   .row
     .col
       div(style="width: 800px;")
         canvas#vi_club
-  hr.mt-5
-  .row
-    .col
-      h3 Décollage jusqu'au
-        span#misesEnLAirTitle
-  .row
-    .col
-      table.table#misesEnLAir
