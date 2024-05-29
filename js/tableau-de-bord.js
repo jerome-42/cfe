@@ -1156,6 +1156,10 @@ let displayValoLancementAnnuel = function() {
 
 $(document).ready(function() {
     Chart.register(ChartDataLabels);
+
+    let formatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    let d = getDateFromD(stats.tableauDeBord.data.dates.pas_apres_cette_date_cette_annee);
+    $('#activity').text("Activité arrêtée au "+formatter.format(d));
     displayLicence();
     displayMoyensLancement();
     let hdv_club_et_banalise = displayHdv('hdv_club_et_banalise', 'hdv_club_et_banalise', 'Heures de vol club+banalisé');
