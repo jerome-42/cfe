@@ -1138,6 +1138,11 @@ DECLARE
   cumulLancementA_n_anneesPrecedantes INT := 0;
 
   -- VALORISATION
+    -- cotisation annuelle, frais technique, nuits dortoir et frais hangar / remorque (frais infra)
+  valo_revenu_infra_membre NUMERIC[] := '{}';
+  valo_cumulRevenu_infra_membre NUMERIC := 0;
+  valo_revenu_infra_membre_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulRevenu_infra_membre_n_anneesPrecedantes NUMERIC := 0;
     -- cellule
   valo_hdv NUMERIC[] := '{}';
   valo_cumulHDV NUMERIC := 0;
@@ -1380,6 +1385,27 @@ BEGIN
         lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
 
     -- ============ VALORISATION ============
+      -- ============ COTISATION ANNUELLE, FRAIS TECHNIQUE, NUITS DORTOIR ET FRAIS HANGAR / REMORQUE (FRAIS INFRA) ============
+          SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol'
+            AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+          valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+            valo_revenu_infra_membre := array_append(valo_revenu_infra_membre, valo_cumulRevenu_infra_membre);
+          END IF;
+
+        -- REVENU FORFAIT sur les 5 dernières années
+          SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol'
+            AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.prix;
+          valo_revenu_infra_membre_n_anneesPrecedantes := array_append(valo_revenu_infra_membre_n_anneesPrecedantes, valo_cumulRevenu_infra_membre_n_anneesPrecedantes);
+
       -- ============ COUT CELLULE ============
         -- REVENU CELLULE des machines club
           SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0) + COALESCE(prix_vol_elv, 0))) AS prix FROM vfr_vol
@@ -1486,6 +1512,9 @@ BEGIN
     stats := setVarInData(stats, 'lancementA_n_anneesPrecedantes', lancementA_n_anneesPrecedantes);
 
   -- ============ ACTIVITES ============
+    -- COTISATION ANNUELLE, FRAIS TECHNIQUES, NUITS DORTOIR ET FRAIS HANGAR (FRAIS INFRA)
+    stats := setVarInData(stats, 'valo_revenu_infra_membre', valo_revenu_infra_membre);
+    stats := setVarInData(stats, 'valo_revenu_infra_membre_n_anneesPrecedantes', valo_revenu_infra_membre_n_anneesPrecedantes);
     -- CELLULE
     stats := setVarInData(stats, 'valo_hdv', valo_hdv);
     stats := setVarInData(stats, 'valo_hdv_n_anneesPrecedantes', valo_hdv_n_anneesPrecedantes);
