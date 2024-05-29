@@ -506,6 +506,61 @@ let displayValoInfraAnnuel = function() {
     });
 };
 
+let displayHDVClubAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('hdvClubAnnuel').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'HDV machines club CDB '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.HDVClubCDB,
+                },
+                {
+                    label: 'moyenne CDB sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.HDVClubCDB_n_anneesPrecedantes,
+                },
+                {
+                    label: 'HDV instruction sur machines club '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.HDVClubInstruction,
+                },
+                {
+                    label: 'moyenne instruction sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.HDVClubInstruction_n_anneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Heures de vol machines CLUB',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
 let displayHDVClubCDBAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvClubCDBAnnuel').getContext('2d');
@@ -606,11 +661,9 @@ let displayHDVClubInstructionAnnuel = function() {
     });
 };
 
-let displayHDVBanaliseCDBAnnuel = function() {
+let displayHDVBanaliseAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('hdvBanaliseCDBAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVBanaliseCDB;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVBanaliseCDB_n_anneesPrecedantes;
+    var ctx = document.getElementById('hdvBanaliseAnnuel').getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -620,16 +673,24 @@ let displayHDVBanaliseCDBAnnuel = function() {
             datasets: [
                 {
                     label: 'HDV machines banalisées CDB '+stats.tableauDeBordAnnuel.params.annee,
-                    data: dataCetteAnnee,
+                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseCDB,
                 },
                 {
-                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
+                    label: 'HDV machines banalisées CDB moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseCDB_n_anneesPrecedantes,
+                },
+                {
+                    label: 'HDV machines banalisées instruction '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseInstruction,
+                },
+                {
+                    label: 'HDV machines banalisées instruction moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseInstruction_n_anneesPrecedantes,
                 },
             ],
         },
         options: {
-            maintainAspectRatio: false,
+            //maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -637,57 +698,7 @@ let displayHDVBanaliseCDBAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Heures de vol machines banalisées en CDB',
-                    font: { size: 24 },
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    color: 'black',
-                    font: {
-                        weight: 'bold',
-                    },
-                    formatter: function (value, context) {
-                        return value;
-                    }
-                },
-            }
-        }
-    });
-};
-
-let displayHDVBanaliseInstructionAnnuel = function() {
-    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('hdvBanaliseInstructionAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVClubInstruction;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVClubInstruction_n_anneesPrecedantes;
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [
-                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
-            ],
-            datasets: [
-                {
-                    label: 'HDV d\'instruction sur machines banalisées '+stats.tableauDeBordAnnuel.params.annee,
-                    data: dataCetteAnnee,
-                },
-                {
-                    label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
-                },
-            ],
-        },
-        options: {
-            maintainAspectRatio: false,
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Heures de vol instruction sur machines banalisées',
+                    text: 'Heures de vol machines banalisées',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -914,8 +925,6 @@ let displayLancementAnnuel = function() {
 
 let displayValoCelluleAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_hdv;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_hdv_n_anneesPrecedantes;
     let opts = {
         type: 'line',
         data: {
@@ -925,11 +934,11 @@ let displayValoCelluleAnnuel = function() {
             datasets: [
                 {
                     label: 'Revenu heure de vol '+stats.tableauDeBordAnnuel.params.annee,
-                    data: dataCetteAnnee,
+                    data: stats.tableauDeBordAnnuel.data.valo_hdv,
                 },
                 {
                     label: 'moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
+                    data: stats.tableauDeBordAnnuel.data.valo_hdv_n_anneesPrecedantes,
                 },
             ],
         },
@@ -944,7 +953,7 @@ let displayValoCelluleAnnuel = function() {
                     },
                 },
             },
-            maintainAspectRatio: false,
+            //maintainAspectRatio: false,
             responsive: true,
             plugins: {
                 legend: {
@@ -1154,6 +1163,57 @@ let displayValoLancementAnnuel = function() {
     });
 };
 
+let saveFile = function(filename, data) {
+    const blob = new Blob([data], {type: 'text/csv'});
+    if(window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveBlob(blob, filename);
+    }
+    else{
+        const elem = window.document.createElement('a');
+        elem.href = window.URL.createObjectURL(blob);
+        elem.download = filename;
+        document.body.appendChild(elem);
+        elem.click();
+        document.body.removeChild(elem);
+    }
+};
+
+let downloadDataAsCSV = function() {
+    let zip = new JSZip();
+    Object.keys(stats.tableauDeBordAnnuel.data).forEach(function(key) {
+        if (key.indexOf('_n_anneesPrecedantes') != -1)
+            return;
+        let data = stats.tableauDeBordAnnuel.data[key];
+        let dataAnneesPrecedantes = null;
+        if (stats.tableauDeBordAnnuel.data[key+'_n_anneesPrecedantes'] !== undefined)
+            dataAnneesPrecedantes = stats.tableauDeBordAnnuel.data[key+'_n_anneesPrecedantes'];
+        let csvContent = '';
+        // header
+        let line = [ '' ];
+        for (let i = 0; i < 12; i++)
+            line.push(i+1);
+        csvContent += line.join(',')+'\n';
+        // data
+        line = [ key + ' annee '+stats.tableauDeBordAnnuel.params.annee ];
+        for (let i = 0; i < 12; i++)
+            if (data[i] !== undefined)
+                line.push(data[i]);
+        csvContent += line.join(',')+'\n';
+        // dataAnneesPrecedantes
+        if (dataAnneesPrecedantes !== null) {
+            line = [ key + ' moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',];
+            for (let i = 0; i < 12; i++)
+                if (dataAnneesPrecedantes[i] !== undefined)
+                    line.push(dataAnneesPrecedantes[i]);
+            csvContent += line.join(',')+'\n';
+        }
+        zip.file(key+'.csv', csvContent);
+    });
+    zip.generateAsync({ type: 'blob' }).then(function(content) {
+        saveFile('data.zip', content);
+    });
+};
+
 $(document).ready(function() {
     Chart.register(ChartDataLabels);
 
@@ -1168,11 +1228,11 @@ $(document).ready(function() {
 
     displayLicenceAnnuel();
     displayValoInfraAnnuel();
+    displayHDVClubAnnuel();
     displayHDVClubCDBAnnuel();
     displayHDVClubInstructionAnnuel();
 
-    displayHDVBanaliseCDBAnnuel();
-    displayHDVBanaliseInstructionAnnuel();
+    displayHDVBanaliseAnnuel();
 
     displayHDVPilotesDansForfaitAnnuel();
     displayHDVPilotesHorsForfaitAnnuel();
@@ -1184,4 +1244,8 @@ $(document).ready(function() {
     displayValoForfaitAnnuel();
     displayValoMoteurAnnuel();
     displayValoLancementAnnuel();
+
+    $('#downloadDataSource').click(function() {
+        downloadDataAsCSV();
+    });
 });
