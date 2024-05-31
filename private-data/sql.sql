@@ -1390,21 +1390,40 @@ BEGIN
           SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol'
-            AND li.date_piece BETWEEN rDate.start AND rDate.stop;
-          valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
+            WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%'
+            AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+          IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les cotisations de l'année prochaine ce qu'on ne veut pas prendre en compte ici
+            valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
+          END IF;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
             valo_revenu_infra_membre := array_append(valo_revenu_infra_membre, valo_cumulRevenu_infra_membre);
           END IF;
 
         -- REVENU FORFAIT sur les 5 dernières années
-          SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
-            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-            JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol'
-            AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
-          valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.prix;
+          IF EXTRACT(MONTH FROM rDate.start) = 1 THEN
+            -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier
+            SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
+              JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+              JOIN cp_piece pi ON pi.id_piece = li.id_piece
+              WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND
+              (
+                (EXTRACT(MONTH FROM li.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM li.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
+              OR
+              (
+                (EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+                AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start)))
+              );
+            ELSE
+              SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
+                JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+                JOIN cp_piece pi ON pi.id_piece = li.id_piece
+                WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND
+                EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+                AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);            
+          END IF;
+          IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
+            valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.prix;
+          END IF;
           valo_revenu_infra_membre_n_anneesPrecedantes := array_append(valo_revenu_infra_membre_n_anneesPrecedantes, valo_cumulRevenu_infra_membre_n_anneesPrecedantes);
 
       -- ============ COUT CELLULE ============
