@@ -461,6 +461,7 @@ $$ LANGUAGE plpgsql VOLATILE;
 CREATE OR REPLACE FUNCTION calculPrixVol(input_id_pilote INT, input_id_aeronef INT, input_date_vol DATE, temps_vol INTERVAL) RETURNS NUMERIC AS $$
 DECLARE
   nom_type TEXT;
+  temps_vol_consomme INTERVAL;
   r_pilote record;
   r_prix RECORD;
   r_tarif_type_cond record;
@@ -486,17 +487,19 @@ BEGIN
     RETURN 0;
   END IF;
 
+  temps_vol_consomme := '0:0:0'::interval;
   FOR r_tranche_item IN SELECT * FROM tarif_tranche_item WHERE id_tarif_tranche = r_prix.id_tarif_tranche_vol
   LOOP
-    IF temps_vol > '0:0:0'::interval THEN
+    IF temps_vol_consomme < temps_vol THEN -- si on doit encore facturer des heures de vol
       IF temps_vol > r_tranche_item.plafond THEN
-        temps_vol_dans_item := r_tranche_item.plafond;
-        temps_vol := temps_vol - r_tranche_item.plafond;
+        temps_vol_dans_item := r_tranche_item.plafond - temps_vol_consomme;
       ELSE
-        temps_vol_dans_item := temps_vol;
-        temps_vol := 0;
+        temps_vol_dans_item := temps_vol - temps_vol_consomme;
       END IF;
+      temps_vol_consomme := temps_vol_consomme + temps_vol_dans_item;
+      --DEBUG RAISE NOTICE 'on est dans %', r_tranche_item;
       --DEBUG RAISE NOTICE 'prix pour % coef %: %', temps_vol_dans_item, r_tranche_item.coefficient, r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
+      --DEBUG RAISE NOTICE 'reste à facturer: %', temps_vol - temps_vol_consomme;
       prix := prix + r_prix.prix_heure * r_tranche_item.coefficient * EXTRACT(epoch FROM temps_vol_dans_item)/3600;
     END IF;
   END LOOP;
@@ -1661,10 +1664,15 @@ CREATE OR REPLACE FUNCTION anonymisationVol(annee INT, avec_anonymisation BOOLEA
   prix_moteur_co NUMERIC,
   nom_type_vol VARCHAR,
   temps_vol INTERVAL,
-  immatriculation_remorqueur VARCHAR
+  immatriculation_remorqueur VARCHAR,
+  vol_est_dans_forfait BOOLEAN,
+  prix_vol_sans_forfait NUMERIC,
+  proprietaire_vole_sur_sa_machine BOOLEAN,
+  prix_vol_si_la_machine_etait_club NUMERIC -- il s'agit du prix de la cellule (équivalent à prix_vol_cdb)
   ) AS $$
 DECLARE
   r RECORD;
+  r2 RECORD;
   i INT;
   chars TEXT[] := '{0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f}';
   salt TEXT;
@@ -1793,6 +1801,36 @@ BEGIN
     nom_type_vol := r.nom_type_vol;
     temps_vol := r.temps_vol;
     immatriculation_remorqueur := r.immatriculation_remorqueur;
+
+    -- est-ce que le pilote a volé sur une machine compris dans son forfait ?
+    vol_est_dans_forfait := false;
+    prix_vol_sans_forfait := 0;
+    IF r.id_cdt_de_bord IS NOT NULL THEN
+      SELECT INTO r2 * FROM vfr_forfait_pilote
+        JOIN vfr_gv_personne ON vfr_forfait_pilote.id_personne = r.id_cdt_de_bord
+        WHERE EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = EXTRACT(YEAR FROM r.date_vol)
+          AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
+          AND NOT EXISTS (SELECT 1 FROM forfait_modele_aeronef_exclu WHERE forfait_modele_aeronef_exclu.id_aeronef = r.id_aeronef AND forfait_modele_aeronef_exclu.id_forfait_modele = vfr_forfait_pilote.id_forfait_modele) LIMIT 1;
+      IF FOUND THEN
+        --DEBUG RAISE NOTICE '% % % %', r.date_vol, r.cdt_de_bord, r.nom_type_vol, r2;
+        --DEBUG RAISE NOTICE 'id_cdt_de_bord: % id_aeronef: %', r.id_cdt_de_bord, r.id_aeronef;
+        vol_est_dans_forfait := true;
+        -- si c'est le cas quel serait le prix du vol si le pilote n'avait
+        -- pas de forfait ?
+        prix_vol_sans_forfait := calculPrixVol(r.id_cdt_de_bord, r.id_aeronef, r.date_vol, r.temps_vol);
+      END IF;
+    END IF;
+
+
+    -- prix du vol pour les propriétaires (certains proprietaires n'ont pas de retrocession, donc pas de prix de cellule), on le calcule pour faire des stats
+    SELECT INTO r2 piloteEstProprietaireDeMachine(r.id_cdt_de_bord, r.id_aeronef, r.date_vol) AS estProprietaire;
+    --DEBUG RAISE NOTICE '% % % %', aeronef, r.date_vol, r.cdt_de_bord, r2;
+    prix_vol_si_la_machine_etait_club := 0; -- par defaut le prix est a 0
+    proprietaire_vole_sur_sa_machine := false;
+    IF r2.estProprietaire is true THEN
+      proprietaire_vole_sur_sa_machine := true;
+      prix_vol_si_la_machine_etait_club := calculPrixVol(r.id_cdt_de_bord, r.id_aeronef, r.date_vol, r.temps_vol);
+    END IF;
     return NEXT;
   END LOOP;
 END;
