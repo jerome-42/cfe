@@ -113,33 +113,40 @@ DECLARE
   sub_json jsonb;
   frais_hangar NUMERIC;
   ca NUMERIC;
+  machine_est_privee BOOLEAN;
 BEGIN
   FOR r IN SELECT vfr_vol.nom_type_vol FROM vfr_vol WHERE date_vol BETWEEN date_debut AND date_fin GROUP BY vfr_vol.nom_type_vol
   LOOP
     types_vol := array_append(types_vol, r.nom_type_vol);
   END LOOP;
 
-  FOR r IN SELECT vfr_vol.id_aeronef, vfr_vol.immatriculation,
-    CASE
-      WHEN aeronef_situation.situation = 'C' THEN false
-      when aeronef_situation.situation = 'B' THEN true
-    END AS machine_est_privee
+  FOR r IN SELECT vfr_vol.id_aeronef, vfr_vol.immatriculation
     FROM vfr_vol
     JOIN aeronef ON aeronef.id_aeronef = vfr_vol.id_aeronef
-    JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
-    WHERE
-    date_fin BETWEEN date_debut AND date_fin
+    WHERE date_fin BETWEEN date_debut AND date_fin
     AND aeronef.actif IS true
-    AND aeronef_situation.situation IN ('B', 'C')
-    AND vfr_vol.id_aeronef = 25
-    GROUP BY vfr_vol.id_aeronef, vfr_vol.immatriculation, aeronef_situation.situation ORDER BY vfr_vol.immatriculation
+--    AND vfr_vol.id_aeronef = 18867 -- KAKO
+--    AND vfr_vol.id_aeronef = 36 -- F-CGYG
+    GROUP BY vfr_vol.id_aeronef, vfr_vol.immatriculation ORDER BY vfr_vol.immatriculation
   LOOP
     immatriculation := r.immatriculation;
     stats := '{}';
+
+    machine_est_privee := NULL;
+    -- situation
+    SELECT INTO r2 CASE WHEN situation = 'C' THEN false ELSE true END AS machine_est_privee, situation FROM aeronef_situation WHERE id_aeronef = r.id_aeronef
+    AND date_application <= date_debut
+    ORDER BY date_application DESC LIMIT 1;
+    machine_est_privee := r2.machine_est_privee;
+    RAISE NOTICE '% machine_est_privee=%', immatriculation, machine_est_privee;
+    
     stats := setVarInData(stats, 'id_aeronef', r.id_aeronef);
+    stats := setVarInData(stats, 'situation', r2.situation);
+    SELECT INTO r2 * FROM aeronef WHERE id_aeronef = r.id_aeronef;
+    stats := setVarInData(stats, 'nb_place', r2.nb_places);
 
     -- nb vol & CA heure de vol
-    IF r.machine_est_privee IS false THEN -- machine club, on compte prix vol
+    IF machine_est_privee IS false THEN -- machine club, on compte prix vol
       SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
         SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_vol_co, 0)) AS ca FROM vfr_vol
           WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
@@ -181,7 +188,7 @@ BEGIN
     -- stats par moyen de mise en l'air
     FOREACH mise_en_l_air IN ARRAY mises_en_l_air
     LOOP
-      IF r.machine_est_privee IS false THEN -- machine club, on compte tout
+      IF machine_est_privee IS false THEN -- machine club, on compte tout
         SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
           SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) +
             SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) +
@@ -214,7 +221,7 @@ BEGIN
     -- stats par type de vol
     FOREACH type_vol IN ARRAY types_vol
     LOOP
-      IF r.machine_est_privee IS false THEN -- machine club, on compte tout
+      IF machine_est_privee IS false THEN -- machine club, on compte tout
         SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
           SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_vol_co, 0)) AS ca FROM vfr_vol
             WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.nom_type_vol = type_vol;
@@ -867,6 +874,7 @@ DECLARE
   beneficiares_personnes INT[];
   v_id_personne INT;
   immatriculations TEXT[];
+  v_situation TEXT;
 BEGIN
   montant_frais_hangar := 0;
   FOR r IN SELECT * FROM aeronef_situation
@@ -921,15 +929,23 @@ BEGIN
     END IF;
   END LOOP;
 
+  IF beneficiares_personnes IS NULL THEN
+    RAISE NOTICE 'pas de bénéficiaire enregistré';
+    RETURN 0;
+  END IF;
   -- on cherche le nombre de machine dont sont bénéficiaires les personnes
   FOREACH v_id_personne IN ARRAY beneficiares_personnes LOOP
     RAISE NOTICE 'on cherche les machines dont est bénéficiare id_personne=%', v_id_personne;
     FOR r IN SELECT aeronef.immatriculation FROM aeronef
-    JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
-    JOIN aeronef_situation_benef ON aeronef_situation_benef.id_aeronef_situation = aeronef_situation.id_aeronef_situation
-    WHERE CONCAT(input_annee, '-01-01')::date >= aeronef_situation.date_application
-    AND aeronef_situation_benef.id_personne = v_id_personne
-    GROUP BY aeronef.immatriculation LOOP
+      JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
+      JOIN aeronef_situation_benef ON aeronef_situation_benef.id_aeronef_situation = aeronef_situation.id_aeronef_situation
+      WHERE CONCAT(input_annee, '-01-01')::date >= aeronef_situation.date_application
+        AND aeronef_situation_benef.id_personne = v_id_personne
+        AND aeronef_situation.situation IN ('B', 'P')
+        AND aeronef.actif IS TRUE
+        AND aeronef.immatriculation NOT IN ('F-CCER') -- F-CCER n'est pas dans le hangar ni en remorque
+      GROUP BY aeronef.immatriculation LOOP
+      RAISE NOTICE 'id_personne=% est bénéficiaire de %', v_id_personne, r.immatriculation;
       immatriculations := array_append(immatriculations, r.immatriculation);
     END LOOP;
   END LOOP;
