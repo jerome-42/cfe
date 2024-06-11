@@ -127,6 +127,7 @@ BEGIN
     AND aeronef.actif IS true
 --    AND vfr_vol.id_aeronef = 18867 -- KAKO
 --    AND vfr_vol.id_aeronef = 36 -- F-CGYG
+--    AND vfr_vol.id_aeronef = 18860 -- F-CFDM
     GROUP BY vfr_vol.id_aeronef, vfr_vol.immatriculation ORDER BY vfr_vol.immatriculation
   LOOP
     immatriculation := r.immatriculation;
@@ -175,7 +176,7 @@ BEGIN
             WHEN r_vol.id_eleve IS NOT NULL THEN calculPrixVol(r_vol.id_eleve, r_vol.id_aeronef, r_vol.date_vol, r_vol.id_tarif_type_vol, r_vol.temps_vol)
             END;
           END LOOP;
-          sub_json := setVarInData(sub_json, 'ca_si_club', ca);
+          stats := setVarInData(stats, 'ca_si_club', ca);
     END IF;
 
     -- stats revenu mises en l'air
