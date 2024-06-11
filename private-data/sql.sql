@@ -183,7 +183,7 @@ BEGIN
       SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) +
       SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) AS ca FROM vfr_vol
       WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
-    stats := setVarInData(stats, 'revenu_mise_en_l_air', r_vol.ca);
+    stats := setVarInData(stats, 'revenus_mise_en_l_air', r_vol.ca);
 
     -- stats par moyen de mise en l'air
     FOREACH mise_en_l_air IN ARRAY mises_en_l_air
@@ -198,7 +198,7 @@ BEGIN
           sub_json := '{}';
           sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
           sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-          sub_json := setVarInData(sub_json, 'revenu_mise_en_l_air', r_vol.ca);
+          sub_json := setVarInData(sub_json, 'revenus_mise_en_l_air', r_vol.ca);
           stats := setVarInData(stats, mise_en_l_air, sub_json);
         END IF;
       ELSE -- machine privée, on ne compte pas les heures de vol
@@ -211,7 +211,7 @@ BEGIN
           sub_json := '{}';
           sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
           sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-          sub_json := setVarInData(sub_json, 'revenu_mise_en_l_air', r_vol.ca);
+          sub_json := setVarInData(sub_json, 'revenus_mise_en_l_air', r_vol.ca);
           stats := setVarInData(stats, mise_en_l_air, sub_json);
         END IF;
       END IF;
