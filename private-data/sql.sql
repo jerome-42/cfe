@@ -142,7 +142,13 @@ BEGIN
     RAISE NOTICE '% machine_est_privee=%', immatriculation, machine_est_privee;
     
     stats := setVarInData(stats, 'id_aeronef', r.id_aeronef);
-    stats := setVarInData(stats, 'situation', r2.situation);
+    CASE r2.situation
+      WHEN 'C' THEN stats := setVarInData(stats, 'situation', 'CLUB');
+      WHEN 'B' THEN stats := setVarInData(stats, 'situation', 'BANALISE');
+      WHEN 'P' THEN stats := setVarInData(stats, 'situation', 'PRIVE');
+      WHEN 'E' THEN stats := setVarInData(stats, 'situation', 'EXTERIEUR');
+      ELSE stats := setVarInData(stats, 'situation', r2.situation);
+    END CASE;
     SELECT INTO r2 * FROM aeronef WHERE id_aeronef = r.id_aeronef;
     stats := setVarInData(stats, 'nb_place', r2.nb_places);
 

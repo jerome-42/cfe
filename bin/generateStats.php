@@ -56,8 +56,9 @@ $anneePrecedente = intval($annee)-1;
 $dateDebutPrecedente = $anneePrecedente.'-1-1';
 $dateFinPrecedente = $dateOfLastFlight->modify("-1 year");
 $dateFinPrecedente = $dateFinPrecedente->format('Y-m-d');
+$dateFinPrecedentePleine = $anneePrecedente.'-12-31';
 
-echo "statsMachines".PHP_EOL;
+echo "statsMachines ".$annee.PHP_EOL;
 $q = 'SELECT * FROM statsMachines(:start, :end)';
 $sth = $db->prepare($q);
 $sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
@@ -70,99 +71,118 @@ $output['statsMachines'] = [
         'date_debut' => $dateDebut,
         'date_fin' => $dateFin,
     ],
+    'year' => $annee,
     'requete' => $q,
     'data' => $data,
 ];
 
-echo "statsMisesEnLAir ".$annee.PHP_EOL;
-$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+echo "statsMachines ".$anneePrecedente.PHP_EOL;
+$q = 'SELECT * FROM statsMachines(:start, :end)';
 $sth = $db->prepare($q);
-$sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
+$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedentePleine ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
 foreach ($data as &$line) {
     $line['stats'] = json_decode($line['stats']);
 }
-$output['statsMisesEnLAir'] = [
+$output['statsMachinesPrecedente'] = [
     'params' => [
-        'date_debut' => $dateDebut,
-        'date_fin' => $dateFin,
+        'date_debut' => $dateDebutPrecedente,
+        'date_fin' => $dateFinPrecedentePleine,
     ],
+    'year' => $anneePrecedente,
     'requete' => $q,
     'data' => $data,
 ];
 
-echo "statsMisesEnLAir ".$anneePrecedente.PHP_EOL;
-$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
-$sth = $db->prepare($q);
-$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedente ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-foreach ($data as &$line) {
-    $line['stats'] = json_decode($line['stats']);
-}
-$output['statsMisesEnLAirAnneePrecedente'] = [
-    'params' => [
-        'date_debut' => $dateDebut,
-        'date_fin' => $dateFin,
-    ],
-    'requete' => $q,
-    'data' => $data,
-];
-
-echo "statsForfait".PHP_EOL;
-$q = 'SELECT * FROM statsForfait(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
-$output['statsForfait'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
-];
-
-echo "statsMembre".PHP_EOL;
-$q = 'SELECT * FROM statsMembre(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
-$output['statsMembre'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
-];
-
-echo "statsAuCoursAnnee ".$annee.PHP_EOL;
-$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-foreach ($data as &$line) {
-    $line['stats'] = json_decode($line['stats']);
-}
-$output['statsAuCoursAnnee'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $data,
-];
-
-echo "statsAuCoursAnnee ".$anneePrecedente.PHP_EOL;
-$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $anneePrecedente ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-foreach ($data as &$line) {
-    $line['stats'] = json_decode($line['stats']);
-}
-$output['statsAuCoursAnneePrecedente'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $data,
-];
+//echo "statsMisesEnLAir ".$annee.PHP_EOL;
+//$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsMisesEnLAir'] = [
+//    'params' => [
+//        'date_debut' => $dateDebut,
+//        'date_fin' => $dateFin,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+//
+//echo "statsMisesEnLAir ".$anneePrecedente.PHP_EOL;
+//$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedente ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsMisesEnLAirAnneePrecedente'] = [
+//    'params' => [
+//        'date_debut' => $dateDebut,
+//        'date_fin' => $dateFin,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+//
+//echo "statsForfait".PHP_EOL;
+//$q = 'SELECT * FROM statsForfait(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $annee ]);
+//$output['statsForfait'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+//];
+//
+//echo "statsMembre".PHP_EOL;
+//$q = 'SELECT * FROM statsMembre(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $annee ]);
+//$output['statsMembre'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+//];
+//
+//echo "statsAuCoursAnnee ".$annee.PHP_EOL;
+//$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $annee ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsAuCoursAnnee'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+//
+//echo "statsAuCoursAnnee ".$anneePrecedente.PHP_EOL;
+//$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $anneePrecedente ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsAuCoursAnneePrecedente'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
 
 echo "tableau de bord".PHP_EOL;
 $q = 'SELECT tableauDeBord() AS tdb';
