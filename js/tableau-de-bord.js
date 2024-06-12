@@ -1151,27 +1151,44 @@ let downloadDataAsCSV = function() {
 let getCSV_statsMachines = function(statsMachines) {
     let csvContent = '';
     // header
-    let line = [ 'immatriculation', 'nb places', 'type', 'nb vol', 'temps vol', 'revenus cellule', 'revenus mise en l\'air', 'revenu cellule si la machine est club', 'revenus cellule + mise en l\'air' ];
+    let line = [ 'immatriculation', 'nb places',
+                 'type', 'nb vol', 'temps vol', 'revenus cellule', 'revenus moteur', 'revenu mise en l\'air', 'frais hangar', 'décollage autonome', 'revenu cellule si la machine est club', 'CA' ];
     csvContent += line.join(',')+'\n';
     for (var j = 0; j < statsMachines.data.length; j++) {
         var statsMachine = statsMachines.data[j];
         line = [
-            statsMachine.immatriculation, statsMachine.stats.nb_place, statsMachine.stats.situation,
+            statsMachine.immatriculation, statsMachine.stats.nb_place,
+            statsMachine.stats.situation, // type
             statsMachine.stats.global.nb_vol, statsMachine.stats.global.temps_vol,
-            statsMachine.stats.global.ca,
-            statsMachine.stats.revenus_mise_en_l_air ];
-        var total = 0;
-        if (statsMachine.stats.ca_si_club !== undefined) {
-            line.push(statsMachine.stats.ca_si_club);
-            total = statsMachine.stats.ca_si_club;
-        }
-        else
-            line.push('');
-        total += statsMachine.stats.global.ca;
-        line.push(total);
+            numToFrenchXlsFmt(statsMachine.stats.global.revenus_cellule),
+            numToFrenchXlsFmt(statsMachine.stats.global.revenus_moteur),
+            numToFrenchXlsFmt(statsMachine.stats.revenus_mise_en_l_air),
+            numToFrenchXlsFmt(statsMachine.stats.frais_hangar),
+            numToFrenchXlsFmt(statsMachine.stats.revenu_decollage_autonome),
+            numToFrenchXlsFmt(statsMachine.stats.global.ca_si_club),
+        ];
+        let total = 0;
+        [ statsMachine.stats.global.revenus_cellule, statsMachine.stats.global.revenus_moteur,
+          statsMachine.stats.frais_hangar,
+          statsMachine.stats.revenu_decollage_autonome ].forEach(function(revenu) {
+              if (revenu !== undefined)
+                  total += revenu;
+          });
+        line.push(numToFrenchXlsFmt(total));
         csvContent += line.join(',')+'\n';
     };
     return csvContent;
+};
+
+// excel veut les nombres avec des , et pas des .
+// on transforme
+let numToFrenchXlsFmt = function(n) {
+    if (n === undefined)
+        return n;
+    n = ''+n;
+    if (n.indexOf('.') === -1)
+        return n;
+    return '"'+ n.replace('.', ',')+'"';
 };
 
 $(document).ready(function() {
