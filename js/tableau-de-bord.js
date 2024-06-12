@@ -1141,9 +1141,37 @@ let downloadDataAsCSV = function() {
         }
         zip.file(key+'.csv', csvContent);
     });
+    zip.file('statsMachines-'+stats.statsMachines.year+'.csv', getCSV_statsMachines(stats.statsMachines));
+    zip.file('statsMachines-'+stats.statsMachinesPrecedente.year+'.csv', getCSV_statsMachines(stats.statsMachinesPrecedente));
     zip.generateAsync({ type: 'blob' }).then(function(content) {
         saveFile('data.zip', content);
     });
+};
+
+let getCSV_statsMachines = function(statsMachines) {
+    let csvContent = '';
+    // header
+    let line = [ 'immatriculation', 'nb places', 'type', 'nb vol', 'temps vol', 'revenus cellule', 'revenus mise en l\'air', 'revenu cellule si la machine est club', 'revenus cellule + mise en l\'air' ];
+    csvContent += line.join(',')+'\n';
+    for (var j = 0; j < statsMachines.data.length; j++) {
+        var statsMachine = statsMachines.data[j];
+        line = [
+            statsMachine.immatriculation, statsMachine.stats.nb_place, statsMachine.stats.situation,
+            statsMachine.stats.global.nb_vol, statsMachine.stats.global.temps_vol,
+            statsMachine.stats.global.ca,
+            statsMachine.stats.revenus_mise_en_l_air ];
+        var total = 0;
+        if (statsMachine.stats.ca_si_club !== undefined) {
+            line.push(statsMachine.stats.ca_si_club);
+            total = statsMachine.stats.ca_si_club;
+        }
+        else
+            line.push('');
+        total += statsMachine.stats.global.ca;
+        line.push(total);
+        csvContent += line.join(',')+'\n';
+    };
+    return csvContent;
 };
 
 $(document).ready(function() {
