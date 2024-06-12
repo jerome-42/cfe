@@ -100,6 +100,7 @@ CREATE OR REPLACE FUNCTION statsMachines(date_debut date, date_fin date) returns
 $$
 DECLARE
   r record;
+  r_machine RECORD;
   r2 RECORD;
   r_vol record;
   js jsonb;
@@ -113,6 +114,7 @@ DECLARE
   sub_json jsonb;
   frais_hangar NUMERIC;
   ca NUMERIC;
+  decollage_autonome NUMERIC;
   machine_est_privee BOOLEAN;
 BEGIN
   FOR r IN SELECT vfr_vol.nom_type_vol FROM vfr_vol WHERE date_vol BETWEEN date_debut AND date_fin GROUP BY vfr_vol.nom_type_vol
@@ -128,15 +130,20 @@ BEGIN
 --    AND vfr_vol.id_aeronef = 18867 -- KAKO
 --    AND vfr_vol.id_aeronef = 36 -- F-CGYG
 --    AND vfr_vol.id_aeronef = 18860 -- F-CFDM
+--    AND vfr_vol.id_aeronef = 18841 -- F-CCER pas dans les hangars et pas de vol
+--    AND vfr_vol.immatriculation = 'D-KOCM'  -- F-KOCM décollage autonome facturés à la fin de l'année comme des treuillées
+--    AND vfr_vol.immatriculation = 'D-3743' -- situation aeronef en cours d'année
+--    AND vfr_vol.immatriculation = 'F-CVOL' -- frais hangar car machine Extérieure, devrait être Privée
     GROUP BY vfr_vol.id_aeronef, vfr_vol.immatriculation ORDER BY vfr_vol.immatriculation
   LOOP
     immatriculation := r.immatriculation;
     stats := '{}';
 
+    SELECT INTO r_machine * FROM aeronef WHERE id_aeronef = r.id_aeronef;
     machine_est_privee := NULL;
     -- situation
     SELECT INTO r2 CASE WHEN situation = 'C' THEN false ELSE true END AS machine_est_privee, situation FROM aeronef_situation WHERE id_aeronef = r.id_aeronef
-    AND date_application <= date_debut
+    AND EXTRACT(YEAR FROM date_application) <= EXTRACT(YEAR FROM date_debut)
     ORDER BY date_application DESC LIMIT 1;
     machine_est_privee := r2.machine_est_privee;
     RAISE NOTICE '% machine_est_privee=%', immatriculation, machine_est_privee;
@@ -155,12 +162,15 @@ BEGIN
     -- nb vol & CA heure de vol
     IF machine_est_privee IS false THEN -- machine club, on compte prix vol
       SELECT INTO r_vol COUNT(*) AS nb_vol, SUM(temps_vol) AS temps_vol,
-        SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_vol_co, 0)) AS ca FROM vfr_vol
+        SUM(COALESCE(prix_vol_elv, 0)) + SUM(COALESCE(prix_vol_cdb, 0)) + SUM(COALESCE(prix_vol_co, 0)) AS cellule,
+        SUM(COALESCE(prix_moteur_elv, 0)) + SUM(COALESCE(prix_moteur_cdb, 0)) + SUM(COALESCE(prix_moteur_co, 0)) AS moteur FROM vfr_vol
           WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
           sub_json := '{}';
           sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
           sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-          sub_json := setVarInData(sub_json, 'ca', r_vol.ca);
+          sub_json := setVarInData(sub_json, 'revenus_cellule', r_vol.cellule);
+          sub_json := setVarInData(sub_json, 'revenus_moteur', r_vol.moteur);
+          sub_json := setVarInData(sub_json, 'ca', r_vol.cellule + r_vol.moteur);
           stats := setVarInData(stats, 'global', sub_json);
     ELSE -- privé
       RAISE NOTICE '% (id_aeronef=%) est une machine banalisée', r.immatriculation, r.id_aeronef;
@@ -169,11 +179,14 @@ BEGIN
           sub_json := '{}';
           sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
           sub_json := setVarInData(sub_json, 'temps_vol', r_vol.temps_vol);
-          frais_hangar := getFraisHangarParMachine(r.id_aeronef, EXTRACT(YEAR FROM date_debut));
+          frais_hangar := getFraisHangarParMachine(r_machine.id_aeronef, EXTRACT(YEAR FROM date_debut));
+          -- NULL ça veut dire que l'on n'a pas trouvé, donc potentiellement une erreur
+          -- on ne lève pas l'erreur, on met à 0 comme si on n'avait pas trouvé
+          IF frais_hangar IS NULL THEN
+            frais_hangar := 0;
+          END IF;
           --DEBUG RAISE NOTICE 'frais de hangar: %', frais_hangar;
-          sub_json := setVarInData(sub_json, 'frais_hangar', frais_hangar);
-          sub_json := setVarInData(sub_json, 'ca', frais_hangar);
-          stats := setVarInData(stats, 'global', sub_json);
+          stats := setVarInData(stats, 'frais_hangar', frais_hangar);
           -- on veut avoir le coût des heures de vol pour savoir quel chiffre d'affaire le club verrai
           -- si la machine était dans le parc club
           ca := 0;
@@ -182,15 +195,22 @@ BEGIN
             WHEN r_vol.id_eleve IS NOT NULL THEN calculPrixVol(r_vol.id_eleve, r_vol.id_aeronef, r_vol.date_vol, r_vol.id_tarif_type_vol, r_vol.temps_vol)
             END;
           END LOOP;
-          stats := setVarInData(stats, 'ca_si_club', ca);
+          sub_json := setVarInData(sub_json, 'ca_si_club', ca);
+          stats := setVarInData(stats, 'global', sub_json);
     END IF;
 
     -- stats revenu mises en l'air
-    SELECT INTO r_vol SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) +
+    SELECT INTO r_vol COALESCE(SUM(COALESCE(prix_treuil_elv, 0)) + SUM(COALESCE(prix_remorque_elv, 0)) +
       SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) +
-      SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) AS ca FROM vfr_vol
+      SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)), 0) AS ca FROM vfr_vol
       WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef;
     stats := setVarInData(stats, 'revenus_mise_en_l_air', r_vol.ca);
+    IF r_machine.autonome IS TRUE THEN
+      RAISE NOTICE '% est autonome, on récupère les revenus des décollages autonomes transformés en treuillées', immatriculation;
+      decollage_autonome := getRefactuDecollagesAutonome(r_machine.id_aeronef, EXTRACT(YEAR FROM date_debut));
+      stats := setVarInData(stats, 'revenu_decollage_autonome', decollage_autonome);
+      stats := setVarInData(stats, 'revenus_mise_en_l_air', r_vol.ca + decollage_autonome);
+    END IF;
 
     -- stats par moyen de mise en l'air
     FOREACH mise_en_l_air IN ARRAY mises_en_l_air
@@ -214,6 +234,7 @@ BEGIN
             SUM(COALESCE(prix_treuil_cdb, 0)) + SUM(COALESCE(prix_remorque_cdb, 0)) +
             SUM(COALESCE(prix_treuil_co, 0)) + SUM(COALESCE(prix_remorque_co, 0)) AS ca FROM vfr_vol
             WHERE date_vol BETWEEN date_debut AND date_fin AND vfr_vol.id_aeronef = r.id_aeronef AND vfr_vol.mode_decollage = mise_en_l_air;
+        -- si la machine est autonome on cherche la facturation "Décollages Autonomes LFFC"
         IF r_vol.nb_vol > 0 OR r_vol.ca > 0 THEN
           sub_json := '{}';
           sub_json := setVarInData(sub_json, 'nb_vol', r_vol.nb_vol);
@@ -874,6 +895,7 @@ CREATE OR REPLACE FUNCTION getFraisHangarParMachine(input_id_aeronef INT, input_
 DECLARE
   r RECORD;
   r2 RECORD;
+  r_machine RECORD;
   last_id_aeronef_situation NUMERIC;
   v_id_aeronef_sitation NUMERIC;
   montant_frais_hangar NUMERIC;
@@ -883,6 +905,12 @@ DECLARE
   immatriculations TEXT[];
   v_situation TEXT;
 BEGIN
+  -- F-CCER n'est pas dans le hangar hors son propriétaire a un autre planeur
+  -- qui lui est dans le hangar, ça fausse tout
+  SELECT INTO r_machine * FROM aeronef WHERE id_aeronef = input_id_aeronef;
+  IF r_machine.immatriculation = 'F-CCER' THEN
+    RETURN 0;
+  END IF;
   montant_frais_hangar := 0;
   FOR r IN SELECT * FROM aeronef_situation
     WHERE aeronef_situation.id_aeronef = input_id_aeronef ORDER BY date_application ASC
@@ -948,7 +976,7 @@ BEGIN
       JOIN aeronef_situation_benef ON aeronef_situation_benef.id_aeronef_situation = aeronef_situation.id_aeronef_situation
       WHERE CONCAT(input_annee, '-01-01')::date >= aeronef_situation.date_application
         AND aeronef_situation_benef.id_personne = v_id_personne
-        AND aeronef_situation.situation IN ('B', 'P')
+        AND aeronef_situation.situation IN ('B', 'P', 'E') -- F-CVOL est Extérieure alors que ça devrait être Privée
         AND aeronef.actif IS TRUE
         AND aeronef.immatriculation NOT IN ('F-CCER') -- F-CCER n'est pas dans le hangar ni en remorque
       GROUP BY aeronef.immatriculation LOOP
@@ -965,6 +993,71 @@ BEGIN
 
   RAISE NOTICE 'total frais hangar: % nb_machine=%', montant_frais_hangar, nb_machine;
   RETURN ROUND(montant_frais_hangar / nb_machine, 2);
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION getRefactuDecollagesAutonome(input_id_aeronef INT, input_annee NUMERIC) RETURNS NUMERIC AS $$
+DECLARE
+  r RECORD;
+  r2 RECORD;
+  last_id_aeronef_situation NUMERIC;
+  v_id_aeronef_sitation NUMERIC;
+  montant_decollage NUMERIC := 0;
+BEGIN
+  FOR r IN SELECT * FROM aeronef_situation
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef ORDER BY date_application ASC
+  LOOP
+    IF input_annee >= EXTRACT(YEAR FROM r.date_application) THEN
+      v_id_aeronef_sitation = r.id_aeronef_situation;
+    END IF;
+  END LOOP;
+  IF v_id_aeronef_sitation IS NULL THEN
+    RETURN 0;
+  END IF;
+
+  FOR r IN SELECT aeronef.immatriculation, gv_personne.nom, gv_personne.id_personne FROM gv_personne
+    JOIN aeronef_situation_benef ON aeronef_situation_benef.id_personne = gv_personne.id_personne
+    JOIN aeronef_situation ON aeronef_situation.id_aeronef_situation = aeronef_situation_benef.id_aeronef_situation
+    JOIN aeronef ON aeronef.id_aeronef = input_id_aeronef
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef
+    AND CONCAT(input_annee, '-01-01')::date >= aeronef_situation.date_application
+    ORDER BY aeronef_situation.date_application ASC LIMIT 1
+  LOOP
+    RAISE NOTICE 'bénéficiaires de %: % (id_personne=%)', r.immatriculation, r.nom, r.id_personne;
+  END LOOP;
+
+  -- on cherche tous les propriétaires de cette machine et ce qui est facturé en tant
+  -- que décollage autonome
+  FOR r IN SELECT * FROM aeronef_situation_benef
+    JOIN gv_personne ON gv_personne.id_personne = aeronef_situation_benef.id_personne
+    LEFT JOIN club ON club.id_personne = gv_personne.id_personne
+    WHERE aeronef_situation_benef.id_aeronef_situation = v_id_aeronef_sitation
+  LOOP
+    RAISE NOTICE 'annee=% id_personne=% id_club=%', input_annee, r.id_personne, r.id_club;
+    IF r.id_club IS NOT NULL THEN
+      -- c'est une personne morale
+      SELECT INTO r2 COALESCE(SUM(montant), 0) AS montant FROM cp_piece_ligne li
+        JOIN cp_piece pi ON pi.id_piece = li.id_piece
+        WHERE pi.type = 'ODBR+' AND libelle LIKE 'Décollages Autonomes LFFC%'
+          AND li.id_compte = r.id_compte
+          AND EXTRACT(YEAR FROM li.date_piece) = input_annee;
+      RAISE NOTICE 'montant décollages %', r2;
+      montant_decollage := montant_decollage + r2.montant;
+    ELSE
+      -- c'est un pilote
+      SELECT INTO r2 COALESCE(SUM(montant), 0) AS montant FROM cp_piece_ligne li
+        JOIN cp_piece pi ON pi.id_piece = li.id_piece
+        JOIN pilote ON pilote.id_compte = li.id_compte
+        WHERE pi.type = 'ODBR+' AND libelle LIKE 'Décollages Autonomes LFFC%'
+          AND EXTRACT(YEAR FROM li.date_piece) = input_annee
+          AND pilote.id_personne = r.id_personne;
+      RAISE NOTICE 'montant décollages %', r2;
+      montant_decollage := montant_decollage + r2.montant;
+    END IF;
+  END LOOP;
+
+  RAISE NOTICE 'total montant décollages: %', montant_decollage;
+  RETURN ROUND(montant_decollage, 2);
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
