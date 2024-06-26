@@ -1,0 +1,35 @@
+extends layout-forms.pug
+
+block scripts
+  title Equipements des ASK-21
+  script(src="/js/formulaire-vario-k21.js")
+
+block content
+  .row
+    .col.text-center
+      .row
+        h1.display-4 Sondage variométrie électronique des ASK-21
+      .row
+        h3.display-6 Réponse souhaitée avant le .. septembre 2024
+  hr.border.border-primary.border-3
+  .row
+    .col
+      span Le CA lance un sondage auprès des
+        i &nbsp;instructeurs&nbsp;
+        | pour connaître leur souhaits sur le remplacement et l'ajout de vario électronique sur les
+        b &nbsp;ASK-21 du club (CHIC, CHIM et CIMC).
+  if $stored === false
+    form(method="POST")
+      .row
+        .col
+          span Je souhaite que le vario puisse :
+      .mb-2.form-check
+        input.form-check-input(type="checkbox" name="varioSonore")#varioSonore
+        label.form-check-label(for="varioSonore") être un vario sonore (bip bip dans un haut parleur)
+      .mb-2.form-check
+        input.form-check-input(type="checkbox" name="netto")#netto
+        label.form-check-label(for="netto") avoir une option pour afficher le netto
+      .mb-2
+        button.btn.btn-primary(type="submit" disabled)#submit Enregistrer
+  else
+    h3 Merci de votre participation
