@@ -1774,7 +1774,7 @@ BEGIN
       depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
     END IF;
 
-    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+    SELECT INTO r ROUND(SUM(montant)/moyenne_sur_nb_annee) AS somme FROM cp_piece_ligne li
       JOIN cp_piece pi ON pi.id_piece = li.id_piece
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
       WHERE (
@@ -1810,7 +1810,7 @@ BEGIN
       depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
     END IF;
 
-    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+    SELECT INTO r ROUND(SUM(montant)/moyenne_sur_nb_annee) AS somme FROM cp_piece_ligne li
       JOIN cp_piece pi ON pi.id_piece = li.id_piece
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
       WHERE cp_compte.code like '6%'
