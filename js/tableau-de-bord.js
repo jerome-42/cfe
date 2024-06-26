@@ -506,6 +506,66 @@ let displayValoInfraAnnuel = function() {
     });
 };
 
+let displayDepensesGeneralesAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('depensesGeneralesAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.depenses_generales;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.depenses_generales_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Dépenses générales '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Dépenses générales',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
 let displayHDVClubAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvClubAnnuel').getContext('2d');
@@ -895,6 +955,66 @@ let displayLancementEtValoRemorqueAnnuel = function() {
     });
 };
 
+let diplayDepensesMoyensLancementAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('depensesMoyensLancementAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.depenses_moyens_lancement;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.depenses_moyens_lancement_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Dépenses moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Dépenses moyens de lancement et assurance',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
 let displayLancementAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('lancementAnnuel').getContext('2d');
@@ -1017,7 +1137,7 @@ let displayValoCelluleEtForfaitAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Revenu forfait',
+                    text: 'Revenu heures de vol et forfaits',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -1028,6 +1148,66 @@ let displayValoCelluleEtForfaitAnnuel = function() {
                         weight: 'bold',
                     },
                     formatter: function(value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let diplayDepensesEntretienPlaneur = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('depensesEntretienPlaneursAnnuel').getContext('2d');
+    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.depenses_entretien_planeurs;
+    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.depenses_entretien_planeurs_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Dépenses entretien planeurs '+stats.tableauDeBordAnnuel.params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Dépenses entretiens planeurs + assurance',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
                         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
                     }
                 },
@@ -1205,6 +1385,7 @@ $(document).ready(function() {
 
     displayLicenceAnnuel();
     displayValoInfraAnnuel();
+    displayDepensesGeneralesAnnuel();
     displayHDVClubAnnuel();
     displayHDVClubCDBAnnuel();
     displayHDVClubInstructionAnnuel();
@@ -1215,9 +1396,11 @@ $(document).ready(function() {
     displayHDVPilotesHorsForfaitAnnuel();
 
     displayLancementEtValoRemorqueAnnuel();
+    diplayDepensesMoyensLancementAnnuel();
     displayLancementAnnuel();
 
     displayValoCelluleEtForfaitAnnuel();
+    diplayDepensesEntretienPlaneur();
     displayValoMoteurAnnuel();
 
     $('#downloadDataSource').click(function() {

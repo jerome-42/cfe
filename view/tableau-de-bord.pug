@@ -19,7 +19,7 @@ block content
         i#activity
     .col-2.mt-4
       button.btn.btn-primary#downloadDataSource Télécharger les données
-  h2 Licences et cotisations
+  h2 Activité générale (licences et cotisation)
   .row
     .col
       div(style="width: 800px")
@@ -31,6 +31,11 @@ block content
         canvas#valoFraisInfraAnnuel
       p.mt-3
         i Cotisations annuelles, frais technique, taxe hangar & remorque et nuits en dortoir
+    .col
+      div(style="width: 800px")
+        canvas#depensesGeneralesAnnuel
+      p.mt-3
+        i Dépenses générales (chauffage, élec, eau, salaires, charges, assurances, véhicules de piste, parachutes, radio, batteries, bref tous les achats hors essence avion et entretien planeurs, avions, treuil)
   hr.mt-5
   h2 Machines club
   .row
@@ -40,6 +45,9 @@ block content
     .col
       div(style="width: 800px;")
         canvas#valoCelluleEtForfaitAnnuel
+    .col
+      div(style="width: 800px;")
+        canvas#depensesEntretienPlaneursAnnuel
   hr.mt-5
   h3 Détails Machines club
   .row
@@ -65,7 +73,6 @@ block content
     .col
       div(style="width: 1200px;")
         canvas#hdvPilotesHorsForfait
-    .col
       i Ce sont les vols qui ne sont pas au forfait (vols solo, partagé, instruction, VI perso, VI club ...)
   hr.mt-5
   h2 Forfaits
@@ -81,12 +88,17 @@ block content
   h2 Moyens de lancement
   .row
     .col
-      div(style="width: 1200px;")
+      div(style="width: 800px;")
         canvas#lancementEtValoRemorqueAnnuel
       p.mt-3
         i Les remorqués corrigés sont les remorqués en fonction de l'altitude de largage (0.5 pour les 250m, 1 pour les 500m, 1.5 pour les 750m, 2 pour les 1000m et 2.6 pour les 1300m, les autres remorqués ne sont pas comptabilisés)
       p
         i Ne sont pas comptés les lancements autonomes transformées en treuillées
+    .col
+      div(style="width: 800px;")
+        canvas#depensesMoyensLancementAnnuel
+      p.mt-3
+        i Concerne essence et entretiens avion, ulm et treuil
   hr.mt-5
   .row  
     .col
