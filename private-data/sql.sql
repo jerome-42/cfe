@@ -1359,6 +1359,25 @@ DECLARE
   valo_cumulLancement NUMERIC := 0;
   valo_lancement_n_anneesPrecedantes NUMERIC[] := '{}';
   valo_cumulLancement_n_anneesPrecedantes NUMERIC := 0;
+
+  -- dépenses générales
+  depenses_generales NUMERIC[] := '{}';
+  depenses_generales_cumul NUMERIC := 0;
+  depenses_generales_n_anneesPrecedantes NUMERIC[] := '{}';
+  depenses_generales_cumul_n_anneesPrecedantes NUMERIC := 0;
+
+  -- dépenses moyens de lancement
+  depenses_moyens_lancement NUMERIC[] := '{}';
+  depenses_moyens_lancement_cumul NUMERIC := 0;
+  depenses_moyens_lancement_n_anneesPrecedantes NUMERIC[] := '{}';
+  depenses_moyens_lancement_cumul_n_anneesPrecedantes NUMERIC := 0;
+
+  -- dépenses entretien planeurs
+  depenses_entretien_planeurs NUMERIC[] := '{}';
+  depenses_entretien_planeurs_cumul NUMERIC := 0;
+  depenses_entretien_planeurs_n_anneesPrecedantes NUMERIC[] := '{}';
+  depenses_entretien_planeurs_cumul_n_anneesPrecedantes NUMERIC := 0;
+
 BEGIN
   stats := '{}';
   stats := setVarInData(stats, 'moyenne_sur_nb_annee', moyenne_sur_nb_annee);
@@ -1696,6 +1715,118 @@ BEGIN
             AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start);
           valo_cumulLancement_n_anneesPrecedantes := valo_cumulLancement_n_anneesPrecedantes + r.prix;
           valo_lancement_n_anneesPrecedantes := array_append(valo_lancement_n_anneesPrecedantes, valo_cumulLancement_n_anneesPrecedantes);
+
+    -- ============ DEPENSES GENERALES ============
+    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+      WHERE cp_compte.code like '6%'
+        AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
+        AND cp_compte.code NOT LIKE '60221%' -- essence avion
+        AND cp_compte.code NOT LIKE '6151%' -- entretien et réparations (pièces détachées, GNAV, simu) planeurs
+        AND cp_compte.code NOT LIKE '61521%' -- idem mais SF28
+        AND cp_compte.code NOT LIKE '61522%' -- idem mais WT9
+        AND cp_compte.code NOT LIKE '61523%' -- idem mais BXRO
+        AND cp_compte.code NOT LIKE '61524%' -- idem mais treuil
+        AND cp_compte.code NOT LIKE '6161%' -- ANEPVV et ASEPVO
+        AND sens = 'D' -- que les dépenses
+        AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
+    depenses_generales_cumul := depenses_generales_cumul + r.somme;
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+      depenses_generales := array_append(depenses_generales, depenses_generales_cumul);
+    END IF;
+
+    SELECT INTO r ROUND(SUM(COALESCE(montant, 0))/moyenne_sur_nb_annee, 0) AS somme FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+      WHERE cp_compte.code like '6%'
+        AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
+        AND cp_compte.code NOT LIKE '60221%' -- essence avion
+        AND cp_compte.code NOT LIKE '6151%' -- entretien et réparations (pièces détachées, GNAV, simu) planeurs
+        AND cp_compte.code NOT LIKE '61521%' -- idem mais SF28
+        AND cp_compte.code NOT LIKE '61522%' -- idem mais WT9
+        AND cp_compte.code NOT LIKE '61523%' -- idem mais BXRO
+        AND cp_compte.code NOT LIKE '61524%' -- idem mais treuil
+        AND cp_compte.code NOT LIKE '6161%' -- ANEPVV et ASEPVO
+        AND sens = 'D' -- que les dépenses
+        AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM date_valeur) < cette_annee
+        AND EXTRACT(MONTH FROM date_valeur) = EXTRACT(MONTH FROM rDate.start);
+    depenses_generales_cumul_n_anneesPrecedantes := depenses_generales_cumul_n_anneesPrecedantes + r.somme;
+    depenses_generales_n_anneesPrecedantes := array_append(depenses_generales_n_anneesPrecedantes, depenses_generales_cumul_n_anneesPrecedantes);
+
+      -- ============ DEPENSES MOYENS LANCEMENTS ============
+      -- entretien + essence
+    SELECT INTO r COALESCE(SUM(montant), 0) AS somme FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+      WHERE (
+          cp_compte.code LIKE '60221%' -- essence avion
+          OR cp_compte.code LIKE '61522%' -- idem mais WT9
+          OR cp_compte.code LIKE '61523%' -- idem mais BXRO
+          OR cp_compte.code LIKE '61524%' -- idem mais treuil
+          OR cp_compte.code LIKE '61612%' -- ANEPVV remorqueurs
+        )
+        AND sens = 'D' -- que les dépenses
+        AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
+    depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+      depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
+    END IF;
+
+    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+      WHERE (
+          cp_compte.code LIKE '60221%' -- essence avion
+          OR cp_compte.code LIKE '61522%' -- idem mais WT9
+          OR cp_compte.code LIKE '61523%' -- idem mais BXRO
+          OR cp_compte.code LIKE '61524%' -- idem mais treuil
+          OR cp_compte.code LIKE '61612%' -- ANEPVV remorqueurs
+        )
+        AND sens = 'D' -- que les dépenses
+        AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM date_valeur) < cette_annee
+        AND EXTRACT(MONTH FROM date_valeur) = EXTRACT(MONTH FROM rDate.start);
+    depenses_moyens_lancement_cumul_n_anneesPrecedantes := depenses_moyens_lancement_cumul_n_anneesPrecedantes + r.somme;
+    depenses_moyens_lancement_n_anneesPrecedantes := array_append(depenses_moyens_lancement_n_anneesPrecedantes, depenses_moyens_lancement_cumul_n_anneesPrecedantes);
+
+      -- ============ DEPENSES ENTRETIEN PLANEURS ============
+      -- entretien
+    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+      WHERE cp_compte.code like '6%'
+        AND (
+          cp_compte.code LIKE '61521%' -- SF28
+          OR cp_compte.code LIKE '6151%' -- M.O. Pièces détachées et entretien
+          OR cp_compte.code LIKE '61611%' -- ANEPVV planeurs
+          OR cp_compte.code LIKE '61613%' -- ANEPVV SF28
+        )
+        AND sens = 'D' -- que les dépenses
+        AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
+    depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+      depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
+    END IF;
+
+    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+      WHERE cp_compte.code like '6%'
+        AND (
+          cp_compte.code LIKE '61521%' -- SF28
+          OR cp_compte.code LIKE '6151%' -- M.O. Pièces détachées et entretien
+          OR cp_compte.code LIKE '61611%' -- ANEPVV planeurs
+          OR cp_compte.code LIKE '61613%' -- ANEPVV SF28
+        )
+        AND sens = 'D' -- que les dépenses
+        AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM date_valeur) < cette_annee
+        AND EXTRACT(MONTH FROM date_valeur) = EXTRACT(MONTH FROM rDate.start);
+    depenses_entretien_planeurs_cumul_n_anneesPrecedantes := depenses_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme;
+    depenses_entretien_planeurs_n_anneesPrecedantes := array_append(depenses_entretien_planeurs_n_anneesPrecedantes, depenses_entretien_planeurs_cumul_n_anneesPrecedantes);
+
   END LOOP;
   -- ============ ACTIVITES ============
     stats := setVarInData(stats, 'licences', licences);
@@ -1743,6 +1874,19 @@ BEGIN
     -- LANCEMENT
     stats := setVarInData(stats, 'valo_lancement', valo_lancement);
     stats := setVarInData(stats, 'valo_lancement_n_anneesPrecedantes', valo_lancement_n_anneesPrecedantes);
+
+    -- ============ DEPENSES GENERALES ============
+    stats := setVarInData(stats, 'depenses_generales', depenses_generales);
+    stats := setVarInData(stats, 'depenses_generales_n_anneesPrecedantes', depenses_generales_n_anneesPrecedantes);
+
+    -- ============ DEPENSES MOYENS LANCEMENT ============
+    stats := setVarInData(stats, 'depenses_moyens_lancement', depenses_moyens_lancement);
+    stats := setVarInData(stats, 'depenses_moyens_lancement_n_anneesPrecedantes', depenses_moyens_lancement_n_anneesPrecedantes);
+
+    -- ============ DEPENSES ENTRETIEN PLANEURS ============
+    stats := setVarInData(stats, 'depenses_entretien_planeurs', depenses_entretien_planeurs);
+    stats := setVarInData(stats, 'depenses_entretien_planeurs_n_anneesPrecedantes', depenses_entretien_planeurs_n_anneesPrecedantes);
+
   RETURN stats;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
