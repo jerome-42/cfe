@@ -172,6 +172,21 @@ post('/connexion', function($conn, $pug) {
     $pug->displayFile('view/connexion.pug', $vars);
 });
 
+get('/debiteurDuJour', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $cng = new ClickNGlide($env->config['clickNGlide']['token']);
+    $vars = $_SESSION;
+    $d = new DateTime();
+    $todaySignups = $cng->fetchSignups($d);
+    // dans todaySignus on a { 'Instructeurs': ['Prénom Nom', 'Prénom Nom2']
+    // 'Chef de piste': ['Prénom Nom']
+    // }
+    list($vars['debtPilots'], $vars['notResolved']) = Personne::getDebtPilotFromClicnNGlideSignups($conn, $d, $todaySignups);
+    sort($vars['debtPilots']);
+    $pug->displayFile('view/debiteurDuJour.pug', $vars);
+});
+
 get('/declaration', function($conn, $pug) {
     if (!isset($_SESSION['auth'])) {
         return redirect('/connexion');

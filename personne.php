@@ -30,6 +30,43 @@ class Personne {
         return $data; // on a besoin à minima d'id (pour /connexion)
     }
 
+    // dans signups on a: { 'Instructeur': [ 'Prénom Nom', 'Prénom Nom2' }, 'Chef de piste': [ 'Prénom Nom' ] }
+    // d est la date de l'inscription
+    static public function getDebtPilotFromClicnNGlideSignups($conn, $d, $signups) {
+        $pilots = [];
+        $notResolved = [];
+        $q = "SELECT personnes.name, personnes.email, personnes.givavNumber, givavdebtor.balance, unix_timestamp(givavdebtor.since) AS since FROM personnes LEFT JOIN givavdebtor ON givavdebtor.givavNumber = personnes.givavNumber WHERE personnes.name LIKE :name AND (givavdebtor.since <= :d OR givavdebtor.since IS NULL)";
+        $sth = $conn->prepare($q);
+        //var_dump($signups);
+        foreach ($signups as $section => $names) {
+            foreach ($names as $name) {
+                $nameToBeDisplayed = $name['firstName'] . ' ' . $name['lastName'];
+                $givavName = strtoupper($name['lastName'] . ' ' . $name['firstName']);
+                $sth->execute([ ':name' => $givavName, ':d' => $d->format("Y-m-d") ]);
+                //DEBUG echo json_encode($name)." ".$givavName.$d->format("Y-m-d")."\n";
+                //DEBUG echo "res: ".$sth->rowCount()."n";
+                if ($sth->rowCount() === 0)
+                    $notResolved[] = $nameToBeDisplayed." est inconnu dans la table personnes";
+                if ($sth->rowCount() > 1) {
+                    $personnes = [];
+                    foreach ($sth->fetchAll() as $line)
+                        $personnes[] = $line['name'];
+                    $notResolved[] = $nameToBeDisplayed." renvoi plusieurs lignes depuis la table personnes ".implode(', ', $personnes);
+                }
+                if ($sth->rowCount() === 1) {
+                    $row = $sth->fetchAll()[0];
+                    //DEBUG var_dump($row);
+                    if ($row['balance'] !== null) {
+                        if (!isset($pilots[$nameToBeDisplayed]))
+                            $pilots[$nameToBeDisplayed] = [ 'name' => $nameToBeDisplayed, 'email' => $row['email'], 'givavNumber' => $row['givavNumber'], 'balance' => floatval($row['balance']), 'since' => $row['since'], 'sections' => [] ];
+                        $pilots[$nameToBeDisplayed]['sections'][] = $section;
+                    }
+                }
+            }
+        }
+        return [ $pilots, $notResolved ];
+    }
+
     static public function getFromId($conn, $id) {
         $query = "SELECT * FROM personnes WHERE id = :id";
         $sth = $conn->prepare($query);
