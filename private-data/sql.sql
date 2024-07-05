@@ -1760,13 +1760,25 @@ BEGIN
     SELECT INTO r COALESCE(SUM(montant), 0) AS somme FROM cp_piece_ligne li
       JOIN cp_piece pi ON pi.id_piece = li.id_piece
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE (
-          cp_compte.code LIKE '60221%' -- essence avion
-          OR cp_compte.code LIKE '61522%' -- idem mais WT9
-          OR cp_compte.code LIKE '61523%' -- idem mais BXRO
-          OR cp_compte.code LIKE '61524%' -- idem mais treuil
-          OR cp_compte.code LIKE '61612%' -- ANEPVV remorqueurs
-        )
+      WHERE
+          cp_compte.code IN (
+          '6022100', -- essence avion
+          '6022101', -- huile avion - amortisseur et frein
+          '6022102', -- huile planeur turbo
+          '6022103', -- huile moteur avion
+          '6022110', -- Essence Véhicule
+          '6022120', -- Frais Fuel Chauffage
+          '6022130', -- Achat Essence Voiture
+          '6152210', -- M.O. Entretien Avion - WT9
+          '6152220', -- Fournitures Pièces Avion - WT9
+          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
+          '6152310', -- M.O. Entretien Avion - BXRO
+          '6152320', -- Fournitures Pièces Avion - BXRO
+          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
+          '6152410', -- M.O. Entretien - Treuil
+          '6152420', -- Fournitures Piéces - Treuil
+          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
+          )
         AND sens = 'D' -- que les dépenses
         AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
     depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
@@ -1777,13 +1789,25 @@ BEGIN
     SELECT INTO r ROUND(SUM(montant)/moyenne_sur_nb_annee) AS somme FROM cp_piece_ligne li
       JOIN cp_piece pi ON pi.id_piece = li.id_piece
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE (
-          cp_compte.code LIKE '60221%' -- essence avion
-          OR cp_compte.code LIKE '61522%' -- idem mais WT9
-          OR cp_compte.code LIKE '61523%' -- idem mais BXRO
-          OR cp_compte.code LIKE '61524%' -- idem mais treuil
-          OR cp_compte.code LIKE '61612%' -- ANEPVV remorqueurs
-        )
+      WHERE
+          cp_compte.code IN (
+          '6022100', -- essence avion
+          '6022101', -- huile avion - amortisseur et frein
+          '6022102', -- huile planeur turbo
+          '6022103', -- huile moteur avion
+          '6022110', -- Essence Véhicule
+          '6022120', -- Frais Fuel Chauffage
+          '6022130', -- Achat Essence Voiture
+          '6152210', -- M.O. Entretien Avion - WT9
+          '6152220', -- Fournitures Pièces Avion - WT9
+          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
+          '6152310', -- M.O. Entretien Avion - BXRO
+          '6152320', -- Fournitures Pièces Avion - BXRO
+          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
+          '6152410', -- M.O. Entretien - Treuil
+          '6152420', -- Fournitures Piéces - Treuil
+          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
+          )
         AND sens = 'D' -- que les dépenses
         AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
         AND EXTRACT(YEAR FROM date_valeur) < cette_annee
@@ -1796,13 +1820,17 @@ BEGIN
     SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
       JOIN cp_piece pi ON pi.id_piece = li.id_piece
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE cp_compte.code like '6%'
-        AND (
-          cp_compte.code LIKE '61521%' -- SF28
-          OR cp_compte.code LIKE '6151%' -- M.O. Pièces détachées et entretien
-          OR cp_compte.code LIKE '61611%' -- ANEPVV planeurs
-          OR cp_compte.code LIKE '61613%' -- ANEPVV SF28
-        )
+      WHERE
+          cp_compte.code IN (
+          '6151000', -- M.O. , Pièces détachées et entretien
+          '6151010', -- GNAV, OSAC & taxes diverses planeurs
+          '6151030', -- Simulateur
+          '6152110', -- M.O. Entretien - SF28
+          '6152120', -- Fourniture Pièces - SF28
+          '6152130', -- GNAV - Doc & Taxes - SF28
+          '6161100', -- Assurance Accident ANEPVV - Planeurs
+          '6161300' -- Assurance Accident ANEPVV - SF28
+          )
         AND sens = 'D' -- que les dépenses
         AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
     depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
@@ -1813,13 +1841,17 @@ BEGIN
     SELECT INTO r ROUND(SUM(montant)/moyenne_sur_nb_annee) AS somme FROM cp_piece_ligne li
       JOIN cp_piece pi ON pi.id_piece = li.id_piece
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE cp_compte.code like '6%'
-        AND (
-          cp_compte.code LIKE '61521%' -- SF28
-          OR cp_compte.code LIKE '6151%' -- M.O. Pièces détachées et entretien
-          OR cp_compte.code LIKE '61611%' -- ANEPVV planeurs
-          OR cp_compte.code LIKE '61613%' -- ANEPVV SF28
-        )
+      WHERE
+        cp_compte.code IN (
+          '6151000', -- M.O. , Pièces détachées et entretien
+          '6151010', -- GNAV, OSAC & taxes diverses planeurs
+          '6151030', -- Simulateur
+          '6152110', -- M.O. Entretien - SF28
+          '6152120', -- Fourniture Pièces - SF28
+          '6152130', -- GNAV - Doc & Taxes - SF28
+          '6161100', -- Assurance Accident ANEPVV - Planeurs
+          '6161300' -- Assurance Accident ANEPVV - SF28
+          )
         AND sens = 'D' -- que les dépenses
         AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
         AND EXTRACT(YEAR FROM date_valeur) < cette_annee
