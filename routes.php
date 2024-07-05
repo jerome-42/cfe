@@ -175,13 +175,16 @@ post('/connexion', function($conn, $pug) {
 get('/debiteurDuJour', function($conn, $pug, $env) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
+    $givav = new Givav($env->config['remoteGivav']['login'], $env->config['remoteGivav']['password']);
+    $givav->loginApp();
+    $givav->updateDebtors($env);
     $cng = new ClickNGlide($env->config['clickNGlide']['token']);
-    $vars = $_SESSION;
     $d = new DateTime();
     $todaySignups = $cng->fetchSignups($d);
     // dans todaySignus on a { 'Instructeurs': ['Prénom Nom', 'Prénom Nom2']
     // 'Chef de piste': ['Prénom Nom']
     // }
+    $vars = $_SESSION;
     list($vars['debtPilots'], $vars['notResolved']) = Personne::getDebtPilotFromClicnNGlideSignups($conn, $d, $todaySignups);
     sort($vars['debtPilots']);
     sort($vars['notResolved']);

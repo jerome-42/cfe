@@ -175,4 +175,15 @@ class Givav {
             throw new Exception("Le code de la page de login de givav a changé, impossible de trouver l'URL de connexion");
         return $matches[1][0];
     }
+
+    public function updateDebtors($env) {
+        $debtors = $this->fetchDebtors();
+        $q = "INSERT INTO givavdebtor (givavNumber, balance, since, lastUpdate) VALUES (:givavNumber, :balance, NOW(), NOW()) ON DUPLICATE KEY UPDATE balance = :balance, lastUpdate = NOW()";
+        $sth = $env->mysql->prepare($q);
+        $givavNumbers = [];
+        foreach ($debtors as $debt) {
+            $sth->execute([ ':givavNumber' => $debt['givavNumber'], ':balance' => $debt['balance'] ]);
+        }
+        $env->mysql->query("DELETE FROM givavdebtor WHERE lastUpdate != CAST(NOW() AS date)");
+    }
 }
