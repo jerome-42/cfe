@@ -46,7 +46,7 @@ class Personne {
                 //DEBUG echo json_encode($name)." ".$givavName.$d->format("Y-m-d")."\n";
                 //DEBUG echo "res: ".$sth->rowCount()."n";
                 if ($sth->rowCount() === 0)
-                    $notResolved[] = $nameToBeDisplayed." est inconnu dans la table personnes";
+                    $notResolved[] = $nameToBeDisplayed." est inconnu";
                 if ($sth->rowCount() > 1) {
                     $personnes = [];
                     foreach ($sth->fetchAll() as $line)

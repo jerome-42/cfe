@@ -15,7 +15,7 @@ block content
       if count($debtPilots) == 0
         h3 Pas de compte en négatif aujourd'hui !
       else
-        table.table.table-striped#list
+        table.table.table-striped
           thead
             tr
               th Nom
@@ -47,5 +47,21 @@ block content
               th Solde
               th Solde négatif depuis
               th Pour
+
+      if (count($notResolved) > 0)
+        h4 Les inscrits qui n'ont pas pu être rapprochés de leur compte pilote GIVAV.
+        p Il faudrait changer leur nom sur Click'n Glide (la base GIVAV fait foi) ou bien les faire apparaître sur cfe.aavo.org en leur demandant de s'y connecter.
+        table.table.table-striped
+          thead
+            tr
+              th Nom
+          tbody
+            each name in $notResolved
+              tr
+                td= $name
+          tfoot
+            tr
+              th Nom
+
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour

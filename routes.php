@@ -184,6 +184,7 @@ get('/debiteurDuJour', function($conn, $pug, $env) {
     // }
     list($vars['debtPilots'], $vars['notResolved']) = Personne::getDebtPilotFromClicnNGlideSignups($conn, $d, $todaySignups);
     sort($vars['debtPilots']);
+    sort($vars['notResolved']);
     $pug->displayFile('view/debiteurDuJour.pug', $vars);
 });
 
