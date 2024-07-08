@@ -22,6 +22,7 @@ block content
             option(value="0") Dispensés de CFE
             option(value="admin") Les admin
             option(value="not0notDefault") Ni à CFE 0 ni au défaut
+            option(value="noRevealWhenInDebt") Ne sortent pas lors de la vérification avec Click'n Glide des comptes négatifs
     .col-md-3
       .row
         label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
@@ -39,9 +40,10 @@ block content
             th CFE à réaliser
             th Détails
             th Admin
+            th Affichage compte négatif
         tbody
           each membre in $membres
-            tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'])
+            tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'] x-noRevealWhenInDebt=$membre['noRevealWhenInDebt'])
               td
                 if ($inSudo == false) && ($currentUser != $membre['givavNumber'])
                   button.btn.btn-secondary.sudo
@@ -65,6 +67,7 @@ block content
                   i.bi.bi-eye
                   span.d-none.d-sm-block2 &nbsp;Détails
               td.isAdmin
+              td.noRevealWhenInDebt
           tr.sum
             td.text-end
               h5 Total
@@ -76,6 +79,7 @@ block content
               .sumValidatedLabel
             td.text-center.sumTODO
             td
+            td
         tfoot
           tr
             th Endosser
@@ -84,5 +88,6 @@ block content
             th CFE réalisées
             th CFE à réaliser
             th Admin
+            th Affichage compte négatif
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour

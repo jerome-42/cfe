@@ -23,11 +23,34 @@ var changeAdmin = function(num, status) {
     });
 };
 
+var changeNoRevealWhenInDebt = function(num, status) {
+    $.ajax({
+        url: '/changeNoRevealWhenInDebt',
+        data: { num: num, status: status },
+        type: 'POST',
+        error: function() {
+	    alert("Impossible");
+        },
+        success: function(res) {
+	    // ok
+        }
+    });
+};
+
 var displayIsAdmin = function(elem) {
     if (elem.parents('tr').attr('x-isAdmin') === '1')
 	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2">&nbsp;Révoquer les droits administrateur</span></button>'));
     else
 	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2">&nbsp;Passer administrateur</span></button>'));
+};
+
+var displayNoRevealWhenInDebt = function(elem) {
+    $('.tooltip').hide();
+    if (elem.parents('tr').attr('x-noRevealWhenInDebt') === '1')
+	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-circle"></i><span class="d-none d-sm-block2" data-bs-toggle="tooltip" data-bs-title="actuellement le pilote n\'est pas listé si son compte est négatif, cliquez pour que le pilote fasse à nouveau parti de la liste des pilotes en négatif">&nbsp;n\'est pas affiché</span></button>'));
+    else
+	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2" data-bs-toggle="tooltip" data-bs-title="actuellement le pilote est listé si son compte est négatif, cliquez pour que le pilote n\'en fasse plus parti">&nbsp;est affiché</span></button>'));
+    elem.find('[data-bs-toggle="tooltip"]').tooltip();
 };
 
 var durationToHuman = function(d) {
@@ -75,6 +98,10 @@ var updateList = function() {
 	    if (parseFloat($(this).attr('x-cfeTODO')) === '0' || parseFloat($(this).attr('x-cfeTODO')) === defaultCFE_TODO)
 		displayLine = false;
 	    break;
+        case 'noRevealWhenInDebt':
+	    if ($(this).attr('x-noRevealWhenInDebt') === '0')
+		displayLine = false;
+            break;
 	case 'realizedMoreThan0':
 	    if (parseFloat($(this).attr('x-cfeValidated')) === 0)
 		displayLine = false;
@@ -131,6 +158,21 @@ $(document).ready(function() {
 		changeAdmin($(this).parents('tr').attr('x-num'), true);
 	    }
 	    displayIsAdmin($(this));
+	});
+    $('#list').find('td.noRevealWhenInDebt')
+	.each(function() {
+	    displayNoRevealWhenInDebt($(this));
+	})
+	.click(function() {
+	    if ($(this).parents('tr').attr('x-noRevealWhenInDebt') === '1') {
+		$(this).parents('tr').attr('x-noRevealWhenInDebt', 0);
+		changeNoRevealWhenInDebt($(this).parents('tr').attr('x-num'), false);
+	    }
+	    else {
+		$(this).parents('tr').attr('x-noRevealWhenInDebt', 1);
+		changeNoRevealWhenInDebt($(this).parents('tr').attr('x-num'), true);
+	    }
+	    displayNoRevealWhenInDebt($(this));
 	});
     $('#list > tbody > tr').each(function() {
 	if ($(this).attr('x-cfeCompleted') === '1') {

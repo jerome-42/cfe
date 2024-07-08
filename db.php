@@ -101,6 +101,7 @@ $tables = [
   `email` varchar(255) DEFAULT NULL,
   `givavNumber` bigint unsigned NOT NULL,
   `isAdmin` tinyint(1) DEFAULT '0',
+  `noRevealWhenInDebt tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `givavNumber` (`givavNumber`)
 ) ENGINE=InnoDB",

@@ -131,6 +131,31 @@ post('/changeAdmin', function($conn) {
     Personne::modifieStatutAdmin($conn, intval($_POST['num']), $status);
 });
 
+post('/changeNoRevealWhenInDebt', function($conn) {
+    if (!isset($_SESSION['auth'])) {
+        echo "vous n'êtes pas connecté";
+        return http_response_code(500);
+    }
+    if (!isset($_SESSION['isAdmin'])) {
+        echo "vous n'êtes pas admin";
+        return http_response_code(500);
+    }
+    foreach ([ 'num', 'status' ] as $elem) {
+        if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+            echo "le paramètre ".$elem." est absent";
+            return http_response_code(500);
+        }
+    }
+    if (!is_numeric($_POST['num'])) {
+        echo "le paramètre num doit être un entier";
+        return http_response_code(500);
+    }
+    $status = false;
+    if ($_POST['status'] === 'true')
+        $status = true;
+    Personne::modifieStatutNoRevealWhenInDebt($conn, intval($_POST['num']), $status);
+});
+
 get('/connexion', function($conn, $pug) {
     if (isset($_SESSION['auth'])) {
         return redirect('/');
@@ -188,6 +213,7 @@ get('/debiteurDuJour', function($conn, $pug, $env) {
     list($vars['debtPilots'], $vars['notResolved']) = Personne::getDebtPilotFromClicnNGlideSignups($conn, $d, $todaySignups);
     sort($vars['debtPilots']);
     sort($vars['notResolved']);
+    $vars['notResolved'] = array_unique($vars['notResolved']);
     $pug->displayFile('view/debiteurDuJour.pug', $vars);
 });
 
