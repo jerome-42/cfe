@@ -887,12 +887,12 @@ let displayLancementEtValoRemorqueAnnuel = function() {
             datasets: [
                 {
                     label: 'Nombre de remorqué avec correction '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.lancementR,
+                    data: stats.tableauDeBordAnnuel.data.lancementRCumul,
                     yAxisID: 'y',
                 },
                 {
                     label: 'Moyenne de remorqué sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.lancementR_n_anneesPrecedantes,
+                    data: stats.tableauDeBordAnnuel.data.lancementRCumul_n_anneesPrecedantes,
                     yAxisID: 'y',
                 },
                 {
