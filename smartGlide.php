@@ -5,7 +5,7 @@ class SmartGlide {
     private $password;
     private $session;
 
-    public function __construct($login, $password) {
+    public function __construct($login, $password, $env = null) {
         $this->login = $login;
         $this->password = $password;
     }

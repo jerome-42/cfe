@@ -163,7 +163,7 @@ get('/connexion', function($conn, $pug) {
     $pug->displayFile('view/connexion.pug');
 });
 
-post('/connexion', function($conn, $pug) {
+post('/connexion', function($conn, $pug, $env) {
     $vars = [];
     if (!isset($_POST['login']) || $_POST['login'] === '') {
         $vars['error'] = "Veuillez saisir votre n°nationnal ou courriel";
@@ -174,7 +174,7 @@ post('/connexion', function($conn, $pug) {
         return $pug->displayFile('view/connexion.pug', $vars);
     }
     try {
-        $givav = new SmartGlide($_POST['login'], $_POST['pass']);
+        $givav = new SmartGlide($_POST['login'], $_POST['pass'], $env);
         $givav->login();
         $user = $givav->getName();
         $userData = Personne::creeOuMAJ($conn, $user);
