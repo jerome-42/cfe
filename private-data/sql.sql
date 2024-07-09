@@ -1638,8 +1638,8 @@ BEGIN
             SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
               JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
               JOIN cp_piece pi ON pi.id_piece = li.id_piece
-              WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%' OR
-                libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019
+              WHERE (type = 'PRESTATION' OR (type = 'FVTE' AND LOWER(libelle) NOT LIKE 'dépannage%') OR libelle LIKE '%frais hangar ou en remorque%' OR
+                libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019, on compte quand même les forfaits dedans, il n'y a qu'une seule ligne pour assurance + cotisation + forfait
                 ) AND libelle NOT LIKE 'Carnet de vol%' AND
               (
                 (EXTRACT(MONTH FROM pi.date_echeance) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_echeance) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
