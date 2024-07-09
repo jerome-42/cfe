@@ -1146,7 +1146,6 @@ get('/robots.txt', function($conn) {
 
 get('/tableau-de-bord', function($conn, $pug) {
     // authentification par http basic, un peu moche, il aurait été meilleur de faire un middleware
-    file_put_contents('log', json_encode($_SERVER).PHP_EOL, FILE_APPEND);
     if (!isset($_SERVER['PHP_AUTH_USER'])) {
         header('WWW-Authenticate: Basic realm="Tableau de bord"');
         header('HTTP/1.0 401 Unauthorized');
