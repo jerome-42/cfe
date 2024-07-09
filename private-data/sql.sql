@@ -1326,12 +1326,20 @@ DECLARE
   lancementA INT[] := '{}';
   cumulLancementA INT := 0;
 
+  lancementRCumul INT[] := '{}';
+  lancementTCumul INT[] := '{}';
+  lancementACumul INT[] := '{}';
+
   lancementR_n_anneesPrecedantes INT[] := '{}';
   cumulLancementR_n_anneesPrecedantes INT := 0;
   lancementT_n_anneesPrecedantes INT[] := '{}';
   cumulLancementT_n_anneesPrecedantes INT := 0;
   lancementA_n_anneesPrecedantes INT[] := '{}';
   cumulLancementA_n_anneesPrecedantes INT := 0;
+
+  lancementRCumul_n_anneesPrecedantes INT[] := '{}';
+  lancementTCumul_n_anneesPrecedantes INT[] := '{}';
+  lancementACumul_n_anneesPrecedantes INT[] := '{}';
 
   -- VALORISATION
     -- cotisation annuelle, frais technique, nuits dortoir et frais hangar / remorque (frais infra)
@@ -1574,9 +1582,14 @@ BEGIN
         cumulLancementT := cumulLancementT + r.nbT;
         cumulLancementA := cumulLancementA + r.nbA;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
-          lancementR := array_append(lancementR, cumulLancementR);
-          lancementT := array_append(lancementT, cumulLancementT);
-          lancementA := array_append(lancementA, cumulLancementA);
+          -- ici on veut avoir mois par mois (sans cumul)
+          lancementR := array_append(lancementR, r.nbR);
+          lancementT := array_append(lancementT, r.nbT);
+          lancementA := array_append(lancementA, r.nbA);
+          -- mais aussi avec les cumuls
+          lancementRCumul := array_append(lancementRCumul, cumulLancementR);
+          lancementTCumul := array_append(lancementTCumul, cumulLancementT);
+          lancementACumul := array_append(lancementACumul, cumulLancementA);
         END IF;
 
         -- années précédantes
@@ -1596,9 +1609,14 @@ BEGIN
         cumulLancementR_n_anneesPrecedantes := cumulLancementR_n_anneesPrecedantes + r.nbR;
         cumulLancementT_n_anneesPrecedantes := cumulLancementT_n_anneesPrecedantes + r.nbT;
         cumulLancementA_n_anneesPrecedantes := cumulLancementA_n_anneesPrecedantes + r.nbA;
-        lancementR_n_anneesPrecedantes := array_append(lancementR_n_anneesPrecedantes, cumulLancementR_n_anneesPrecedantes);
-        lancementT_n_anneesPrecedantes := array_append(lancementT_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
-        lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
+        -- on veut sans cumul
+        lancementR_n_anneesPrecedantes := array_append(lancementR_n_anneesPrecedantes, r.nbR);
+        lancementT_n_anneesPrecedantes := array_append(lancementT_n_anneesPrecedantes, r.nbT);
+        lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, r.nbA);
+        -- et avec cumul
+        lancementRCumul_n_anneesPrecedantes := array_append(lancementRCumul_n_anneesPrecedantes, cumulLancementR_n_anneesPrecedantes);
+        lancementTCumul_n_anneesPrecedantes := array_append(lancementTCumul_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
+        lancementACumul_n_anneesPrecedantes := array_append(lancementACumul_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
 
     -- ============ VALORISATION ============
       -- ============ COTISATION ANNUELLE, FRAIS TECHNIQUE, NUITS DORTOIR ET FRAIS HANGAR / REMORQUE (FRAIS INFRA) ============
@@ -1932,9 +1950,15 @@ BEGIN
     stats := setVarInData(stats, 'lancementR', lancementR);
     stats := setVarInData(stats, 'lancementT', lancementT);
     stats := setVarInData(stats, 'lancementA', lancementA);
+    stats := setVarInData(stats, 'lancementRCumul', lancementRCumul);
+    stats := setVarInData(stats, 'lancementTCumul', lancementTCumul);
+    stats := setVarInData(stats, 'lancementACumul', lancementACumul);
     stats := setVarInData(stats, 'lancementR_n_anneesPrecedantes', lancementR_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementT_n_anneesPrecedantes', lancementT_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementA_n_anneesPrecedantes', lancementA_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementRCumul_n_anneesPrecedantes', lancementRCumul_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementTCumul_n_anneesPrecedantes', lancementTCumul_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementACumul_n_anneesPrecedantes', lancementACumul_n_anneesPrecedantes);
 
   -- ============ ACTIVITES ============
     -- COTISATION ANNUELLE, FRAIS TECHNIQUES, NUITS DORTOIR ET FRAIS HANGAR (FRAIS INFRA)
