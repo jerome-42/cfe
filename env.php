@@ -2,6 +2,7 @@
 
 include_once __DIR__ . '/cache.php';
 include_once __DIR__ . '/cfe.php';
+include_once __DIR__ . '/click-n-glide.php';
 include_once __DIR__ . '/csv.php';
 include_once __DIR__ . '/db.php';
 include_once __DIR__ . '/flarm.php';

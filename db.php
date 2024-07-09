@@ -70,6 +70,16 @@ $tables = [
   INDEX `glider`(`glider`)
 ) ENGINE=InnoDB",
 
+    "givavdebtor" => "CREATE TABLE `givavdebtor` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `givavNumber` bigint unsigned NOT NULL,
+  `balance` decimal(10, 2) NOT NULL,
+  `since` date NOT NULL,
+  `lastUpdate` date NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `givavNumber` (`givavNumber`)
+) ENGINE=InnoDB",
+
     'glider' => "CREATE TABLE `glider` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `immat` varchar(255) NOT NULL,
@@ -91,6 +101,7 @@ $tables = [
   `email` varchar(255) DEFAULT NULL,
   `givavNumber` bigint unsigned NOT NULL,
   `isAdmin` tinyint(1) DEFAULT '0',
+  `noRevealWhenInDebt tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `givavNumber` (`givavNumber`)
 ) ENGINE=InnoDB",

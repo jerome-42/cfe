@@ -1,0 +1,69 @@
+extends layout.pug
+
+block scripts
+  title Débiteur(s) du jour
+  script(src="js/debiteurDuJour.js")
+
+block content
+  .row
+    h1 Débiteur(s) du jour
+  .row
+    .col-md-1
+      button.btn.btn-danger.back Retour
+  .row
+    .col-12
+      if count($debtPilots) == 0
+        h3 Pas de compte en négatif aujourd'hui !
+      else
+        table.table.table-striped
+          thead
+            tr
+              th Nom
+              th Numéro GIVAV
+              th Solde
+              th Solde négatif depuis
+              th Pour
+          tbody
+            - $total = 0
+            each pilot in $debtPilots
+              - $total = $total + $pilot['balance']
+              tr(x-num=$membre['givavNumber'])
+                td= $pilot['name']
+                td= $pilot['givavNumber']
+                td #{$pilot['balance']} €
+                td= timestampToDate($pilot['since'])
+                td= implode(', ', $pilot['sections'])
+            if count($debtPilots) > 0
+              tr.sum
+                td.text-end
+                  h5 Total
+                td
+                td.text-sumValidated
+                  b #{$total} €
+                td
+                td
+          tfoot
+            tr
+              th Nom
+              th Numéro GIVAV
+              th Solde
+              th Solde négatif depuis
+              th Pour
+
+      if (count($notResolved) > 0)
+        h4 Les inscrits qui n'ont pas pu être rapprochés de leur compte pilote GIVAV.
+        p Il faudrait changer leur nom sur Click'n Glide (la base GIVAV fait foi) ou bien les faire apparaître sur cfe.aavo.org en leur demandant de s'y connecter.
+        table.table.table-striped
+          thead
+            tr
+              th Nom
+          tbody
+            each name in $notResolved
+              tr
+                td= $name
+          tfoot
+            tr
+              th Nom
+
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour
