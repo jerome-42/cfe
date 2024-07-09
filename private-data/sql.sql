@@ -1392,7 +1392,7 @@ BEGIN
         SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
           JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
           JOIN cp_piece pi ON pi.id_piece = li.id_piece
-          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
         IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
           cumulLicence := cumulLicence + r.nb;
         END IF;
@@ -1408,18 +1408,18 @@ BEGIN
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
             WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND
             (
-              (EXTRACT(MONTH FROM li.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM li.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
+              (EXTRACT(MONTH FROM pi.date_echeance) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_echeance) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
             OR
             (
-              (EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-              AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start)))
+              (EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
+              AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start)))
             );
         ELSE
           SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
+            AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start);
         END IF;
         IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
           cumulLicenceAnneesPrecedantes := cumulLicenceAnneesPrecedantes + r.nb;
@@ -1606,7 +1606,7 @@ BEGIN
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
             WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%'
-            AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+            AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
           IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les cotisations de l'année prochaine ce qu'on ne veut pas prendre en compte ici
             valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
           END IF;
@@ -1620,21 +1620,25 @@ BEGIN
             SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
               JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
               JOIN cp_piece pi ON pi.id_piece = li.id_piece
-              WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND
+              WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%' OR
+                libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019
+                ) AND libelle NOT LIKE 'Carnet de vol%' AND
               (
-                (EXTRACT(MONTH FROM li.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM li.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
+                (EXTRACT(MONTH FROM pi.date_echeance) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_echeance) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
               OR
               (
-                (EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-                AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start)))
+                (EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
+                AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start)))
               );
             ELSE
               SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
                 JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
                 JOIN cp_piece pi ON pi.id_piece = li.id_piece
-                WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND
-                EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-                AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);            
+                WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%' OR
+                  libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019
+                  ) AND libelle NOT LIKE 'Carnet de vol%' AND
+                  EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
+                  AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start);
           END IF;
           IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
             valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.prix;
@@ -1683,7 +1687,7 @@ BEGIN
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
             WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
-            AND li.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+            AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
           valo_cumulForfait := valo_cumulForfait + r.prix;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
             valo_forfait := array_append(valo_forfait, valo_cumulForfait);
@@ -1694,8 +1698,8 @@ BEGIN
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
             WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
-            AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+            AND EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
+            AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start);
           valo_cumulForfait_n_anneesPrecedantes := valo_cumulForfait_n_anneesPrecedantes + r.prix;
           valo_forfait_n_anneesPrecedantes := array_append(valo_forfait_n_anneesPrecedantes, valo_cumulForfait_n_anneesPrecedantes);
 
@@ -1722,15 +1726,36 @@ BEGIN
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
       WHERE cp_compte.code like '6%'
         AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
-        AND cp_compte.code NOT LIKE '60221%' -- essence avion
-        AND cp_compte.code NOT LIKE '6151%' -- entretien et réparations (pièces détachées, GNAV, simu) planeurs
-        AND cp_compte.code NOT LIKE '61521%' -- idem mais SF28
-        AND cp_compte.code NOT LIKE '61522%' -- idem mais WT9
-        AND cp_compte.code NOT LIKE '61523%' -- idem mais BXRO
-        AND cp_compte.code NOT LIKE '61524%' -- idem mais treuil
-        AND cp_compte.code NOT LIKE '6161%' -- ANEPVV et ASEPVO
+        AND cp_compte.code NOT IN ( -- coût moyens de lancement
+          '6022100', -- essence avion
+          '6022101', -- huile avion - amortisseur et frein
+          '6022102', -- huile planeur turbo
+          '6022103', -- huile moteur avion
+          '6022110', -- Essence Véhicule
+          '6022120', -- Frais Fuel Chauffage
+          '6022130', -- Achat Essence Voiture
+          '6152210', -- M.O. Entretien Avion - WT9
+          '6152220', -- Fournitures Pièces Avion - WT9
+          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
+          '6152310', -- M.O. Entretien Avion - BXRO
+          '6152320', -- Fournitures Pièces Avion - BXRO
+          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
+          '6152410', -- M.O. Entretien - Treuil
+          '6152420', -- Fournitures Piéces - Treuil
+          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
+          )
+        AND cp_compte.code NOT IN ( -- coût entretien planeurs
+          '6151000', -- M.O. , Pièces détachées et entretien
+          '6151010', -- GNAV, OSAC & taxes diverses planeurs
+          '6151030', -- Simulateur
+          '6152110', -- M.O. Entretien - SF28
+          '6152120', -- Fourniture Pièces - SF28
+          '6152130', -- GNAV - Doc & Taxes - SF28
+          '6161100', -- Assurance Accident ANEPVV - Planeurs
+          '6161300' -- Assurance Accident ANEPVV - SF28
+          )
         AND sens = 'D' -- que les dépenses
-        AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
+        AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_generales_cumul := depenses_generales_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
       depenses_generales := array_append(depenses_generales, depenses_generales_cumul);
@@ -1741,17 +1766,38 @@ BEGIN
       JOIN cp_compte ON cp_compte.id_compte = li.id_compte
       WHERE cp_compte.code like '6%'
         AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
-        AND cp_compte.code NOT LIKE '60221%' -- essence avion
-        AND cp_compte.code NOT LIKE '6151%' -- entretien et réparations (pièces détachées, GNAV, simu) planeurs
-        AND cp_compte.code NOT LIKE '61521%' -- idem mais SF28
-        AND cp_compte.code NOT LIKE '61522%' -- idem mais WT9
-        AND cp_compte.code NOT LIKE '61523%' -- idem mais BXRO
-        AND cp_compte.code NOT LIKE '61524%' -- idem mais treuil
-        AND cp_compte.code NOT LIKE '6161%' -- ANEPVV et ASEPVO
+        AND cp_compte.code NOT IN ( -- coût moyens de lancement
+          '6022100', -- essence avion
+          '6022101', -- huile avion - amortisseur et frein
+          '6022102', -- huile planeur turbo
+          '6022103', -- huile moteur avion
+          '6022110', -- Essence Véhicule
+          '6022120', -- Frais Fuel Chauffage
+          '6022130', -- Achat Essence Voiture
+          '6152210', -- M.O. Entretien Avion - WT9
+          '6152220', -- Fournitures Pièces Avion - WT9
+          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
+          '6152310', -- M.O. Entretien Avion - BXRO
+          '6152320', -- Fournitures Pièces Avion - BXRO
+          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
+          '6152410', -- M.O. Entretien - Treuil
+          '6152420', -- Fournitures Piéces - Treuil
+          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
+          )
+        AND cp_compte.code NOT IN ( -- coût entretien planeurs
+          '6151000', -- M.O. , Pièces détachées et entretien
+          '6151010', -- GNAV, OSAC & taxes diverses planeurs
+          '6151030', -- Simulateur
+          '6152110', -- M.O. Entretien - SF28
+          '6152120', -- Fourniture Pièces - SF28
+          '6152130', -- GNAV - Doc & Taxes - SF28
+          '6161100', -- Assurance Accident ANEPVV - Planeurs
+          '6161300' -- Assurance Accident ANEPVV - SF28
+          )
         AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM date_valeur) < cette_annee
-        AND EXTRACT(MONTH FROM date_valeur) = EXTRACT(MONTH FROM rDate.start);
+        AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM date_echeance) < cette_annee
+        AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM rDate.start);
     depenses_generales_cumul_n_anneesPrecedantes := depenses_generales_cumul_n_anneesPrecedantes + r.somme;
     depenses_generales_n_anneesPrecedantes := array_append(depenses_generales_n_anneesPrecedantes, depenses_generales_cumul_n_anneesPrecedantes);
 
@@ -1780,7 +1826,7 @@ BEGIN
           '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
           )
         AND sens = 'D' -- que les dépenses
-        AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
+        AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
       depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
@@ -1809,9 +1855,9 @@ BEGIN
           '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
           )
         AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM date_valeur) < cette_annee
-        AND EXTRACT(MONTH FROM date_valeur) = EXTRACT(MONTH FROM rDate.start);
+        AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM date_echeance) < cette_annee
+        AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM rDate.start);
     depenses_moyens_lancement_cumul_n_anneesPrecedantes := depenses_moyens_lancement_cumul_n_anneesPrecedantes + r.somme;
     depenses_moyens_lancement_n_anneesPrecedantes := array_append(depenses_moyens_lancement_n_anneesPrecedantes, depenses_moyens_lancement_cumul_n_anneesPrecedantes);
 
@@ -1832,7 +1878,7 @@ BEGIN
           '6161300' -- Assurance Accident ANEPVV - SF28
           )
         AND sens = 'D' -- que les dépenses
-        AND pi.date_valeur BETWEEN rDate.start AND rDate.stop;
+        AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
       depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
@@ -1853,9 +1899,9 @@ BEGIN
           '6161300' -- Assurance Accident ANEPVV - SF28
           )
         AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM date_valeur) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM date_valeur) < cette_annee
-        AND EXTRACT(MONTH FROM date_valeur) = EXTRACT(MONTH FROM rDate.start);
+        AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM date_echeance) < cette_annee
+        AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM rDate.start);
     depenses_entretien_planeurs_cumul_n_anneesPrecedantes := depenses_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme;
     depenses_entretien_planeurs_n_anneesPrecedantes := array_append(depenses_entretien_planeurs_n_anneesPrecedantes, depenses_entretien_planeurs_cumul_n_anneesPrecedantes);
 
