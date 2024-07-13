@@ -792,13 +792,13 @@ BEGIN
     -- on sort:
     -- RE5_TIERS les remboursements de frais
     -- TRCLU les transferts entre comptes
-    SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
+    SELECT INTO r2 COALESCE(SUM(montant), 0) AS montant FROM cp_piece
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
       WHERE id_compte = r.id_compte AND sens = 'D' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee
       AND type NOT IN ('RE5_TIERS', 'TRCLU');
     stats := setVarInData(stats, 'debit', r2.montant - a_deduire);
 
-    SELECT INTO r2 SUM(montant) AS montant FROM cp_piece
+    SELECT INTO r2 COALESCE(SUM(montant), 0) AS montant FROM cp_piece
       JOIN cp_piece_ligne ON cp_piece_ligne.id_piece = cp_piece.id_piece
       WHERE id_compte = r.id_compte AND sens = 'C' AND EXTRACT(YEAR FROM cp_piece_ligne.date_piece) = annee
       AND type NOT IN ('RE5_TIERS', 'TRCLU');
