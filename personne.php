@@ -50,12 +50,18 @@ class Personne {
         $sth = $conn->prepare($q);
         //var_dump($signups);
         foreach ($signups as $section => $names) {
+            // on ne vérifie pas les remorqueurs, parfois ils sont pilotes extérieurs
+            if ($section === 'Remorqueurs')
+                continue;
             foreach ($names as $name) {
                 $nameToBeDisplayed = $name['firstName'] . ' ' . $name['lastName'];
                 $givavName = strtoupper($name['lastName'] . ' ' . $name['firstName']);
                 $sth->execute([ ':name' => $givavName, ':d' => $d->format("Y-m-d") ]);
                 //DEBUG echo json_encode($name)." ".$givavName.$d->format("Y-m-d")."\n";
                 //DEBUG echo "res: ".$sth->rowCount()."n";
+                // on n'affiche pas les stagiaires
+                if ($sth->rowCount() === 0 && strpos($nameToBeDisplayed, "Stagiaire") !== false)
+                    continue;
                 if ($sth->rowCount() === 0)
                     $notResolved[] = $nameToBeDisplayed." est inconnu";
                 if ($sth->rowCount() > 1) {
