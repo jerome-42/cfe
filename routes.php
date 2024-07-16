@@ -92,6 +92,23 @@ post('/api/pushSoftwareVersion', function($conn) {
     echo json_encode([ 'ok' => true ]);
 });
 
+post('/api/updatePilotsList', function($conn, $pug, $env) {
+    if (!isset($_POST['token']))
+        return apiReturnError('token is mandatory');
+    if ($_POST['token'] !== $env->config['stats']['token'])
+        return apiReturnError("bad token");
+    if (!isset($_POST['pilots']))
+        return apiReturnError("pilots is mandatory");
+    $pilots = json_decode($_POST['pilots'], true);
+    if (json_last_error() !== JSON_ERROR_NONE)
+        return apiReturnError("pilots is not json");
+    $q = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :givavNumber) ON DUPLICATE KEY UPDATE name = :name, email = :email";
+    $sth = $conn->prepare($q);
+    foreach ($pilots as $pilot) {
+        $sth->execute([ ':name' => $pilot['name'], ':email' => $pilot['email'], ':givavNumber' => $pilot['givavNumber'] ]);
+    }
+    echo json_encode([ 'ok' => true ]);
+});
 
 post('/ajoutMachine', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
