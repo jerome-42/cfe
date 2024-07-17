@@ -46,7 +46,8 @@ class Personne {
     static public function getDebtPilotFromClicnNGlideSignups($conn, $d, $signups) {
         $pilots = [];
         $notResolved = [];
-        $q = "SELECT personnes.name, personnes.noRevealWhenInDebt, personnes.email, personnes.givavNumber, givavdebtor.balance, unix_timestamp(givavdebtor.since) AS since FROM personnes LEFT JOIN givavdebtor ON givavdebtor.givavNumber = personnes.givavNumber WHERE personnes.name LIKE :name AND (givavdebtor.since <= :d OR givavdebtor.since IS NULL)";
+        // certains prénoms sont avec des - d'autres non (JEAN-PIERRE, JEAN-LUC ...) on gère les 2 cas
+        $q = "SELECT personnes.name, personnes.noRevealWhenInDebt, personnes.email, personnes.givavNumber, givavdebtor.balance, unix_timestamp(givavdebtor.since) AS since FROM personnes LEFT JOIN givavdebtor ON givavdebtor.givavNumber = personnes.givavNumber WHERE (personnes.name LIKE :name OR REPLACE(:name, '-', ' ') = personnes.name) AND (givavdebtor.since <= :d OR givavdebtor.since IS NULL)";
         $sth = $conn->prepare($q);
         //var_dump($signups);
         foreach ($signups as $section => $names) {
