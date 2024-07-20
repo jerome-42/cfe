@@ -194,7 +194,7 @@ post('/connexion', function($conn, $pug, $env) {
         $givav = new SmartGlide($_POST['login'], $_POST['pass'], $env);
         $givav->login();
         $user = $givav->getName();
-        $userData = Personne::creeOuMAJ($conn, $user);
+        $userData = Personne::creeSiNecessaire($conn, $user);
         if (Personne::estAdmin($conn, $user['number']) === true) {
             $givav->getAndStoreGliders($conn);
         }

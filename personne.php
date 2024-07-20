@@ -41,6 +41,15 @@ class Personne {
         return $data; // on a besoin à minima d'id (pour /connexion)
     }
 
+    static public function creeSiNecessaire($conn, $user) {
+        $query = "INSERT IGNORE INTO personnes (name, email, givavNumber) VALUES (:name, :email, :num)";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':name' => $user['name'], ':email' => $user['mail'], ':num' => $user['number'] ]);
+        $data = self::load($conn, $user['number']);
+        $conn->commit();
+        return $data; // on a besoin à minima d'id (pour /connexion)
+    }
+
     // dans signups on a: { 'Instructeur': [ 'Prénom Nom', 'Prénom Nom2' }, 'Chef de piste': [ 'Prénom Nom' ] }
     // d est la date de l'inscription
     static public function getDebtPilotFromClicnNGlideSignups($conn, $d, $signups) {
