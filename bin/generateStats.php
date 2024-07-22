@@ -215,7 +215,25 @@ file_put_contents($fichierStats, 'var stats = '.json_encode($output).';');
 
 
 echo "vols anonymisés".PHP_EOL;
-$q = 'SELECT * FROM anonymisationVol(:annee, true)';
+$q = "SELECT *,
+REPLACE(prix_vol::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque::text, '.', ',') AS prix_remorque_fr,
+REPLACE(prix_treuil::text, '.', ',') AS prix_treuil_fr,
+REPLACE(prix_moteur::text, '.', ',') AS prix_moteur_fr,
+REPLACE(prix_vol_elv::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque_elv::text, '.', ',') AS prix_remorque_elv_fr,
+REPLACE(prix_treuil_elv::text, '.', ',') AS prix_treuil_elv_fr,
+REPLACE(prix_moteur_elv::text, '.', ',') AS prix_moteur_elv_fr,
+REPLACE(prix_vol_cdb::text, '.', ',') AS prix_vol_cdb_fr,
+REPLACE(prix_remorque_cdb::text, '.', ',') AS prix_remorque_cdb_fr,
+REPLACE(prix_treuil_cdb::text, '.', ',') AS prix_treuil_cdb_fr,
+REPLACE(prix_moteur_cdb::text, '.', ',') AS prix_moteur_cdb_fr,
+REPLACE(prix_vol_co::text, '.', ',') AS prix_vol_co_fr,
+REPLACE(prix_remorque_co::text, '.', ',') AS prix_remorque_co_fr,
+REPLACE(prix_treuil_co::text, '.', ',') AS prix_treuil_co_fr,
+REPLACE(prix_moteur_co::text, '.', ',') AS prix_moteur_co_fr,
+ROUND(EXTRACT(EPOCH FROM temps_vol)/60) AS temps_vol_en_minutes
+ FROM anonymisationVol(:annee, true)";
 $sth = $db->prepare($q);
 $sth->execute([ ':annee' => $annee ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -229,7 +247,25 @@ foreach ($data as $line) {
 $csv = null; // free
 
 echo "vols".PHP_EOL;
-$q = 'SELECT * FROM anonymisationVol(:annee, false)';
+$q = "SELECT *,
+REPLACE(prix_vol::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque::text, '.', ',') AS prix_remorque_fr,
+REPLACE(prix_treuil::text, '.', ',') AS prix_treuil_fr,
+REPLACE(prix_moteur::text, '.', ',') AS prix_moteur_fr,
+REPLACE(prix_vol_elv::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque_elv::text, '.', ',') AS prix_remorque_elv_fr,
+REPLACE(prix_treuil_elv::text, '.', ',') AS prix_treuil_elv_fr,
+REPLACE(prix_moteur_elv::text, '.', ',') AS prix_moteur_elv_fr,
+REPLACE(prix_vol_cdb::text, '.', ',') AS prix_vol_cdb_fr,
+REPLACE(prix_remorque_cdb::text, '.', ',') AS prix_remorque_cdb_fr,
+REPLACE(prix_treuil_cdb::text, '.', ',') AS prix_treuil_cdb_fr,
+REPLACE(prix_moteur_cdb::text, '.', ',') AS prix_moteur_cdb_fr,
+REPLACE(prix_vol_co::text, '.', ',') AS prix_vol_co_fr,
+REPLACE(prix_remorque_co::text, '.', ',') AS prix_remorque_co_fr,
+REPLACE(prix_treuil_co::text, '.', ',') AS prix_treuil_co_fr,
+REPLACE(prix_moteur_co::text, '.', ',') AS prix_moteur_co_fr,
+ROUND(EXTRACT(EPOCH FROM temps_vol)/60) AS temps_vol_en_minutes
+ FROM anonymisationVol(:annee, false)";
 $sth = $db->prepare($q);
 $sth->execute([ ':annee' => $annee ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
