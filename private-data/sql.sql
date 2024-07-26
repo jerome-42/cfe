@@ -2085,18 +2085,24 @@ CREATE OR REPLACE FUNCTION anonymisationVol(annee INT, avec_anonymisation BOOLEA
   instructeur VARCHAR,
   eleve VARCHAR,
   cat_age_eleve VARCHAR,
+  frais_technique_eleve VARCHAR,
+  prix_frais_technique_eleve NUMERIC,
   prix_vol_elv NUMERIC,
   prix_treuil_elv NUMERIC,
   prix_remorque_elv NUMERIC,
   prix_moteur_elv NUMERIC,
   cdt_de_bord VARCHAR,
   cat_age_cdb VARCHAR,
+  frais_technique_cdb VARCHAR,
+  prix_frais_technique_cdb NUMERIC,
   prix_vol_cdb NUMERIC,
   prix_treuil_cdb NUMERIC,
   prix_remorque_cdb NUMERIC,
   prix_moteur_cdb NUMERIC,
   co_pilote VARCHAR,
   cat_age_co VARCHAR,
+  frais_technique_co VARCHAR,
+  prix_frais_technique_co NUMERIC,
   prix_vol_co NUMERIC,
   prix_treuil_co NUMERIC,
   prix_remorque_co NUMERIC,
@@ -2237,6 +2243,41 @@ BEGIN
     prix_remorque_co := r.prix_remorque_co;
     prix_treuil_co := r.prix_treuil_co;
     prix_moteur_co := r.prix_moteur_co;
+
+    -- frais technique
+    IF r.id_eleve IS NOT NULL THEN
+      SELECT INTO r2 cp_compte.libelle, li.montant FROM pilote
+        JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+        JOIN cp_piece pi ON pi.id_piece = li.id_piece
+        JOIN cp_piece_ligne li2 ON li2.id_piece = pi.id_piece
+        JOIN cp_compte ON cp_compte.id_compte = li2.id_compte AND cp_compte.code LIKE '7561%'
+        WHERE pilote.id_personne = r.id_eleve AND
+        pi.date_echeance BETWEEN make_date(annee-1, 10, 01) AND make_date(annee, 12, 31) LIMIT 1;
+      frais_technique_eleve = r2.libelle;
+      prix_frais_technique_eleve = r2.montant;
+    END IF;
+    IF r.id_cdt_de_bord IS NOT NULL THEN
+      SELECT INTO r2 cp_compte.libelle, li.montant FROM pilote
+        JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+        JOIN cp_piece pi ON pi.id_piece = li.id_piece
+        JOIN cp_piece_ligne li2 ON li2.id_piece = pi.id_piece
+        JOIN cp_compte ON cp_compte.id_compte = li2.id_compte AND cp_compte.code LIKE '7561%'
+        WHERE pilote.id_personne = r.id_cdt_de_bord AND
+        pi.date_echeance BETWEEN make_date(annee-1, 10, 01) AND make_date(annee, 12, 31) LIMIT 1;
+      frais_technique_cdb = r2.libelle;
+      prix_frais_technique_cdb = r2.montant;
+    END IF;
+    IF r.id_co_pilote IS NOT NULL THEN
+      SELECT INTO r2 cp_compte.libelle, li.montant FROM pilote
+        JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+        JOIN cp_piece pi ON pi.id_piece = li.id_piece
+        JOIN cp_piece_ligne li2 ON li2.id_piece = pi.id_piece
+        JOIN cp_compte ON cp_compte.id_compte = li2.id_compte AND cp_compte.code LIKE '7561%'
+        WHERE pilote.id_personne = r.id_co_pilote AND
+        pi.date_echeance BETWEEN make_date(annee-1, 10, 01) AND make_date(annee, 12, 31) LIMIT 1;
+      frais_technique_co = r2.libelle;
+      prix_frais_technique_co = r2.montant;
+    END IF;
     nom_type_vol := r.nom_type_vol;
     temps_vol := r.temps_vol;
     immatriculation_remorqueur := r.immatriculation_remorqueur;

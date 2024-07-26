@@ -232,6 +232,9 @@ REPLACE(prix_vol_co::text, '.', ',') AS prix_vol_co_fr,
 REPLACE(prix_remorque_co::text, '.', ',') AS prix_remorque_co_fr,
 REPLACE(prix_treuil_co::text, '.', ',') AS prix_treuil_co_fr,
 REPLACE(prix_moteur_co::text, '.', ',') AS prix_moteur_co_fr,
+REPLACE(prix_frais_technique_eleve::text, '.', ',') AS prix_frais_technique_eleve,
+REPLACE(prix_frais_technique_cdb::text, '.', ',') AS prix_frais_technique_cdb,
+REPLACE(prix_frais_technique_co::text, '.', ',') AS prix_frais_technique_co,
 ROUND(EXTRACT(EPOCH FROM temps_vol)/60) AS temps_vol_en_minutes
  FROM anonymisationVol(:annee, true)";
 $sth = $db->prepare($q);
@@ -264,6 +267,9 @@ REPLACE(prix_vol_co::text, '.', ',') AS prix_vol_co_fr,
 REPLACE(prix_remorque_co::text, '.', ',') AS prix_remorque_co_fr,
 REPLACE(prix_treuil_co::text, '.', ',') AS prix_treuil_co_fr,
 REPLACE(prix_moteur_co::text, '.', ',') AS prix_moteur_co_fr,
+REPLACE(prix_frais_technique_eleve::text, '.', ',') AS prix_frais_technique_eleve,
+REPLACE(prix_frais_technique_cdb::text, '.', ',') AS prix_frais_technique_cdb,
+REPLACE(prix_frais_technique_co::text, '.', ',') AS prix_frais_technique_co,
 ROUND(EXTRACT(EPOCH FROM temps_vol)/60) AS temps_vol_en_minutes
  FROM anonymisationVol(:annee, false)";
 $sth = $db->prepare($q);
