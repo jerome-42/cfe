@@ -968,10 +968,11 @@ BEGIN
     RAISE NOTICE 'pas de bénéficiaire enregistré';
     RETURN 0;
   END IF;
+
   -- on cherche le nombre de machine dont sont bénéficiaires les personnes
   FOREACH v_id_personne IN ARRAY beneficiares_personnes LOOP
     RAISE NOTICE 'on cherche les machines dont est bénéficiare id_personne=%', v_id_personne;
-    FOR r IN SELECT aeronef.immatriculation FROM aeronef
+    FOR r IN SELECT aeronef_situation.id_aeronef_situation, aeronef_situation.date_application, aeronef.immatriculation FROM aeronef
       JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
       JOIN aeronef_situation_benef ON aeronef_situation_benef.id_aeronef_situation = aeronef_situation.id_aeronef_situation
       WHERE CONCAT(input_annee, '-01-01')::date >= aeronef_situation.date_application
@@ -979,12 +980,28 @@ BEGIN
         AND aeronef_situation.situation IN ('B', 'P', 'E') -- F-CVOL est Extérieure alors que ça devrait être Privée
         AND aeronef.actif IS TRUE
         AND aeronef.immatriculation NOT IN ('F-CCER') -- F-CCER n'est pas dans le hangar ni en remorque
-      GROUP BY aeronef.immatriculation LOOP
-      RAISE NOTICE 'id_personne=% est bénéficiaire de %', v_id_personne, r.immatriculation;
-      immatriculations := array_append(immatriculations, r.immatriculation);
+      ORDER BY aeronef_situation.date_application DESC LOOP
+      RAISE NOTICE 'id_personne=% est potentiellement bénéficiaire de % a la date % (debut situation %) %', v_id_personne, r.immatriculation, input_annee, r.date_application, r;
+      -- on vérifie que cette situation est la situation du moment (input_annee)
+      -- s'il y a une situation plus récente, on ne traite pas la situation que l'on vient de trouver
+      SELECT INTO r2 aeronef_situation.* FROM aeronef
+      JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
+      JOIN aeronef_situation_benef ON aeronef_situation_benef.id_aeronef_situation = aeronef_situation.id_aeronef_situation
+      WHERE aeronef_situation.date_application <= CONCAT(input_annee, '-01-01')::date AND aeronef_situation.date_application >= r.date_application
+        AND aeronef_situation_benef.id_personne != v_id_personne
+        AND aeronef.actif IS TRUE
+        AND aeronef.immatriculation = r.immatriculation
+        AND aeronef_situation.id_aeronef_situation != r.id_aeronef_situation
+        LIMIT 1;
+      -- il est possible que la machine ai été banalisée mais est maintenant club donc on ne filtre pas sur la situation B, P ou E
+      -- DEBUG RAISE NOTICE 'trouve: %', r2;
+      IF NOT FOUND THEN -- c'est ok, on a bien pris la bonne situation
+        RAISE NOTICE 'id_personne=% est bénéficiaire de %', v_id_personne, r.immatriculation;
+        immatriculations := array_append(immatriculations, r.immatriculation);
+      END IF;
     END LOOP;
   END LOOP;
-  RAISE NOTICE 'immatriculations: %', immatriculations;
+  RAISE NOTICE 'finalement id_personne=% est beneficiaire de immatriculations: %', v_id_personne, immatriculations;
   -- unique
   SELECT INTO immatriculations ARRAY(SELECT DISTINCT v FROM UNNEST(immatriculations) as b(v));
   RAISE NOTICE 'after unique: %', immatriculations;
