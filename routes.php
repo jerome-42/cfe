@@ -59,8 +59,8 @@ post('/api/pushStatsFile', function($conn, $pug, $env) {
     }
     if ($_FILES['data']['error'] !== UPLOAD_ERR_OK)
         return apiReturnError("upload error");
-    if ($_FILES['data']['size'] > 1000000)
-        return apiReturnError("file size > 1 Mo");
+    if ($_FILES['data']['size'] > 2000000)
+        return apiReturnError("file size > 2 Mo");
     $dstPath = null;
     switch ($_POST['what']) {
     case 'stats.js':
