@@ -58,6 +58,8 @@ $dateFinPrecedente = $dateOfLastFlight->modify("-1 year");
 $dateFinPrecedente = $dateFinPrecedente->format('Y-m-d');
 $dateFinPrecedentePleine = $anneePrecedente.'-12-31';
 
+echo "Date du dernier vol: ".$dateFin.PHP_EOL;
+
 echo "statsMachines ".$annee.PHP_EOL;
 $q = 'SELECT * FROM statsMachines(:start, :end)';
 $sth = $db->prepare($q);
@@ -196,9 +198,9 @@ $output['tableauDeBord'] = [
 ];
 
 echo "tableau de bord annuel".PHP_EOL;
-$q = 'SELECT tableauDeBordAnnuel(:annee) AS tdb';
+$q = 'SELECT tableauDeBordAnnuel(:annee, :last_computation_date) AS tdb';
 $sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
+$sth->execute([ ':annee' => $annee, ':last_computation_date' => $dateFin ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
 $data = json_decode($data['tdb']);
 $output['tableauDeBordAnnuel'] = [

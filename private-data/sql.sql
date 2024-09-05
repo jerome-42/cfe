@@ -1287,7 +1287,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION tableauDeBordAnnuel(annee INT) RETURNS JSONB AS $$
+CREATE OR REPLACE FUNCTION tableauDeBordAnnuel(annee INT, last_computation_date DATE) RETURNS JSONB AS $$
 DECLARE
   stats JSONB;
   rDate RECORD;
@@ -1421,7 +1421,7 @@ BEGIN
         IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
           cumulLicence := cumulLicence + r.nb;
         END IF;
-        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
           licences := array_append(licences, cumulLicence);
         END IF;
 
@@ -1458,7 +1458,7 @@ BEGIN
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé')
             AND categorie != 'U'; -- 'U' = remorqueur
           cumulHDVClubCDB := cumulHDVClubCDB + r.duree;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             HDVClubCDB := array_append(HDVClubCDB, cumulHDVClubCDB);
           END IF;
 
@@ -1476,7 +1476,7 @@ BEGIN
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
             AND categorie != 'U'; -- 'U' = remorqueur
           cumulHDVClubInstruction := cumulHDVClubInstruction + r.duree;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             HDVClubInstruction := array_append(HDVClubInstruction, cumulHDVClubInstruction);
           END IF;
 
@@ -1494,7 +1494,7 @@ BEGIN
           SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval)/3600)) AS duree FROM vfr_vol
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé');
           cumulHDVBanaliseCDB := cumulHDVBanaliseCDB + r.duree;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             HDVBanaliseCDB := array_append(HDVBanaliseCDB, cumulHDVBanaliseCDB);
           END IF;
 
@@ -1510,7 +1510,7 @@ BEGIN
           SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(temps_vol), '0'::interval))/3600) AS duree FROM vfr_vol
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
           cumulHDVBanaliseInstruction := cumulHDVBanaliseInstruction + r.duree;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             HDVBanaliseInstruction := array_append(HDVBanaliseInstruction, cumulHDVBanaliseInstruction);
           END IF;
 
@@ -1537,7 +1537,7 @@ BEGIN
             JOIN aeronef ON aeronef.id_aeronef = forfait_modele_aeronef_exclu.id_aeronef
             WHERE forfait_modele.id_forfait_modele = vfr_forfait_pilote.id_forfait_modele AND aeronef.id_aeronef = vfr_vol.id_aeronef);
         cumulHDVPilotesDansForfait := cumulHDVPilotesDansForfait + r.duree;
-        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
           HDVPilotesDansForfait := array_append(HDVPilotesDansForfait, cumulHDVPilotesDansForfait);
         END IF;
 
@@ -1567,7 +1567,7 @@ BEGIN
           )
           AND categorie != 'U'; -- 'U' = remorqueur
         cumulHDVPilotesHorsForfait := cumulHDVPilotesHorsForfait + r.duree;
-        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
           HDVPilotesHorsForfait := array_append(HDVPilotesHorsForfait, cumulHDVPilotesHorsForfait);
         END IF;
 
@@ -1598,7 +1598,7 @@ BEGIN
         cumulLancementR := cumulLancementR + r.nbR;
         cumulLancementT := cumulLancementT + r.nbT;
         cumulLancementA := cumulLancementA + r.nbA;
-        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+        IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
           -- ici on veut avoir mois par mois (sans cumul)
           lancementR := array_append(lancementR, r.nbR);
           lancementT := array_append(lancementT, r.nbT);
@@ -1645,7 +1645,7 @@ BEGIN
           IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les cotisations de l'année prochaine ce qu'on ne veut pas prendre en compte ici
             valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
           END IF;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_revenu_infra_membre := array_append(valo_revenu_infra_membre, valo_cumulRevenu_infra_membre);
           END IF;
 
@@ -1686,7 +1686,7 @@ BEGIN
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
             AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
           valo_cumulHDV := valo_cumulHDV + r.prix;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_hdv := array_append(valo_hdv, valo_cumulHDV);
           END IF;
 
@@ -1704,7 +1704,7 @@ BEGIN
             WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
             AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
           valo_cumulMoteur := valo_cumulMoteur + r.prix;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_moteur := array_append(valo_moteur, valo_cumulMoteur);
           END IF;
 
@@ -1724,7 +1724,7 @@ BEGIN
             WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
             AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
           valo_cumulForfait := valo_cumulForfait + r.prix;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_forfait := array_append(valo_forfait, valo_cumulForfait);
           END IF;
 
@@ -1743,7 +1743,7 @@ BEGIN
             COALESCE(prix_treuil_cdb, 0) + COALESCE(prix_treuil_co, 0) + COALESCE(prix_treuil_elv, 0))) AS prix FROM vfr_vol
             WHERE date_vol BETWEEN rDate.start AND rDate.stop;
           valo_cumulLancement := valo_cumulLancement + r.prix;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_lancement := array_append(valo_lancement, valo_cumulLancement);
           END IF;
 
@@ -1792,7 +1792,7 @@ BEGIN
         AND sens = 'D' -- que les dépenses
         AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_generales_cumul := depenses_generales_cumul + r.somme;
-    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_generales := array_append(depenses_generales, depenses_generales_cumul);
     END IF;
 
@@ -1863,7 +1863,7 @@ BEGIN
         AND sens = 'D' -- que les dépenses
         AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
-    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
     END IF;
 
@@ -1915,7 +1915,7 @@ BEGIN
         AND sens = 'D' -- que les dépenses
         AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
-    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) THEN
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
     END IF;
 
