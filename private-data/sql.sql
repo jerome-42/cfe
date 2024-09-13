@@ -1530,6 +1530,7 @@ BEGIN
           AND EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = EXTRACT(YEAR FROM vfr_vol.date_vol)
           AND date_vol BETWEEN rDate.start AND rDate.stop
           AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
+          AND situation IN ('B', 'C')
           AND NOT EXISTS(
             SELECT 1
             FROM forfait_modele_aeronef_exclu
@@ -1548,6 +1549,7 @@ BEGIN
           AND EXTRACT(YEAR FROM vfr_vol.date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM vfr_vol.date_vol) < cette_annee
           AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
           AND vfr_forfait_pilote.hrs_cellule = '999:00:00'
+          AND situation IN ('B', 'C')
           AND NOT EXISTS(
             SELECT 1
             FROM forfait_modele_aeronef_exclu
@@ -1565,6 +1567,7 @@ BEGIN
             OR (vfr_vol.prix_vol_elv IS NOT NULL)
             OR (vfr_vol.prix_vol_co IS NOT NULL)
           )
+          AND situation IN ('B', 'C')
           AND categorie != 'U'; -- 'U' = remorqueur
         cumulHDVPilotesHorsForfait := cumulHDVPilotesHorsForfait + r.duree;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
@@ -1580,6 +1583,7 @@ BEGIN
             OR (vfr_vol.prix_vol_elv IS NOT NULL)
             OR (vfr_vol.prix_vol_co IS NOT NULL)
           )
+          AND situation IN ('B', 'C')
           AND categorie != 'U'; -- 'U' = remorqueur
         cumulHDVPilotesHorsForfait_n_anneesPrecedantes := cumulHDVPilotesHorsForfait_n_anneesPrecedantes + r.duree;
         HDVPilotesHorsForfait_n_anneesPrecedantes := array_append(HDVPilotesHorsForfait_n_anneesPrecedantes, cumulHDVPilotesHorsForfait_n_anneesPrecedantes);
@@ -2130,6 +2134,7 @@ CREATE OR REPLACE FUNCTION anonymisationVol(annee INT, avec_anonymisation BOOLEA
   vol_est_dans_forfait BOOLEAN,
   prix_vol_sans_forfait NUMERIC,
   proprietaire_vole_sur_sa_machine BOOLEAN,
+  machine_privee BOOLEAN,
   prix_vol_si_la_machine_etait_club NUMERIC -- il s'agit du prix de la cellule (équivalent à prix_vol_cdb)
   ) AS $$
 DECLARE
@@ -2159,7 +2164,7 @@ BEGIN
     LEFT JOIN gv_personne co_age ON co_age.id_personne = vfr_vol.id_co_pilote
     LEFT JOIN gv_personne remorqueur_age ON remorqueur_age.id_personne = vfr_vol.id_pilote_remorqueur
     LEFT JOIN gv_personne treuilleur_age ON treuilleur_age.id_personne = vfr_vol.id_treuilleur
-    WHERE saison = annee ORDER BY date_vol ASC, decollage ASC
+    WHERE saison = annee AND situation IN ('B', 'C') ORDER BY date_vol ASC, decollage ASC
   LOOP
     IF avec_anonymisation IS false THEN
       id := r.id_vol;
@@ -2204,14 +2209,8 @@ BEGIN
         cat_age_treuilleur := '-25 ans';
       END IF;
     END IF;
+    instructeur := r.instructeur;
 
-    IF r.instructeur_date_naissance IS NOT NULL THEN
-      IF date_part('year', now()) - date_part('year', r.instructeur_date_naissance) > 25 THEN
-        cat_age_pilote_remorqueur := '+25 ans';
-      ELSE
-        cat_age_pilote_remorqueur := '-25 ans';
-      END IF;
-    END IF;
     IF r.eleve IS NOT NULL AND avec_anonymisation IS true THEN
       eleve := SUBSTRING(MD5(salt || r.eleve), 1, 6);
     ELSE
@@ -2327,6 +2326,11 @@ BEGIN
     IF r2.estProprietaire is true THEN
       proprietaire_vole_sur_sa_machine := true;
       prix_vol_si_la_machine_etait_club := calculPrixVol(r.id_cdt_de_bord, r.id_aeronef, r.date_vol, r.id_tarif_type_vol, r.temps_vol);
+    END IF;
+    IF r.situation = 'C' THEN
+      machine_privee = false;
+    ELSE
+      machine_privee = true;
     END IF;
     return NEXT;
   END LOOP;
