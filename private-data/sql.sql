@@ -1793,6 +1793,9 @@ BEGIN
           '6161100', -- Assurance Accident ANEPVV - Planeurs
           '6161300' -- Assurance Accident ANEPVV - SF28
           )
+        AND cp_compte.code NOT LIKE '68%' -- amortissements
+        -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
+        AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
         AND sens = 'D' -- que les dépenses
         AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
     depenses_generales_cumul := depenses_generales_cumul + r.somme;
@@ -1833,6 +1836,9 @@ BEGIN
           '6161100', -- Assurance Accident ANEPVV - Planeurs
           '6161300' -- Assurance Accident ANEPVV - SF28
           )
+        AND cp_compte.code NOT LIKE '68%' -- amortissements
+        -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
+        AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
         AND sens = 'D' -- que les dépenses
         AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
         AND EXTRACT(YEAR FROM date_echeance) < cette_annee
