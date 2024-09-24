@@ -896,13 +896,13 @@ let displayLancementEtValoRemorqueAnnuel = function() {
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenu moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Revenu des moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
                     data: stats.tableauDeBordAnnuel.data.valo_lancement,
                     yAxisID: 'y1',
                     currency: true,
                 },
                 {
-                    label: 'Moyenne revenus moyens de lancement sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne revenus des moyens de lancement sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
                     data: stats.tableauDeBordAnnuel.data.valo_lancement_n_anneesPrecedantes,
                     yAxisID: 'y1',
                     currency: true,
@@ -1138,6 +1138,78 @@ let displayValoCelluleEtForfaitAnnuel = function() {
                 title: {
                     display: true,
                     text: 'Revenu heures de vol et forfaits',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function(value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayValoJdStageAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('valoJdStageAnnuel').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenus journées découvertes et stages '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_jdStages,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Moyenne revenus journées découvertes et stages sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    data: stats.tableauDeBordAnnuel.data.valo_jdStages_n_anneesPrecedantes,
+                    yAxisID: 'y',
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                    position: 'left',
+                },
+                y1: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu JD et stages',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -1400,6 +1472,7 @@ $(document).ready(function() {
     displayLancementAnnuel();
 
     displayValoCelluleEtForfaitAnnuel();
+    displayValoJdStageAnnuel();
     diplayDepensesEntretienPlaneur();
     displayValoMoteurAnnuel();
 
