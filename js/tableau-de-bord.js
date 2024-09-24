@@ -1189,18 +1189,6 @@ let displayValoJdStageAnnuel = function() {
                     },
                     position: 'left',
                 },
-                y1: {
-                    ticks: {
-                        // Include a dollar sign in the ticks
-                        callback: function(value, index, ticks) {
-                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
-                        },
-                    },
-                    position: 'right',
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                },
             },
             responsive: true,
             plugins: {
@@ -1210,6 +1198,81 @@ let displayValoJdStageAnnuel = function() {
                 title: {
                     display: true,
                     text: 'Revenu JD et stages',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function(value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayValoVolAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('valoVolAnnuel').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenus forfaits '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_forfait,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Revenus heure de vol pilotes '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_cellulePilotes,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Revenus heure de vol instruction '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_celluleInstruction,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Revenus VI '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_VI,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Revenus journées découvertes et stages '+stats.tableauDeBordAnnuel.params.annee,
+                    data: stats.tableauDeBordAnnuel.data.valo_jdStages,
+                    yAxisID: 'y',
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                    position: 'left',
+                },
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenu heures de vol',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -1473,6 +1536,7 @@ $(document).ready(function() {
 
     displayValoCelluleEtForfaitAnnuel();
     displayValoJdStageAnnuel();
+    displayValoVolAnnuel();
     diplayDepensesEntretienPlaneur();
     displayValoMoteurAnnuel();
 
