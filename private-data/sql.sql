@@ -1379,6 +1379,26 @@ DECLARE
   valo_cumulForfait NUMERIC := 0;
   valo_forfait_n_anneesPrecedantes NUMERIC[] := '{}';
   valo_cumulForfait_n_anneesPrecedantes NUMERIC := 0;
+    -- journees decouvertes et stages
+  valo_jdStages NUMERIC[] := '{}';
+  valo_cumulJdStages NUMERIC := 0;
+  valo_jdStages_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulJdStages_n_anneesPrecedantes NUMERIC := 0;
+    -- cellule pilotes (solo, partagé et vi perso)
+  valo_cellulePilotes NUMERIC[] := '{}';
+  valo_cumulCellulePilotes NUMERIC := 0;
+  valo_cellulePilotes_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulCellulePilotes_n_anneesPrecedantes NUMERIC := 0;
+    -- cellule instruction
+  valo_celluleInstruction NUMERIC[] := '{}';
+  valo_cumulCelluleInstruction NUMERIC := 0;
+  valo_celluleInstruction_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulCelluleInstruction_n_anneesPrecedantes NUMERIC := 0;
+    -- VI
+  valo_VI NUMERIC[] := '{}';
+  valo_cumulVI NUMERIC := 0;
+  valo_VI_n_anneesPrecedantes NUMERIC[] := '{}';
+  valo_cumulVI_n_anneesPrecedantes NUMERIC := 0;
     -- lancement
   valo_lancement NUMERIC[] := '{}';
   valo_cumulLancement NUMERIC := 0;
@@ -1644,8 +1664,8 @@ BEGIN
           SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%'
-            AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+            WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND li.sens = 'D'
+            AND pi.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
           IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les cotisations de l'année prochaine ce qu'on ne veut pas prendre en compte ici
             valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
           END IF;
@@ -1653,7 +1673,7 @@ BEGIN
             valo_revenu_infra_membre := array_append(valo_revenu_infra_membre, valo_cumulRevenu_infra_membre);
           END IF;
 
-        -- REVENU FORFAIT sur les 5 dernières années
+        -- REVENU sur les 5 dernières années
           IF EXTRACT(MONTH FROM rDate.start) = 1 THEN
             -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier
             SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
@@ -1661,13 +1681,13 @@ BEGIN
               JOIN cp_piece pi ON pi.id_piece = li.id_piece
               WHERE (type = 'PRESTATION' OR (type = 'FVTE' AND LOWER(libelle) NOT LIKE 'dépannage%') OR libelle LIKE '%frais hangar ou en remorque%' OR
                 libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019, on compte quand même les forfaits dedans, il n'y a qu'une seule ligne pour assurance + cotisation + forfait
-                ) AND libelle NOT LIKE 'Carnet de vol%' AND
+                ) AND libelle NOT LIKE 'Carnet de vol%' AND li.sens = 'D' AND
               (
-                (EXTRACT(MONTH FROM pi.date_echeance) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_echeance) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
+                (EXTRACT(MONTH FROM pi.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
               OR
               (
-                (EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
-                AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start)))
+                (EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
+                AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start)))
               );
             ELSE
               SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
@@ -1676,8 +1696,8 @@ BEGIN
                 WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%' OR
                   libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019
                   ) AND libelle NOT LIKE 'Carnet de vol%' AND
-                  EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
-                  AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start);
+                  EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
+                  AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start);
           END IF;
           IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
             valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.prix;
@@ -1725,8 +1745,8 @@ BEGIN
           SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
-            AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+            WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%treuil%' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%'
+            AND pi.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
           valo_cumulForfait := valo_cumulForfait + r.prix;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_forfait := array_append(valo_forfait, valo_cumulForfait);
@@ -1736,11 +1756,102 @@ BEGIN
           SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%' AND LOWER(libelle) NOT LIKE '%treuil%'
-            AND EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
-            AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start);
+            WHERE type = 'FORFAIT' AND LOWER(libelle) NOT LIKE '%treuil%' AND LOWER(libelle) NOT LIKE '%stage%' AND LOWER(libelle) NOT LIKE '%découverte%'
+            AND EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start);
           valo_cumulForfait_n_anneesPrecedantes := valo_cumulForfait_n_anneesPrecedantes + r.prix;
           valo_forfait_n_anneesPrecedantes := array_append(valo_forfait_n_anneesPrecedantes, valo_cumulForfait_n_anneesPrecedantes);
+
+        -- REVENU CELLULE PILOTES (vols solo, partagés et vi perso)
+          SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0))) AS prix FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé', '41 VI perso')
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulCellulePilotes := valo_cumulCellulePilotes + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
+            valo_cellulePilotes := array_append(valo_cellulePilotes, valo_cumulCellulePilotes);
+          END IF;
+
+        -- REVENU CELLULE PILOTES (vols solo, partagés et vi perso) sur les 5 dernières années
+          SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0))/moyenne_sur_nb_annee) AS prix FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé', '41 VI perso')
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulCellulePilotes_n_anneesPrecedantes := valo_cumulCellulePilotes_n_anneesPrecedantes + r.prix;
+          valo_cellulePilotes_n_anneesPrecedantes := array_append(valo_cellulePilotes_n_anneesPrecedantes, valo_cumulCellulePilotes_n_anneesPrecedantes);
+
+        -- REVENU CELLULE INSTRUCTION (vols en instruction)
+          SELECT INTO r ROUND(SUM(COALESCE(prix_vol_elv, 0))) AS prix FROM vfr_vol
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulCelluleInstruction := valo_cumulCelluleInstruction + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
+            valo_celluleInstruction := array_append(valo_celluleInstruction, valo_cumulCelluleInstruction);
+          END IF;
+
+        -- REVENU CELLULE INSTRUCTION (vols en instruction)
+          SELECT INTO r ROUND(SUM(COALESCE(prix_vol_elv, 0))/moyenne_sur_nb_annee) AS prix FROM vfr_vol
+            WHERE EXTRACT(YEAR FROM date_vol) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM date_vol) < cette_annee
+            AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
+            AND situation = 'C' AND nom_type_vol = '2 Vol d''instruction'
+            AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
+          valo_cumulCelluleInstruction_n_anneesPrecedantes := valo_cumulCelluleInstruction_n_anneesPrecedantes + r.prix;
+          valo_celluleInstruction_n_anneesPrecedantes := array_append(valo_celluleInstruction_n_anneesPrecedantes, valo_cumulCelluleInstruction_n_anneesPrecedantes);
+
+        -- REVENU VI et JD 1 jour
+          SELECT INTO r COALESCE(ROUND(SUM(li.montant)), 0) AS prix FROM cp_piece_ligne li
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            JOIN cp_compte ON cp_compte.id_compte = li.id_compte AND cp_compte.code LIKE '4%' AND LOWER(cp_compte.libelle) LIKE 'vi club'
+              WHERE sens = 'C' AND pi.date_piece BETWEEN rDate.start AND rDate.stop;
+          valo_cumulVI := valo_cumulVI + r.prix;
+          -- JD 1 jour
+          SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type = 'FORFAIT' AND LOWER(libelle) LIKE '%découverte 1 jour%'
+            AND pi.date_piece BETWEEN rDate.start AND rDate.stop;
+          valo_cumulVI := valo_cumulVI + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
+            valo_VI := array_append(valo_VI, valo_cumulVI);
+          END IF;
+
+        -- REVENU VI et JD 1 jour sur les 5 dernières années
+          SELECT INTO r ROUND(COALESCE(SUM(li.montant), 0)) AS prix FROM cp_piece_ligne li
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            JOIN cp_compte ON cp_compte.id_compte = li.id_compte AND cp_compte.code LIKE '4%' AND LOWER(cp_compte.libelle) LIKE 'vi club'
+            WHERE sens = 'C' AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulVI_n_anneesPrecedantes := valo_cumulVI_n_anneesPrecedantes + r.prix;
+          -- JD 1 jour
+          SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type = 'FORFAIT' AND LOWER(libelle) LIKE '%découverte 1 jour%'
+            AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulVI_n_anneesPrecedantes := valo_cumulVI_n_anneesPrecedantes + r.prix;
+          valo_VI_n_anneesPrecedantes := array_append(valo_VI_n_anneesPrecedantes, valo_cumulVI_n_anneesPrecedantes);
+
+        -- REVENU JOURNEES DECOUVERTES (2 jours et plus) ET STAGES
+          SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type = 'FORFAIT' AND (LOWER(libelle) LIKE '%stage%' OR LOWER(libelle) LIKE '%découverte 2 jours%')
+            AND pi.date_piece BETWEEN rDate.start AND rDate.stop;
+          valo_cumulJdStages := valo_cumulJdStages + r.prix;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
+            valo_jdStages := array_append(valo_jdStages, valo_cumulJdStages);
+          END IF;
+
+        -- REVENU JOURNEES DECOUVERTES (2 jours et plus) ET STAGES sur les 5 dernières années
+          SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
+            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+            JOIN cp_piece pi ON pi.id_piece = li.id_piece
+            WHERE type = 'FORFAIT' AND (LOWER(libelle) LIKE '%stage%' OR LOWER(libelle) LIKE '%découverte 2 jours%')
+            AND EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
+            AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulJdStages_n_anneesPrecedantes := valo_cumulJdStages_n_anneesPrecedantes + r.prix;
+          valo_jdStages_n_anneesPrecedantes := array_append(valo_jdStages_n_anneesPrecedantes, valo_cumulJdStages_n_anneesPrecedantes);
 
         -- REVENU LANCEMENT
           SELECT INTO r ROUND(SUM(COALESCE(prix_remorque_cdb, 0) + COALESCE(prix_remorque_co, 0) + COALESCE(prix_remorque_elv, 0) +
@@ -1797,7 +1908,7 @@ BEGIN
         -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
         AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
         AND sens = 'D' -- que les dépenses
-        AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
+        AND li.date_piece BETWEEN rDate.start AND rDate.stop;
     depenses_generales_cumul := depenses_generales_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_generales := array_append(depenses_generales, depenses_generales_cumul);
@@ -1840,9 +1951,9 @@ BEGIN
         -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
         AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
         AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM date_echeance) < cette_annee
-        AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM rDate.start);
+        AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
     depenses_generales_cumul_n_anneesPrecedantes := depenses_generales_cumul_n_anneesPrecedantes + r.somme;
     depenses_generales_n_anneesPrecedantes := array_append(depenses_generales_n_anneesPrecedantes, depenses_generales_cumul_n_anneesPrecedantes);
 
@@ -1871,7 +1982,7 @@ BEGIN
           '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
           )
         AND sens = 'D' -- que les dépenses
-        AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
+        AND li.date_piece BETWEEN rDate.start AND rDate.stop;
     depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
@@ -1900,9 +2011,9 @@ BEGIN
           '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
           )
         AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM date_echeance) < cette_annee
-        AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM rDate.start);
+        AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
     depenses_moyens_lancement_cumul_n_anneesPrecedantes := depenses_moyens_lancement_cumul_n_anneesPrecedantes + r.somme;
     depenses_moyens_lancement_n_anneesPrecedantes := array_append(depenses_moyens_lancement_n_anneesPrecedantes, depenses_moyens_lancement_cumul_n_anneesPrecedantes);
 
@@ -1923,7 +2034,7 @@ BEGIN
           '6161300' -- Assurance Accident ANEPVV - SF28
           )
         AND sens = 'D' -- que les dépenses
-        AND pi.date_echeance BETWEEN rDate.start AND rDate.stop;
+        AND li.date_piece BETWEEN rDate.start AND rDate.stop;
     depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
@@ -1944,9 +2055,9 @@ BEGIN
           '6161300' -- Assurance Accident ANEPVV - SF28
           )
         AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM date_echeance) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM date_echeance) < cette_annee
-        AND EXTRACT(MONTH FROM date_echeance) = EXTRACT(MONTH FROM rDate.start);
+        AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
     depenses_entretien_planeurs_cumul_n_anneesPrecedantes := depenses_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme;
     depenses_entretien_planeurs_n_anneesPrecedantes := array_append(depenses_entretien_planeurs_n_anneesPrecedantes, depenses_entretien_planeurs_cumul_n_anneesPrecedantes);
 
@@ -2000,6 +2111,18 @@ BEGIN
     -- FORFAIT
     stats := setVarInData(stats, 'valo_forfait', valo_forfait);
     stats := setVarInData(stats, 'valo_forfait_n_anneesPrecedantes', valo_forfait_n_anneesPrecedantes);
+    -- JD ET STAGES
+    stats := setVarInData(stats, 'valo_jdStages', valo_jdStages);
+    stats := setVarInData(stats, 'valo_jdStages_n_anneesPrecedantes', valo_jdStages_n_anneesPrecedantes);
+    -- CELLULE PILOTES
+    stats := setVarInData(stats, 'valo_cellulePilotes', valo_cellulePilotes);
+    stats := setVarInData(stats, 'valo_cellulePilotes_n_anneesPrecedantes', valo_cellulePilotes_n_anneesPrecedantes);
+    -- CELLULE INSTRUCTION
+    stats := setVarInData(stats, 'valo_celluleInstruction', valo_celluleInstruction);
+    stats := setVarInData(stats, 'valo_celluleInstruction_n_anneesPrecedantes', valo_celluleInstruction_n_anneesPrecedantes);
+    -- VI
+    stats := setVarInData(stats, 'valo_VI', valo_VI);
+    stats := setVarInData(stats, 'valo_VI_n_anneesPrecedantes', valo_VI_n_anneesPrecedantes);
     -- LANCEMENT
     stats := setVarInData(stats, 'valo_lancement', valo_lancement);
     stats := setVarInData(stats, 'valo_lancement_n_anneesPrecedantes', valo_lancement_n_anneesPrecedantes);
