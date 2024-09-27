@@ -43,6 +43,17 @@ ORDER BY workDate DESC LIMIT 200';
         return $lines[0]['total'];
     }
 
+    private function getLines2($status, $givavNumber, $year, $cond = null) {
+        $query = 'SELECT COALESCE(SUM(duration), 0) as total FROM cfe_records WHERE who = :givavNumber AND status = :status AND YEAR(workDate) = :year';
+        if ($cond != null)
+            $query .= $cond;
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ ':givavNumber' => $givavNumber, ':status' => $status,
+                        ':year' => $year ]);
+        $lines = $sth->fetchAll();
+        return $lines[0]['total'];
+    }
+
     public function getLinesToValidate() {
         $query = "SELECT cfe_records.*, personnes.name, personnes.givavNumber, cfe_proposals.title,
 cfe_proposals.id AS `proposalId`,
@@ -128,9 +139,29 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
 
     public function getStats($givavNumber, $year) {
         $data = [ 'submited' => floatval($this->getLines('submitted', $givavNumber, $year)),
-                  'validated' => floatval($this->getLines('validated', $givavNumber, $year)),
                   'rejected' => floatval($this->getLines('rejected', $givavNumber, $year)),
-                  'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)) ];
+                  'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)),
+                  'private' => 0 ];
+
+        $personne = new Personne($this->conn);
+        // si pas propriétaire alors on supprime toutes les heures réalisés pour les privés
+        if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 0) {
+            $data['validated'] = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'AAVO'"));
+            $data['private'] = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'AAVO'"));
+        }
+        else {
+            // c'est un propriétaire, on ne garde que maxi 16h de privé
+            $nbHoursPrive = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'AAVO'");
+            $nbHoursAAVO = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'AAVO'");
+            if ($nbHoursPrive < 16*60) {
+                $data['validated'] = $nbHoursAAVO + $nbHoursPrive;
+                $data['private'] = 0;
+            }
+            else {
+                $data['validated'] = $nbHoursAAVO + 16*60;
+                $data['private'] = $nbHoursPrive - 16*60;
+            }
+        }
 
         if ($data['validated'] >= $data['thecfetodo'])
             $data['completed'] = true;
@@ -140,7 +171,7 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
     }
 
     public function getValidated($givavNumber, $year) {
-        return floatval($this->getLines('validated', $givavNumber, $year));
+        return $this->getStats($givavNumber, $year)['validated'];
     }
 
     public function getLinesOfProposal($proposalId) {

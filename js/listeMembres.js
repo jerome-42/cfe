@@ -23,6 +23,20 @@ var changeAdmin = function(num, status) {
     });
 };
 
+var changeIsOwnerOfGlider = function(num, isOwnerOfGlider) {
+    $.ajax({
+        url: '/changeIsOwnerOfGlider',
+        data: { num: num, isOwnerOfGlider: isOwnerOfGlider },
+        type: 'POST',
+        error: function() {
+	    alert("Impossible");
+        },
+        success: function(res) {
+	    // ok
+        }
+    });
+};
+
 var changeNoRevealWhenInDebt = function(num, status) {
     $.ajax({
         url: '/changeNoRevealWhenInDebt',
@@ -42,6 +56,13 @@ var displayIsAdmin = function(elem) {
 	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2">&nbsp;Révoquer les droits administrateur</span></button>'));
     else
 	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2">&nbsp;Passer administrateur</span></button>'));
+};
+
+var displayIsOwnerOfGlider = function(elem) {
+    if (elem.parents('tr').attr('x-isOwnerOfGlider') === '1')
+	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2 small">&nbsp;Enlever le statut propriétaire</span></button>'));
+    else
+	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2 small">&nbsp;Déclarer comme étant propriétaire</span></button>'));
 };
 
 var displayNoRevealWhenInDebt = function(elem) {
@@ -158,6 +179,21 @@ $(document).ready(function() {
 		changeAdmin($(this).parents('tr').attr('x-num'), true);
 	    }
 	    displayIsAdmin($(this));
+	});
+    $('#list').find('td.isOwnerOfGlider')
+	.each(function() {
+	    displayIsOwnerOfGlider($(this));
+	})
+	.click(function() {
+	    if ($(this).parents('tr').attr('x-isOwnerOfGlider') === '1') {
+		$(this).parents('tr').attr('x-isOwnerOfGlider', 0);
+		changeIsOwnerOfGlider($(this).parents('tr').attr('x-num'), false);
+	    }
+	    else {
+		$(this).parents('tr').attr('x-isOwnerOfGlider', 1);
+		changeIsOwnerOfGlider($(this).parents('tr').attr('x-num'), true);
+	    }
+	    displayIsOwnerOfGlider($(this));
 	});
     $('#list').find('td.noRevealWhenInDebt')
 	.each(function() {

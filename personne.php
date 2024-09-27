@@ -21,6 +21,17 @@ class Personne {
             throw new Exception("Impossible de changer le statut estAdmin de l'utilisateur");
     }
 
+    static public function modifieIsOwnerOfGlider($conn, $num, $isOwnerOfGlider) {
+        if ($isOwnerOfGlider === true)
+            $query = "UPDATE personnes set isOwnerOfGlider = true WHERE givavNumber = :num";
+        else
+            $query = "UPDATE personnes set isOwnerOfGlider = false WHERE givavNumber = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':num' => $num ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("Impossible de changer le statut isOwnerOfGlider de l'utilisateur");
+    }
+
     static public function modifieStatutNoRevealWhenInDebt($conn, $num, $statut) {
         if ($statut === true)
             $query = "UPDATE personnes set noRevealWhenInDebt = true WHERE givavNumber = :num";
