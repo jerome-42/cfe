@@ -71,6 +71,8 @@ class Givav {
     public function downloadBackup() {
         list($http_code, $header, $body) = $this->postFormWithSession('https://club.givav.fr/givav.php/gvparam/assoc/sauvegarde?sessid='.$this->sessionNo.'&assoc=119501&onglet=0', []);
         if (preg_match_all("/sauvegarde\('(\w+)'/m", $body, $matches) !== false) {
+            if (count($matches) === 0)
+                throw new Exception("GIVAV ne liste aucun fichier de sauvegarde, bug de GIVAV");
             $backupFilename = tempnam('/tmp/', 'givav-backup-');
             if ($backupFilename === false)
                 throw new Exception("Unable to get a temporary filename in /tmp path");

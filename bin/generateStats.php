@@ -3,17 +3,13 @@
 
 $config = json_decode(file_get_contents(__DIR__.'/../config.json'), true);
 
-$output = [];
-$now = new DateTime();
-$annee = intval($now->format('Y'));
-$dateDebut = $annee.'-1-1';
-$dateFin = $annee.'-12-31';
-$anneePrecedente = intval($annee)-1;
-$dateDebutPrecedente = $anneePrecedente.'-1-1';
-$dateFinPrecedente = $anneePrecedente.'-12-31';
-
-$dsn = join(';', [ 'host='.$config['givav']['host'], 'dbname='.$config['givav']['database'] ]);
-$db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['password']);
+function getDateOfLastFlight($db, $year) {
+    $q = "SELECT MAX(date_vol) AS d FROM vfr_vol WHERE EXTRACT(YEAR FROM date_vol) = :annee";
+    $sth = $db->prepare($q);
+    $sth->execute([ ':annee' => $year ]);
+    $data = $sth->fetchAll(PDO::FETCH_ASSOC);
+    return DateTime::createFromFormat('Y-m-d', $data[0]['d']);
+}
 
 function uploadFile($config, $what, $file) {
     $url = 'http://cfe-dev.aavo.org/api/pushStatsFile';
@@ -45,7 +41,26 @@ function uploadFile($config, $what, $file) {
         throw new Exception("Réponse inattendue de cfe.aavo.org: ".$http_code.': '.$body);
 }
 
-echo "statsMachines".PHP_EOL;
+$dsn = join(';', [ 'host='.$config['givav']['host'], 'dbname='.$config['givav']['database'] ]);
+$db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['password']);
+
+$now = new DateTime();
+$annee = intval($now->format('Y'));
+// on va chercher la date de fin
+$dateOfLastFlight = getDateOfLastFlight($db, $annee);
+
+$output = [];
+$dateDebut = $annee.'-1-1';
+$dateFin = $dateOfLastFlight->format('Y-m-d');
+$anneePrecedente = intval($annee)-1;
+$dateDebutPrecedente = $anneePrecedente.'-1-1';
+$dateFinPrecedente = $dateOfLastFlight->modify("-1 year");
+$dateFinPrecedente = $dateFinPrecedente->format('Y-m-d');
+$dateFinPrecedentePleine = $anneePrecedente.'-12-31';
+
+echo "Date du dernier vol: ".$dateFin.PHP_EOL;
+
+echo "statsMachines ".$annee.PHP_EOL;
 $q = 'SELECT * FROM statsMachines(:start, :end)';
 $sth = $db->prepare($q);
 $sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
@@ -58,93 +73,137 @@ $output['statsMachines'] = [
         'date_debut' => $dateDebut,
         'date_fin' => $dateFin,
     ],
+    'year' => $annee,
     'requete' => $q,
     'data' => $data,
 ];
 
-echo "statsMisesEnLAir ".$annee.PHP_EOL;
-$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+echo "statsMachines ".$anneePrecedente.PHP_EOL;
+$q = 'SELECT * FROM statsMachines(:start, :end)';
 $sth = $db->prepare($q);
-$sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
+$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedentePleine ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
 foreach ($data as &$line) {
     $line['stats'] = json_decode($line['stats']);
 }
-$output['statsMisesEnLAir'] = [
+$output['statsMachinesPrecedente'] = [
     'params' => [
-        'date_debut' => $dateDebut,
-        'date_fin' => $dateFin,
+        'date_debut' => $dateDebutPrecedente,
+        'date_fin' => $dateFinPrecedentePleine,
     ],
+    'year' => $anneePrecedente,
     'requete' => $q,
     'data' => $data,
 ];
 
-echo "statsMisesEnLAir ".$anneePrecedente.PHP_EOL;
-$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+//echo "statsMisesEnLAir ".$annee.PHP_EOL;
+//$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsMisesEnLAir'] = [
+//    'params' => [
+//        'date_debut' => $dateDebut,
+//        'date_fin' => $dateFin,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+//
+//echo "statsMisesEnLAir ".$anneePrecedente.PHP_EOL;
+//$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedente ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsMisesEnLAirAnneePrecedente'] = [
+//    'params' => [
+//        'date_debut' => $dateDebut,
+//        'date_fin' => $dateFin,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+//
+//echo "statsForfait".PHP_EOL;
+//$q = 'SELECT * FROM statsForfait(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $annee ]);
+//$output['statsForfait'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+//];
+//
+//echo "statsMembre".PHP_EOL;
+//$q = 'SELECT * FROM statsMembre(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $annee ]);
+//$output['statsMembre'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
+//];
+//
+//echo "statsAuCoursAnnee ".$annee.PHP_EOL;
+//$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $annee ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsAuCoursAnnee'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+//
+//echo "statsAuCoursAnnee ".$anneePrecedente.PHP_EOL;
+//$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
+//$sth = $db->prepare($q);
+//$sth->execute([ ':annee' => $anneePrecedente ]);
+//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+//foreach ($data as &$line) {
+//    $line['stats'] = json_decode($line['stats']);
+//}
+//$output['statsAuCoursAnneePrecedente'] = [
+//    'params' => [
+//        'annee' => $annee,
+//    ],
+//    'requete' => $q,
+//    'data' => $data,
+//];
+
+echo "tableau de bord".PHP_EOL;
+$q = 'SELECT tableauDeBord() AS tdb';
 $sth = $db->prepare($q);
-$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedente ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-foreach ($data as &$line) {
-    $line['stats'] = json_decode($line['stats']);
-}
-$output['statsMisesEnLAirAnneePrecedente'] = [
-    'params' => [
-        'date_debut' => $dateDebut,
-        'date_fin' => $dateFin,
-    ],
+$sth->execute();
+$data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+$data = json_decode($data['tdb']);
+$output['tableauDeBord'] = [
     'requete' => $q,
     'data' => $data,
 ];
 
-echo "statsForfait".PHP_EOL;
-$q = 'SELECT * FROM statsForfait(:annee)';
+echo "tableau de bord annuel".PHP_EOL;
+$q = 'SELECT tableauDeBordAnnuel(:annee, :last_computation_date) AS tdb';
 $sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
-$output['statsForfait'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
-];
-
-echo "statsMembre".PHP_EOL;
-$q = 'SELECT * FROM statsMembre(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
-$output['statsMembre'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
-];
-
-echo "statsAuCoursAnnee ".$annee.PHP_EOL;
-$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-foreach ($data as &$line) {
-    $line['stats'] = json_decode($line['stats']);
-}
-$output['statsAuCoursAnnee'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $data,
-];
-
-echo "statsAuCoursAnnee ".$anneePrecedente.PHP_EOL;
-$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $anneePrecedente ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-foreach ($data as &$line) {
-    $line['stats'] = json_decode($line['stats']);
-}
-$output['statsAuCoursAnneePrecedente'] = [
+$sth->execute([ ':annee' => $annee, ':last_computation_date' => $dateFin ]);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+$data = json_decode($data['tdb']);
+$output['tableauDeBordAnnuel'] = [
     'params' => [
         'annee' => $annee,
     ],
@@ -158,7 +217,28 @@ file_put_contents($fichierStats, 'var stats = '.json_encode($output).';');
 
 
 echo "vols anonymisés".PHP_EOL;
-$q = 'SELECT * FROM anonymisationVol(:annee, true)';
+$q = "SELECT *,
+REPLACE(prix_vol::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque::text, '.', ',') AS prix_remorque_fr,
+REPLACE(prix_treuil::text, '.', ',') AS prix_treuil_fr,
+REPLACE(prix_moteur::text, '.', ',') AS prix_moteur_fr,
+REPLACE(prix_vol_elv::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque_elv::text, '.', ',') AS prix_remorque_elv_fr,
+REPLACE(prix_treuil_elv::text, '.', ',') AS prix_treuil_elv_fr,
+REPLACE(prix_moteur_elv::text, '.', ',') AS prix_moteur_elv_fr,
+REPLACE(prix_vol_cdb::text, '.', ',') AS prix_vol_cdb_fr,
+REPLACE(prix_remorque_cdb::text, '.', ',') AS prix_remorque_cdb_fr,
+REPLACE(prix_treuil_cdb::text, '.', ',') AS prix_treuil_cdb_fr,
+REPLACE(prix_moteur_cdb::text, '.', ',') AS prix_moteur_cdb_fr,
+REPLACE(prix_vol_co::text, '.', ',') AS prix_vol_co_fr,
+REPLACE(prix_remorque_co::text, '.', ',') AS prix_remorque_co_fr,
+REPLACE(prix_treuil_co::text, '.', ',') AS prix_treuil_co_fr,
+REPLACE(prix_moteur_co::text, '.', ',') AS prix_moteur_co_fr,
+REPLACE(prix_frais_technique_eleve::text, '.', ',') AS prix_frais_technique_eleve,
+REPLACE(prix_frais_technique_cdb::text, '.', ',') AS prix_frais_technique_cdb,
+REPLACE(prix_frais_technique_co::text, '.', ',') AS prix_frais_technique_co,
+ROUND(EXTRACT(EPOCH FROM temps_vol)/60) AS temps_vol_en_minutes
+ FROM anonymisationVol(:annee, true)";
 $sth = $db->prepare($q);
 $sth->execute([ ':annee' => $annee ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -172,7 +252,28 @@ foreach ($data as $line) {
 $csv = null; // free
 
 echo "vols".PHP_EOL;
-$q = 'SELECT * FROM anonymisationVol(:annee, false)';
+$q = "SELECT *,
+REPLACE(prix_vol::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque::text, '.', ',') AS prix_remorque_fr,
+REPLACE(prix_treuil::text, '.', ',') AS prix_treuil_fr,
+REPLACE(prix_moteur::text, '.', ',') AS prix_moteur_fr,
+REPLACE(prix_vol_elv::text, '.', ',') AS prix_vol_fr,
+REPLACE(prix_remorque_elv::text, '.', ',') AS prix_remorque_elv_fr,
+REPLACE(prix_treuil_elv::text, '.', ',') AS prix_treuil_elv_fr,
+REPLACE(prix_moteur_elv::text, '.', ',') AS prix_moteur_elv_fr,
+REPLACE(prix_vol_cdb::text, '.', ',') AS prix_vol_cdb_fr,
+REPLACE(prix_remorque_cdb::text, '.', ',') AS prix_remorque_cdb_fr,
+REPLACE(prix_treuil_cdb::text, '.', ',') AS prix_treuil_cdb_fr,
+REPLACE(prix_moteur_cdb::text, '.', ',') AS prix_moteur_cdb_fr,
+REPLACE(prix_vol_co::text, '.', ',') AS prix_vol_co_fr,
+REPLACE(prix_remorque_co::text, '.', ',') AS prix_remorque_co_fr,
+REPLACE(prix_treuil_co::text, '.', ',') AS prix_treuil_co_fr,
+REPLACE(prix_moteur_co::text, '.', ',') AS prix_moteur_co_fr,
+REPLACE(prix_frais_technique_eleve::text, '.', ',') AS prix_frais_technique_eleve,
+REPLACE(prix_frais_technique_cdb::text, '.', ',') AS prix_frais_technique_cdb,
+REPLACE(prix_frais_technique_co::text, '.', ',') AS prix_frais_technique_co,
+ROUND(EXTRACT(EPOCH FROM temps_vol)/60) AS temps_vol_en_minutes
+ FROM anonymisationVol(:annee, false)";
 $sth = $db->prepare($q);
 $sth->execute([ ':annee' => $annee ]);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);

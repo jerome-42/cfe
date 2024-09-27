@@ -8,7 +8,14 @@
     "osrt": {
         "credentials": [ { "login": "", "password": "" } ]
     },
+    "remoteGivav": {
+        "login": 1,
+        "password": ""
+    },
     "stats": {
         "token": ""
+    },
+    "prod": {
+        "url": "http://cfe.aavo.org"
     }
 }
