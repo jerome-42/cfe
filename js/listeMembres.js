@@ -115,6 +115,10 @@ var updateList = function() {
 	    if ($(this).attr('x-isAdmin') === '0')
 		displayLine = false;
 	    break;
+	case 'owner':
+	    if ($(this).attr('x-isOwnerOfGlider') === '0')
+		displayLine = false;
+	    break;
 	case 'not0notDefault':
 	    if (parseFloat($(this).attr('x-cfeTODO')) === '0' || parseFloat($(this).attr('x-cfeTODO')) === defaultCFE_TODO)
 		displayLine = false;
