@@ -16,10 +16,10 @@ block content
             .progress.mt-2(role="progressbar" aria-label="heures réalisées" aria-valuenow=$validated aria-valuemin="0" aria-valuemax=$thencfetodo style="height: 30px")
               - $percent = ($validated/$thecfetodo)*100
               .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
-          if $private > 0
-            p.mt-2.mb-0 Vous avez aussi réalisé #{$durationToHuman($private)} pour les sections ou les privés mais ces heures ne sont pas comptées car elles ne sont pas à destination de l'AAVO.
+          if $va > 0
+            p.mt-2.mb-0 Vous avez aussi réalisé #{$durationToHuman($va)} pour votre Visite Annuelle
           if $isOwnerOfGlider == 1
-            p.mt-2.mb-0 En tant que propriétaire, seules 16 heures sections/privées maximum sont comptabilisées dans la CFE. Les heures au-delà ne sont pas comptabilisées.
+            p.mt-2.mb-0 En tant que propriétaire, seules 16 heures de la Visite Annuelle maximum sont comptabilisées dans la CFE. Les heures au-delà ne sont pas comptabilisées. Mais les heures pour les sections comptent également.
 
 
       $reste = $thecfetodo - $validated

@@ -141,25 +141,21 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
         $data = [ 'submited' => floatval($this->getLines('submitted', $givavNumber, $year)),
                   'rejected' => floatval($this->getLines('rejected', $givavNumber, $year)),
                   'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)),
-                  'private' => 0 ];
+                  'validated' => floatval($this->getLines2('validated', $givavNumber, $year)),
+                  'va' => 0 ];
 
         $personne = new Personne($this->conn);
-        // si pas propriétaire alors on supprime toutes les heures réalisés pour les privés
-        if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 0) {
-            $data['validated'] = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'AAVO'"));
-            $data['private'] = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'AAVO'"));
-        }
-        else {
-            // c'est un propriétaire, on ne garde que maxi 16h de privé
-            $nbHoursPrive = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'AAVO'");
-            $nbHoursAAVO = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'AAVO'");
-            if ($nbHoursPrive < 16*60) {
-                $data['validated'] = $nbHoursAAVO + $nbHoursPrive;
-                $data['private'] = 0;
+        if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 1) {
+            // c'est un propriétaire, on ne garde que maxi 16h de VA
+            $nbHoursVA = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'VA'");
+            $nbHoursOthers = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'VA'");
+            if ($nbHoursVA < 16*60) {
+                $data['validated'] = $nbHoursOthers + $nbHoursVA;
+                $data['va'] = 0;
             }
             else {
-                $data['validated'] = $nbHoursAAVO + 16*60;
-                $data['private'] = $nbHoursPrive - 16*60;
+                $data['validated'] = $nbHoursOthers + 16*60;
+                $data['va'] = $nbHoursVA - 16*60;
             }
         }
 
