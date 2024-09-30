@@ -1,0 +1,19 @@
+extends layout.pug
+
+block scripts
+  title CNB
+  script(src="js/cnb.js")
+
+block content
+  .container
+    .row
+      h1 CNB
+    .row.mt-2
+      .col
+        p La CNB a été votée en CA le&nbsp;
+          a(href="http://aavo.free.fr/membres/cc_aavo/2023/ca_aavo_2023_01_22.pdf" target="_blank") 22 janvier 2023
+          | &nbsp;et est définie comme suit:
+        img(src="/img/cnb-ca-23-01-22.png")
+    .row.d-print-none.mt-5
+      .col-md-3
+        button.btn.btn-danger.back Retour

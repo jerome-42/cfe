@@ -198,6 +198,13 @@ post('/changeNoRevealWhenInDebt', function($conn) {
     Personne::modifieStatutNoRevealWhenInDebt($conn, intval($_POST['num']), $status);
 });
 
+get('/cnb', function($conn, $pug) {
+    if (!isset($_SESSION['auth'])) {
+        return redirect('/connexion');
+    }
+    $pug->displayFile('view/cnb.pug');
+});
+
 get('/connexion', function($conn, $pug) {
     if (isset($_SESSION['auth'])) {
         return redirect('/');

@@ -46,6 +46,7 @@ function doRoute($fct, $apiMode = false, $parameters = []) {
                 $data = Personne::load($env->mysql, $_SESSION['givavNumber']);
                 $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
                 $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
+                $_SESSION['isOwnerOfGlider'] = $data['isOwnerOfGlider'];
             }
         }
         $fct($env->mysql, $pug, $env, $parameters);

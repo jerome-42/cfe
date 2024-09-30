@@ -18,8 +18,6 @@ block content
               .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
           if $va > 0
             p.mt-2.mb-0 Vous avez aussi réalisé #{$durationToHuman($va)} pour votre Visite Annuelle
-          if $isOwnerOfGlider == 1
-            p.mt-2.mb-0 En tant que propriétaire, seules 16 heures de la Visite Annuelle maximum sont comptabilisées dans la CFE. Les heures au-delà ne sont pas comptabilisées. Mais les heures pour les sections comptent également.
 
 
       $reste = $thecfetodo - $validated
@@ -44,7 +42,12 @@ block content
         p Sur cette année vous êtes redevable de
           b &nbsp;#{durationToHuman($thecfetodo)}&nbsp;
           | heures de CFE.
-          small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année), si vous êtes pilote-propriétaire vous avez un quota de CNB à réaliser.
+          small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année)
+          if $isOwnerOfGlider == 1
+            br
+            | La&nbsp;
+            a(href="/cnb") CNB s'applique aux sections et propriétaires.
+            | &nbsp;En tant que propriétaire, seules 16 heures de travail sur votre machine sont comptabilisées. Lorsque vous travaillez pour le club, les sections ou d'autres propriétaires ces heures comptent.
 
       if $submited > 0
         .alert.alert-info #{durationToHuman($submited)} en attente de validation
