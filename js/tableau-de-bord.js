@@ -17,6 +17,65 @@ let getDateFromD = function(dString) {
     return d;
 };
 
+let displayCFE = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('cfe').getContext('2d');
+    let dataCetteAnnee = statsLocales.cfe.declarationsCFE;
+    let dataNAnneesPrecedantes = statsLocales.cfe.declarationsCFE_n_anneesPrecedantes;
+    let labelNAnneesPrecedantes = 'Moyenne sur les '+statsLocales.cfe.moyenne_sur_nb_annee+' dernières années';
+    if (statsLocales.cfe.moyenne_sur_nb_annee === 1)
+        labelNAnneesPrecedantes = "Heure de CFE "+(statsLocales.cfe.annee-1);
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Heures de CFE '+statsLocales.cfe.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: labelNAnneesPrecedantes,
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Heure de CFE réalisées',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    }
+                },
+            }
+        }
+    });
+};
+
 let displayLicence = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('licence').getContext('2d');
@@ -1539,6 +1598,8 @@ $(document).ready(function() {
     displayValoVolAnnuel();
     diplayDepensesEntretienPlaneur();
     displayValoMoteurAnnuel();
+
+    displayCFE();
 
     $('#downloadDataSource').click(function() {
         downloadDataAsCSV();

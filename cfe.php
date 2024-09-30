@@ -182,4 +182,47 @@ ORDER BY workDate DESC';
         $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
         return $lines;
     }
+
+    private function getFirstCFERecords() {
+        $q = "SELECT EXTRACT(YEAR FROM registerDate) AS year FROM cfe_records";
+        $sth = $this->conn->prepare($q);
+        $sth->execute();
+        $lines = $sth->fetchAll(PDO::FETCH_ASSOC);
+        return $lines[0]['year'];
+    }
+
+    public function getStatsTableauDeBord($year) {
+        $stats = [
+            'cfe' => [
+                'annee' => date('Y'),
+                'declarationsCFE' => [],
+                'declarationsCFE_n_anneesPrecedantes' => [],
+            ],
+        ];
+        $cumulDeclarationCFE = 0;
+        for ($i = 1; $i <= date('n'); $i++) {
+            $q = "SELECT COALESCE(ROUND(SUM(duration)/60), 0) AS nb FROM cfe_records WHERE status = 'validated' AND EXTRACT(YEAR FROM registerDate) = :year AND EXTRACT(MONTH FROM registerDate) = :month";
+            $sth = $this->conn->prepare($q);
+            $sth->execute([ ':year' => date('Y'), ':month' => $i ]);
+            $cumulDeclarationCFE = $cumulDeclarationCFE + $sth->fetchAll(PDO::FETCH_ASSOC)[0]['nb'];
+            $stats['cfe']['declarationsCFE'][] = $cumulDeclarationCFE;
+        }
+        $cumulDeclarationCFE_n_anneesPrecedantes = 0;
+        // on cherche la première déclaration pour connaître le nombre d'année de l'historique
+        $firstYear = $this->getFirstCFERecords();
+        $nbYearBetweenFirstAndCurrentYear = date('Y') - $firstYear;
+        if ($nbYearBetweenFirstAndCurrentYear > 5) {
+            $firstYear = date('Y') - 5;
+            $nbYearBetweenFirstAndCurrentYear = 5;
+        }
+        $stats['cfe']['moyenne_sur_nb_annee'] = $nbYearBetweenFirstAndCurrentYear;
+        for ($i = 1; $i <= 12; $i++) {
+            $q = "SELECT COALESCE(ROUND(SUM(duration)/60), 0)/:nbAnnees AS nb FROM cfe_records WHERE status = 'validated' AND EXTRACT(YEAR FROM registerDate) >= :firstYear AND EXTRACT(YEAR FROM registerDate) <= :lastYear AND EXTRACT(MONTH FROM registerDate) = :month";
+            $sth = $this->conn->prepare($q);
+            $sth->execute([ ':firstYear' => $firstYear, ':lastYear' => date('Y')-1, ':month' => $i, ':nbAnnees' => $nbYearBetweenFirstAndCurrentYear ]);
+            $cumulDeclarationCFE_n_anneesPrecedantes = $cumulDeclarationCFE_n_anneesPrecedantes + $sth->fetchAll(PDO::FETCH_ASSOC)[0]['nb'];
+            $stats['cfe']['declarationsCFE_n_anneesPrecedantes'][] = $cumulDeclarationCFE_n_anneesPrecedantes;
+        }
+        return $stats;
+    }
 }

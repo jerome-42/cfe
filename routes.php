@@ -1208,7 +1208,9 @@ get('/tableau-de-bord', function($conn, $pug) {
             return;
         }
     }
-    $pug->displayFile('view/tableau-de-bord.pug', $_SESSION);
+    $cfe = new CFE($conn);
+    $statsLocales = $cfe->getStatsTableauDeBord(date("Y"));
+    $pug->displayFile('view/tableau-de-bord.pug', array_merge($_SESSION, [ 'statsLocales' => json_encode($statsLocales) ]));
 });
 
 get('/validation', function($conn, $pug) {
