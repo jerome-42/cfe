@@ -1,3 +1,7 @@
+CREATE OR REPLACE FUNCTION array_distinct(anyarray) RETURNS anyarray AS $$
+  SELECT array_agg(DISTINCT x) FROM unnest($1) t(x);
+$$ LANGUAGE SQL IMMUTABLE;
+
 CREATE OR REPLACE FUNCTION setVarInData(data JSONB, key TEXT, value NUMERIC) RETURNS JSONB AS $$
 BEGIN
 IF value IS NULL THEN
@@ -1013,6 +1017,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
+CREATE OR REPLACE FUNCTION getProprietaireMachine(input_id_aeronef INT, input_date DATE) RETURNS TEXT[] AS $$
+DECLARE
+  r RECORD;
+  r2 RECORD;
+  r3 RECORD;
+  last_id_aeronef_situation NUMERIC;
+  v_id_aeronef_sitation NUMERIC;
+  proprietaires TEXT[];
+BEGIN
+  FOR r IN SELECT * FROM aeronef_situation
+    WHERE aeronef_situation.id_aeronef = input_id_aeronef
+  LOOP
+    IF input_date >= r.date_application THEN
+      v_id_aeronef_sitation = r.id_aeronef_situation;
+    END IF;
+  END LOOP;
+  IF v_id_aeronef_sitation IS NULL THEN
+    RETURN '{}';
+  END IF;
+  FOR r2 IN SELECT * FROM aeronef_situation_benef WHERE id_aeronef_situation = r.id_aeronef_situation LOOP
+    IF r2.id_personne = 235 THEN -- EDF-GDF (ANEG)
+      FOR r3 IN SELECT * FROM vfr_pilote WHERE tarif LIKE '%EGF%' AND vfr_pilote.pilote_actif IS true LOOP
+        proprietaires := array_append(proprietaires, CONCAT(r3.nom, ' ', r3.prenom));
+      END LOOP;
+    END IF;
+    IF r2.id_personne = 246 THEN -- CORMEILLES
+      FOR r3 IN SELECT * FROM vfr_pilote WHERE tarif LIKE '%CORMEILLES%' AND vfr_pilote.pilote_actif IS true LOOP
+        proprietaires := array_append(proprietaires, CONCAT(r3.nom, ' ', r3.prenom));
+      END LOOP;
+    END IF;
+    FOR r3 IN SELECT * FROM aeronef_situation_benef
+      JOIN vfr_pilote ON vfr_pilote.id_personne = aeronef_situation_benef.id_personne
+      WHERE aeronef_situation_benef.id_aeronef_situation = v_id_aeronef_sitation LOOP
+        proprietaires := array_append(proprietaires, CONCAT(r3.nom, ' ', r3.prenom));
+    END LOOP;
+  END LOOP;
+  RETURN array_distinct(proprietaires);
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
 CREATE OR REPLACE FUNCTION getRefactuDecollagesAutonome(input_id_aeronef INT, input_annee NUMERIC) RETURNS NUMERIC AS $$
 DECLARE
   r RECORD;
@@ -1081,6 +1125,8 @@ $$ LANGUAGE plpgsql VOLATILE;
 CREATE OR REPLACE FUNCTION piloteEstProprietaireDeMachine(input_id_personne INT, input_id_aeronef INT, input_date_vol DATE) RETURNS BOOLEAN AS $$
 DECLARE
   r RECORD;
+  r2 RECORD;
+  r3 RECORD;
   last_id_aeronef_situation NUMERIC;
   v_id_aeronef_sitation NUMERIC;
 BEGIN
@@ -1094,6 +1140,20 @@ BEGIN
   IF v_id_aeronef_sitation IS NULL THEN
     RETURN false;
   END IF;
+  FOR r2 IN SELECT * FROM aeronef_situation_benef WHERE id_aeronef_situation = r.id_aeronef_situation LOOP
+    IF r2.id_personne = 235 THEN -- EDF-GDF (ANEG)
+      SELECT INTO r3 * FROM vfr_pilote WHERE tarif LIKE '%EGF%' AND vfr_pilote.id_personne = input_id_personne;
+      IF FOUND THEN
+        RETURN TRUE;
+      END IF;
+    END IF;
+    IF r2.id_personne = 246 THEN -- CORMEILLES
+      SELECT INTO r3 * FROM vfr_pilote WHERE tarif LIKE '%CORMEILLES%' AND vfr_pilote.id_personne = input_id_personne;
+      IF FOUND THEN
+        RETURN TRUE;
+      END IF;
+    END IF;
+  END LOOP;
   SELECT INTO r * FROM aeronef_situation_benef
     WHERE aeronef_situation_benef.id_aeronef_situation = v_id_aeronef_sitation
     AND aeronef_situation_benef.id_personne = input_id_personne;
@@ -1284,6 +1344,83 @@ BEGIN
   stats := setVarInData(stats, 'licence_annee_derniere_complete', sub_json);
 
   RETURN stats;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION etatMachineCNB(annee INT, duree_cnb_a_faire_par_machine INTERVAL) RETURNS TABLE (
+  immatriculation VARCHAR,
+  nom_type VARCHAR,
+  temps_vol_proprietaire INTERVAL,
+  temps_vol_hors_proprietaire INTERVAL,
+  temps_cnb_a_realiser INTERVAL,
+  proprietaires VARCHAR,
+  non_proprietaire_a_vole_sur VARCHAR
+) AS $$
+DECLARE
+  r RECORD;
+  r2 RECORD;
+  liste_pilotes TEXT[];
+BEGIN
+  FOR r IN SELECT * FROM aeronef WHERE categorie = 'P' AND actif IS true LOOP
+    immatriculation := r.immatriculation;
+    nom_type := r.nom_type;
+    liste_pilotes := '{}';
+    temps_vol_proprietaire := '0:0:0'::interval;
+    temps_vol_hors_proprietaire := '0:0:0'::interval;
+    FOR r2 IN SELECT * FROM vfr_vol WHERE vfr_vol.immatriculation = r.immatriculation AND vfr_vol.nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé') AND saison = annee LOOP
+      IF r2.nom_type_vol = '1 Vol en solo' THEN
+        IF piloteEstProprietaireDeMachine(r2.id_cdt_de_bord, r.id_aeronef, r2.date_vol) IS true THEN
+          temps_vol_proprietaire := temps_vol_proprietaire + r2.temps_vol;
+        ELSE
+          liste_pilotes := array_append(liste_pilotes, r2.cdt_de_bord);
+          temps_vol_hors_proprietaire := temps_vol_hors_proprietaire + r2.temps_vol;
+        END IF;
+      END IF;
+      -- pour que le vol soit comptabilisé comme propriétaire il faut que les 2 pilotes soient propriétaires
+      -- (le vol est dit partagé lorsqu'un seul des pilotes n'est pas propriétaire)
+      IF r2.nom_type_vol = '3 Vol partagé' THEN
+        IF piloteEstProprietaireDeMachine(r2.id_cdt_de_bord, r.id_aeronef, r2.date_vol) IS true AND piloteEstProprietaireDeMachine(r2.id_co_pilote, r.id_aeronef, r2.date_vol) IS true THEN
+          temps_vol_proprietaire := temps_vol_proprietaire + r2.temps_vol;
+        ELSE
+          temps_vol_hors_proprietaire := temps_vol_hors_proprietaire + r2.temps_vol;
+          IF piloteEstProprietaireDeMachine(r2.id_cdt_de_bord, r.id_aeronef, r2.date_vol) IS false THEN
+            liste_pilotes := array_append(liste_pilotes, r2.cdt_de_bord);
+          END IF;
+          IF piloteEstProprietaireDeMachine(r2.id_co_pilote, r.id_aeronef, r2.date_vol) IS false THEN
+            liste_pilotes := array_append(liste_pilotes, r2.co_pilote);
+          END IF;
+        END IF;
+      END IF;
+      -- pour que le vol soit comptabilisé comme propriétaire il faut que les 2 pilotes soient propriétaires
+      -- (le vol est dit partagé lorsqu'un seul des pilotes n'est pas propriétaire)
+      IF r2.nom_type_vol = '2 Vol d''instruction' THEN
+        IF piloteEstProprietaireDeMachine(r2.id_instructeur, r.id_aeronef, r2.date_vol) IS true AND piloteEstProprietaireDeMachine(r2.id_eleve, r.id_aeronef, r2.date_vol) IS true THEN
+          temps_vol_proprietaire := temps_vol_proprietaire + r2.temps_vol;
+        ELSE
+          temps_vol_hors_proprietaire := temps_vol_hors_proprietaire + r2.temps_vol;
+        END IF;
+        IF piloteEstProprietaireDeMachine(r2.id_instructeur, r.id_aeronef, r2.date_vol) IS false THEN
+          liste_pilotes := array_append(liste_pilotes, r2.instructeur);
+        END IF;
+        IF piloteEstProprietaireDeMachine(r2.id_eleve, r.id_aeronef, r2.date_vol) IS false THEN
+          liste_pilotes := array_append(liste_pilotes, r2.eleve);
+        END IF;
+      END IF;
+    END LOOP;
+    -- on va chercher le(s) propriétaire(s)
+    proprietaires := array_to_string(getProprietaireMachine(r.id_aeronef, CONCAT(annee, '-01-01')::date), ', ');
+    SELECT COUNT(*) AS nbVol INTO r FROM vfr_vol WHERE vfr_vol.immatriculation = r.immatriculation AND saison = annee;
+    IF temps_vol_proprietaire = '0:0:0'::interval AND r.nbVol > 0 THEN
+      CONTINUE;
+    END IF;
+    IF temps_vol_hors_proprietaire < duree_cnb_a_faire_par_machine THEN
+      temps_cnb_a_realiser := duree_cnb_a_faire_par_machine - temps_vol_hors_proprietaire;
+      ELSE
+      temps_cnb_a_realiser := '0:0:0'::interval;
+    END IF;
+    non_proprietaire_a_vole_sur := array_to_string(array_distinct(liste_pilotes), ', ');
+    return NEXT;
+  END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
@@ -1707,7 +1844,7 @@ BEGIN
       -- ============ COUT CELLULE ============
         -- REVENU CELLULE des machines club
           SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0) + COALESCE(prix_vol_elv, 0))) AS prix FROM vfr_vol
-            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé', '41 VI perso')
             AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
           valo_cumulHDV := valo_cumulHDV + r.prix;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
@@ -1725,7 +1862,7 @@ BEGIN
 
         -- REVENU MOTEUR des machines club
           SELECT INTO r ROUND(SUM(COALESCE(prix_moteur_cdb, 0) + COALESCE(prix_moteur_co, 0) + COALESCE(prix_moteur_elv, 0))) AS prix FROM vfr_vol
-            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')
+            WHERE date_vol BETWEEN rDate.start AND rDate.stop AND situation = 'C' AND nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé', '41 VI perso')
             AND categorie != 'U'; -- 'U' = remorqueur 'B' = banalisé (pas les privés)
           valo_cumulMoteur := valo_cumulMoteur + r.prix;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
