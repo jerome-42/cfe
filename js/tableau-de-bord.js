@@ -1619,8 +1619,12 @@ $(document).ready(function() {
     Object.keys(stats.tableauDeBordAnnuel).forEach(function(key) {
         let begin = stats.tableauDeBordAnnuel[key].params.annee - key;
         let end = stats.tableauDeBordAnnuel[key].params.annee - 1;
-        $('#moyenneAnnees').append($('<option>', { value: key }).text("Comparer sur les "+key+" dernières années ("+begin+" - "+end+")"));
+        if (parseInt(key) === 1)
+            $('#moyenneAnnees').append($('<option>', { value: key }).text("Comparer par rapport à l'année dernière ("+end+")"));
+        else
+            $('#moyenneAnnees').append($('<option>', { value: key }).text("Comparer sur les "+key+" dernières années ("+begin+" - "+end+")"));
     });
+    $('#moyenneAnnees').val(2);
     $('#moyenneAnnees').change(function() {
         displayLicenceAnnuel();
         displayValoInfraAnnuel();
