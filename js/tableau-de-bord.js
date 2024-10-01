@@ -1039,6 +1039,51 @@ let displayLancementEtValoRemorqueAnnuel = function() {
     });
 };
 
+let displayVentilationSelonRemorqueur = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('ventilationSelonRemorqueur').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let datasets = [];
+    Object.keys(getStatsTableauDeBordAnnuel().data.nbRemorquesParRemorqueur).forEach(function(immatriculation) {
+        datasets.push({
+            label: 'Nombre de remorqué '+immatriculation,
+            data: getStatsTableauDeBordAnnuel().data.nbRemorquesParRemorqueur[immatriculation],
+        });
+    });
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: datasets,
+        },
+        options: {
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Nombre de remorqué par remorqueur',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                },
+            }
+        }
+    });
+};
+
 let diplayDepensesMoyensLancementAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('depensesMoyensLancementAnnuel').getContext('2d');
@@ -1514,6 +1559,8 @@ let saveFile = function(filename, data) {
 let downloadDataAsCSV = function() {
     let zip = new JSZip();
     Object.keys(getStatsTableauDeBordAnnuel().data).forEach(function(key) {
+        if (key === 'nbRemorquesParRemorqueur')
+            return;
         if (key.indexOf('_n_anneesPrecedantes') != -1)
             return;
         let data = getStatsTableauDeBordAnnuel().data[key];
@@ -1628,6 +1675,7 @@ $(document).ready(function() {
 
         displayLancementEtValoRemorqueAnnuel();
         diplayDepensesMoyensLancementAnnuel();
+        displayVentilationSelonRemorqueur();
         displayLancementAnnuel();
 
         displayValoCelluleEtForfaitAnnuel();
