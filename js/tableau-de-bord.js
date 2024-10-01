@@ -1617,7 +1617,9 @@ $(document).ready(function() {
     displayViClub();
 
     Object.keys(stats.tableauDeBordAnnuel).forEach(function(key) {
-        $('#moyenneAnnees').append($('<option>', { value: key }).text("Comparer aux "+key+" dernières années"));
+        let begin = stats.tableauDeBordAnnuel[key].params.annee - key;
+        let end = stats.tableauDeBordAnnuel[key].params.annee - 1;
+        $('#moyenneAnnees').append($('<option>', { value: key }).text("Comparer sur les "+key+" dernières années ("+begin+" - "+end+")"));
     });
     $('#moyenneAnnees').change(function() {
         displayLicenceAnnuel();
