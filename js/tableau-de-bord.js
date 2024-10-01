@@ -1187,12 +1187,12 @@ let displayValoCelluleEtForfaitAnnuel = function() {
                 {
                     label: 'Revenus forfaits '+getStatsTableauDeBordAnnuel().params.annee,
                     data: getStatsTableauDeBordAnnuel().data.valo_forfait,
-                    yAxisID: 'y1',
+                    yAxisID: 'y',
                 },
                 {
                     label: 'Moyenne revenus forfaits sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: getStatsTableauDeBordAnnuel().data.valo_forfait_n_anneesPrecedantes,
-                    yAxisID: 'y1',
+                    yAxisID: 'y',
                 },
             ],
         },
@@ -1206,18 +1206,6 @@ let displayValoCelluleEtForfaitAnnuel = function() {
                         },
                     },
                     position: 'left',
-                },
-                y1: {
-                    ticks: {
-                        // Include a dollar sign in the ticks
-                        callback: function(value, index, ticks) {
-                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
-                        },
-                    },
-                    position: 'right',
-                    grid: {
-                        drawOnChartArea: false,
-                    },
                 },
             },
             responsive: true,
