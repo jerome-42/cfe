@@ -1494,6 +1494,14 @@ DECLARE
   lancementTCumul_n_anneesPrecedantes INT[] := '{}';
   lancementACumul_n_anneesPrecedantes INT[] := '{}';
 
+  -- liste des remorqueurs sur la période
+  rRemorqueurs RECORD;
+  rRemorqueursStats RECORD;
+  rMonth RECORD;
+  remorqueursCount JSONB;
+  cumulRemorqueurCount INT := 0;
+  remorqueursCount1 INT[] := '{}';
+
   -- VALORISATION
     -- cotisation annuelle, frais technique, nuits dortoir et frais hangar / remorque (frais infra)
   valo_revenu_infra_membre NUMERIC[] := '{}';
@@ -1562,6 +1570,8 @@ DECLARE
 BEGIN
   stats := '{}';
   stats := setVarInData(stats, 'moyenne_sur_nb_annee', moyenne_sur_nb_annee);
+  DROP TABLE IF EXISTS remorqueursCount;
+  CREATE TEMPORARY TABLE remorqueursCount(id SERIAL PRIMARY KEY, immatriculation VARCHAR, m INT, nb INT);
   FOR rDate IN SELECT t AS start, t + interval '1 month' - interval '1 second' AS stop FROM generate_series(DATE_TRUNC('day', make_date(annee, 1, 1)), make_date(annee, 12, 31), interval '1 month') AS t(day)
   LOOP
     cette_annee := EXTRACT(YEAR FROM rDate.start);
@@ -1794,6 +1804,15 @@ BEGIN
         lancementRCumul_n_anneesPrecedantes := array_append(lancementRCumul_n_anneesPrecedantes, cumulLancementR_n_anneesPrecedantes);
         lancementTCumul_n_anneesPrecedantes := array_append(lancementTCumul_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
         lancementACumul_n_anneesPrecedantes := array_append(lancementACumul_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
+
+      -- ============ DETAILS DES MOYENS DE LANCEMENT ============
+        -- liste des remorqueurs et nombre de remorqués
+      FOR rRemorqueurs IN SELECT immatriculation_remorqueur, COUNT(*) AS nb FROM vfr_vol
+        WHERE date_vol BETWEEN rDate.start AND rDate.stop
+          AND immatriculation_remorqueur IS NOT NULL AND immatriculation_remorqueur NOT IN ('RMEXT', 'REMEXT')
+        GROUP BY immatriculation_remorqueur LOOP
+          INSERT INTO remorqueursCount(immatriculation, m, nb) VALUES (rRemorqueurs.immatriculation_remorqueur, EXTRACT(MONTH FROM rDate.start), rRemorqueurs.nb);
+      END LOOP;
 
     -- ============ VALORISATION ============
       -- ============ COTISATION ANNUELLE, FRAIS TECHNIQUE, NUITS DORTOIR ET FRAIS HANGAR / REMORQUE (FRAIS INFRA) ============
@@ -2233,6 +2252,28 @@ BEGIN
     stats := setVarInData(stats, 'lancementRCumul_n_anneesPrecedantes', lancementRCumul_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementTCumul_n_anneesPrecedantes', lancementTCumul_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementACumul_n_anneesPrecedantes', lancementACumul_n_anneesPrecedantes);
+
+    -- stats avec clef dynamiques (immatriculation des remorqueurs)
+    -- exemple:
+   -- "nbRemorquesParRemorqueur": {"F-GEKY": [39, 124, 316, 528, 698, 967, 1283, 1553, 1706], "F-JDTX": [0, 0, 0, 84, 166, 211, 308, 449, 525]}, "valo_revenu_infra_membre": [28534.00, 43385.00, 63576.00, 69559.00, 75333.00, 79530.00, 82308.00, 83894.80]
+    remorqueursCount := '{}';
+    FOR rRemorqueurs IN SELECT immatriculation FROM remorqueursCount GROUP BY immatriculation ORDER BY immatriculation LOOP
+      cumulRemorqueurCount := 0;
+      remorqueursCount1 := '{}';
+      -- crade :( On doit remplir les mois où il n'y a pas de remorqué et on doit cumuler
+      -- compliqué de tout faire avec des CTE, on décompose pour plus de lisibilité
+      FOR rMonth IN SELECT GENERATE_SERIES(1, 12) AS month LOOP
+        SELECT nb INTO rRemorqueursStats FROM remorqueursCount WHERE immatriculation = rRemorqueurs.immatriculation AND m = rMonth.month;
+        IF rMonth.month <= EXTRACT(MONTH FROM last_computation_date) THEN
+          IF rRemorqueursStats.nb IS NOT NULL THEN
+            cumulRemorqueurCount := cumulRemorqueurCount + rRemorqueursStats.nb;
+          END IF;
+          remorqueursCount1 := array_append(remorqueursCount1, cumulRemorqueurCount);
+        END IF;
+      END LOOP;
+      remorqueursCount := setVarInData(remorqueursCount, rRemorqueurs.immatriculation, remorqueursCount1);
+    END LOOP;
+    stats := setVarInData(stats, 'nbRemorquesParRemorqueur', remorqueursCount);
 
   -- ============ ACTIVITES ============
     -- COTISATION ANNUELLE, FRAIS TECHNIQUES, NUITS DORTOIR ET FRAIS HANGAR (FRAIS INFRA)
