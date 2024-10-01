@@ -1424,7 +1424,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION tableauDeBordAnnuel(annee INT, last_computation_date DATE) RETURNS JSONB AS $$
+CREATE OR REPLACE FUNCTION tableauDeBordAnnuel(annee INT, last_computation_date DATE, moyenne_sur_nb_annee INT) RETURNS JSONB AS $$
 DECLARE
   stats JSONB;
   rDate RECORD;
@@ -1434,7 +1434,6 @@ DECLARE
   mise_en_l_air TEXT;
   mises_en_l_air TEXT[] := '{"R", "T", "M"}';
   cette_annee INT;
-  moyenne_sur_nb_annee INT := 5;
   licences INT[] := '{}';
   cumulLicence INT := 0;
   licences_n_anneesPrecedantes INT[] := '{}';

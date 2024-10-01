@@ -197,20 +197,24 @@ $output['tableauDeBord'] = [
     'data' => $data,
 ];
 
-echo "tableau de bord annuel".PHP_EOL;
-$q = 'SELECT tableauDeBordAnnuel(:annee, :last_computation_date) AS tdb';
-$sth = $db->prepare($q);
-$sth->execute([ ':annee' => $annee, ':last_computation_date' => $dateFin ]);
-$data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
-$data = json_decode($data['tdb']);
-$output['tableauDeBordAnnuel'] = [
-    'params' => [
-        'annee' => $annee,
-    ],
-    'requete' => $q,
-    'data' => $data,
-];
+$output['tableauDeBordAnnuel'] = [];
 
+foreach ([ 2, 5 ] as $moyenneSurNbAnnee) {
+    echo "tableau de bord annuel ".$moyenneSurNbAnnee." ans".PHP_EOL;
+    $q = 'SELECT tableauDeBordAnnuel(:annee, :last_computation_date, :moyenne_sur_nb_annee) AS tdb';
+    $sth = $db->prepare($q);
+    $sth->execute([ ':annee' => $annee, ':last_computation_date' => $dateFin, ':moyenne_sur_nb_annee' => $moyenneSurNbAnnee ]);
+    $data = $sth->fetchAll(PDO::FETCH_ASSOC)[0];
+    $data = json_decode($data['tdb']);
+    $output['tableauDeBordAnnuel'][$moyenneSurNbAnnee] = [
+        'params' => [
+            'moyenneSurNbAnnee' => $moyenneSurNbAnnee,
+            'annee' => $annee,
+        ],
+        'requete' => $q,
+        'data' => $data,
+    ];
+}
 // CURLStringFile n'existe pas en php 7 donc on triche avec un fichier temporaire
 $fichierStats = tempnam(sys_get_temp_dir(), 'stats.js');
 file_put_contents($fichierStats, 'var stats = '.json_encode($output).';');
