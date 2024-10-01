@@ -1068,7 +1068,7 @@ let displayVentilationSelonRemorqueur = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Nombre de remorqué par remorqueur',
+                    text: 'Nombre de remorqués par remorqueur',
                     font: { size: 24 },
                 },
                 datalabels: {
