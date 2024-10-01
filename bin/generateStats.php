@@ -51,7 +51,7 @@ $dateOfLastFlight = getDateOfLastFlight($db, $annee);
 
 $output = [];
 $dateDebut = $annee.'-1-1';
-$dateFin = $dateOfLastFlight->format('Y-m-d');
+$dateFin = $dateOfLastFlight->modify('last day of this month')->format('Y-m-d');
 $anneePrecedente = intval($annee)-1;
 $dateDebutPrecedente = $anneePrecedente.'-1-1';
 $dateFinPrecedente = $dateOfLastFlight->modify("-1 year");
