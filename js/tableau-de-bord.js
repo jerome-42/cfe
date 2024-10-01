@@ -1,3 +1,8 @@
+let getStatsTableauDeBordAnnuel = function() {
+    let key = $('#moyenneAnnees').val();
+    return stats.tableauDeBordAnnuel[key];
+};
+
 let getStatsByMonth = function(s, mois) {
     if (mois < 10)
         mois = '0'+mois;
@@ -458,8 +463,10 @@ let findStats = function(s, masterKey, value) {
 let displayLicenceAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('licenceAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.licences;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.licences_n_annees_precedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.licences;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.licences_n_annees_precedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -468,11 +475,11 @@ let displayLicenceAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Licences '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Licences '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -508,8 +515,10 @@ let displayLicenceAnnuel = function() {
 let displayValoInfraAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('valoFraisInfraAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_revenu_infra_membre;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_revenu_infra_membre_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.valo_revenu_infra_membre;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.valo_revenu_infra_membre_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -518,11 +527,11 @@ let displayValoInfraAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenu cotisations '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Revenu cotisations '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -568,8 +577,10 @@ let displayValoInfraAnnuel = function() {
 let displayDepensesGeneralesAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('depensesGeneralesAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.depenses_generales;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.depenses_generales_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.depenses_generales;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.depenses_generales_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -578,11 +589,11 @@ let displayDepensesGeneralesAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Dépenses générales '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Dépenses générales '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -628,6 +639,8 @@ let displayDepensesGeneralesAnnuel = function() {
 let displayHDVClubAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvClubAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -636,20 +649,20 @@ let displayHDVClubAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'HDV machines club CDB '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.HDVClubCDB,
+                    label: 'HDV machines club CDB '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.HDVClubCDB,
                 },
                 {
-                    label: 'Moyenne CDB sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.HDVClubCDB_n_anneesPrecedantes,
+                    label: 'Moyenne CDB sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.HDVClubCDB_n_anneesPrecedantes,
                 },
                 {
-                    label: 'HDV instruction sur machines club '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.HDVClubInstruction,
+                    label: 'HDV instruction sur machines club '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.HDVClubInstruction,
                 },
                 {
-                    label: 'Moyenne instruction sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.HDVClubInstruction_n_anneesPrecedantes,
+                    label: 'Moyenne instruction sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.HDVClubInstruction_n_anneesPrecedantes,
                 },
             ],
         },
@@ -683,8 +696,10 @@ let displayHDVClubAnnuel = function() {
 let displayHDVClubCDBAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvClubCDBAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVClubCDB;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVClubCDB_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.HDVClubCDB;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.HDVClubCDB_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -693,11 +708,11 @@ let displayHDVClubCDBAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'HDV machines club CDB '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'HDV machines club CDB '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -733,8 +748,10 @@ let displayHDVClubCDBAnnuel = function() {
 let displayHDVClubInstructionAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvClubInstructionAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVClubInstruction;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVClubInstruction_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.HDVClubInstruction;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.HDVClubInstruction_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -743,11 +760,11 @@ let displayHDVClubInstructionAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'HDV d\'instruction sur machines club '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'HDV d\'instruction sur machines club '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -783,6 +800,8 @@ let displayHDVClubInstructionAnnuel = function() {
 let displayHDVBanaliseAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvBanaliseAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -791,20 +810,20 @@ let displayHDVBanaliseAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'HDV machines banalisées CDB '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseCDB,
+                    label: 'HDV machines banalisées CDB '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseCDB,
                 },
                 {
-                    label: 'HDV machines banalisées CDB moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseCDB_n_anneesPrecedantes,
+                    label: 'HDV machines banalisées CDB moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseCDB_n_anneesPrecedantes,
                 },
                 {
-                    label: 'HDV machines banalisées instruction '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseInstruction,
+                    label: 'HDV machines banalisées instruction '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseInstruction,
                 },
                 {
-                    label: 'HDV machines banalisées instruction moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.HDVBanaliseInstruction_n_anneesPrecedantes,
+                    label: 'HDV machines banalisées instruction moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseInstruction_n_anneesPrecedantes,
                 },
             ],
         },
@@ -839,8 +858,10 @@ let displayHDVBanaliseAnnuel = function() {
 let displayHDVPilotesDansForfaitAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvPilotesDansForfait').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVPilotesDansForfait;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVPilotesDansForfait_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.HDVPilotesDansForfait;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.HDVPilotesDansForfait_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -849,11 +870,11 @@ let displayHDVPilotesDansForfaitAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'HDV des pilotes au forfait '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'HDV des pilotes au forfait '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -888,8 +909,10 @@ let displayHDVPilotesDansForfaitAnnuel = function() {
 let displayHDVPilotesHorsForfaitAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('hdvPilotesHorsForfait').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.HDVPilotesHorsForfait;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.HDVPilotesHorsForfait_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.HDVPilotesHorsForfait;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.HDVPilotesHorsForfait_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -898,11 +921,11 @@ let displayHDVPilotesHorsForfaitAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'HDV hors forfait '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'HDV hors forfait '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -937,6 +960,8 @@ let displayHDVPilotesHorsForfaitAnnuel = function() {
 let displayLancementEtValoRemorqueAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('lancementEtValoRemorqueAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -945,24 +970,24 @@ let displayLancementEtValoRemorqueAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Nombre de remorqué avec correction '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.lancementRCumul,
+                    label: 'Nombre de remorqué avec correction '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.lancementRCumul,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Moyenne de remorqué sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.lancementRCumul_n_anneesPrecedantes,
+                    label: 'Moyenne de remorqué sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.lancementRCumul_n_anneesPrecedantes,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenu des moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_lancement,
+                    label: 'Revenu des moyens de lancement '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_lancement,
                     yAxisID: 'y1',
                     currency: true,
                 },
                 {
-                    label: 'Moyenne revenus des moyens de lancement sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.valo_lancement_n_anneesPrecedantes,
+                    label: 'Moyenne revenus des moyens de lancement sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.valo_lancement_n_anneesPrecedantes,
                     yAxisID: 'y1',
                     currency: true,
                 },
@@ -1017,8 +1042,10 @@ let displayLancementEtValoRemorqueAnnuel = function() {
 let diplayDepensesMoyensLancementAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('depensesMoyensLancementAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.depenses_moyens_lancement;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.depenses_moyens_lancement_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1027,11 +1054,11 @@ let diplayDepensesMoyensLancementAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Dépenses moyens de lancement '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Dépenses moyens de lancement '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -1077,6 +1104,8 @@ let diplayDepensesMoyensLancementAnnuel = function() {
 let displayLancementAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('lancementAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1085,16 +1114,16 @@ let displayLancementAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Nombre de remorqué '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.lancementR,
+                    label: 'Nombre de remorqué '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.lancementR,
                 },
                 {
-                    label: 'Nombre de treuillées '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.lancementT,
+                    label: 'Nombre de treuillées '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.lancementT,
                 },
                 {
-                    label: 'Nombre de lancement autonome '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.lancementA,
+                    label: 'Nombre de lancement autonome '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.lancementA,
                 },
             ],
         },
@@ -1136,6 +1165,8 @@ let displayLancementAnnuel = function() {
 let displayValoCelluleEtForfaitAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('valoCelluleEtForfaitAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1144,23 +1175,23 @@ let displayValoCelluleEtForfaitAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenus heure de vol '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_hdv,
+                    label: 'Revenus heure de vol '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_hdv,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Moyenne revenus heure de vol sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.valo_hdv_n_anneesPrecedantes,
+                    label: 'Moyenne revenus heure de vol sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.valo_hdv_n_anneesPrecedantes,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenus forfaits '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_forfait,
+                    label: 'Revenus forfaits '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_forfait,
                     yAxisID: 'y1',
                 },
                 {
-                    label: 'Moyenne revenus forfaits sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.valo_forfait_n_anneesPrecedantes,
+                    label: 'Moyenne revenus forfaits sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.valo_forfait_n_anneesPrecedantes,
                     yAxisID: 'y1',
                 },
             ],
@@ -1218,6 +1249,8 @@ let displayValoCelluleEtForfaitAnnuel = function() {
 let displayValoJdStageAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('valoJdStageAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1226,13 +1259,13 @@ let displayValoJdStageAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenus journées découvertes et stages '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_jdStages,
+                    label: 'Revenus journées découvertes et stages '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_jdStages,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Moyenne revenus journées découvertes et stages sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
-                    data: stats.tableauDeBordAnnuel.data.valo_jdStages_n_anneesPrecedantes,
+                    label: 'Moyenne revenus journées découvertes et stages sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.valo_jdStages_n_anneesPrecedantes,
                     yAxisID: 'y',
                 },
             ],
@@ -1278,6 +1311,8 @@ let displayValoJdStageAnnuel = function() {
 let displayValoVolAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('valoVolAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1286,28 +1321,28 @@ let displayValoVolAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenus forfaits '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_forfait,
+                    label: 'Revenus forfaits '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_forfait,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenus heure de vol pilotes '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_cellulePilotes,
+                    label: 'Revenus heure de vol pilotes '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_cellulePilotes,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenus heure de vol instruction '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_celluleInstruction,
+                    label: 'Revenus heure de vol instruction '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_celluleInstruction,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenus VI '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_VI,
+                    label: 'Revenus VI '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_VI,
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Revenus journées découvertes et stages '+stats.tableauDeBordAnnuel.params.annee,
-                    data: stats.tableauDeBordAnnuel.data.valo_jdStages,
+                    label: 'Revenus journées découvertes et stages '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_jdStages,
                     yAxisID: 'y',
                 },
             ],
@@ -1353,8 +1388,10 @@ let displayValoVolAnnuel = function() {
 let diplayDepensesEntretienPlaneur = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('depensesEntretienPlaneursAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.depenses_entretien_planeurs;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.depenses_entretien_planeurs_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1363,11 +1400,11 @@ let diplayDepensesEntretienPlaneur = function() {
             ],
             datasets: [
                 {
-                    label: 'Dépenses entretien planeurs '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Dépenses entretien planeurs '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -1413,8 +1450,10 @@ let diplayDepensesEntretienPlaneur = function() {
 let displayValoMoteurAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('valoMoteurAnnuel').getContext('2d');
-    let dataCetteAnnee = stats.tableauDeBordAnnuel.data.valo_moteur;
-    let dataNAnneesPrecedantes = stats.tableauDeBordAnnuel.data.valo_moteur_n_anneesPrecedantes;
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.valo_moteur;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.valo_moteur_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1423,11 +1462,11 @@ let displayValoMoteurAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenu temps moteur SF28 '+stats.tableauDeBordAnnuel.params.annee,
+                    label: 'Revenu temps moteur SF28 '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
-                    label: 'Moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: dataNAnneesPrecedantes,
                 },
             ],
@@ -1486,13 +1525,13 @@ let saveFile = function(filename, data) {
 
 let downloadDataAsCSV = function() {
     let zip = new JSZip();
-    Object.keys(stats.tableauDeBordAnnuel.data).forEach(function(key) {
+    Object.keys(getStatsTableauDeBordAnnuel().data).forEach(function(key) {
         if (key.indexOf('_n_anneesPrecedantes') != -1)
             return;
-        let data = stats.tableauDeBordAnnuel.data[key];
+        let data = getStatsTableauDeBordAnnuel().data[key];
         let dataAnneesPrecedantes = null;
-        if (stats.tableauDeBordAnnuel.data[key+'_n_anneesPrecedantes'] !== undefined)
-            dataAnneesPrecedantes = stats.tableauDeBordAnnuel.data[key+'_n_anneesPrecedantes'];
+        if (getStatsTableauDeBordAnnuel().data[key+'_n_anneesPrecedantes'] !== undefined)
+            dataAnneesPrecedantes = getStatsTableauDeBordAnnuel().data[key+'_n_anneesPrecedantes'];
         let csvContent = '';
         // header
         let line = [ '' ];
@@ -1500,14 +1539,14 @@ let downloadDataAsCSV = function() {
             line.push(i+1);
         csvContent += line.join(',')+'\n';
         // data
-        line = [ key + ' annee '+stats.tableauDeBordAnnuel.params.annee ];
+        line = [ key + ' annee '+getStatsTableauDeBordAnnuel().params.annee ];
         for (let i = 0; i < 12; i++)
             if (data[i] !== undefined)
                 line.push(data[i]);
         csvContent += line.join(',')+'\n';
         // dataAnneesPrecedantes
         if (dataAnneesPrecedantes !== null) {
-            line = [ key + ' moyenne sur les '+stats.tableauDeBordAnnuel.data.moyenne_sur_nb_annee+' dernières années',];
+            line = [ key + ' moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',];
             for (let i = 0; i < 12; i++)
                 if (dataAnneesPrecedantes[i] !== undefined)
                     line.push(dataAnneesPrecedantes[i]);
@@ -1577,27 +1616,33 @@ $(document).ready(function() {
     displayHdv('hdv_club', 'hdv_club', 'Heures de vol club', hdv_club_et_banalise.scales.y.max);
     displayViClub();
 
-    displayLicenceAnnuel();
-    displayValoInfraAnnuel();
-    displayDepensesGeneralesAnnuel();
-    displayHDVClubAnnuel();
-    displayHDVClubCDBAnnuel();
-    displayHDVClubInstructionAnnuel();
+    Object.keys(stats.tableauDeBordAnnuel).forEach(function(key) {
+        $('#moyenneAnnees').append($('<option>', { value: key }).text("Comparer aux "+key+" dernières années"));
+    });
+    $('#moyenneAnnees').change(function() {
+        displayLicenceAnnuel();
+        displayValoInfraAnnuel();
+        displayDepensesGeneralesAnnuel();
+        displayHDVClubAnnuel();
+        displayHDVClubCDBAnnuel();
+        displayHDVClubInstructionAnnuel();
 
-    displayHDVBanaliseAnnuel();
+        displayHDVBanaliseAnnuel();
 
-    displayHDVPilotesDansForfaitAnnuel();
-    displayHDVPilotesHorsForfaitAnnuel();
+        displayHDVPilotesDansForfaitAnnuel();
+        displayHDVPilotesHorsForfaitAnnuel();
 
-    displayLancementEtValoRemorqueAnnuel();
-    diplayDepensesMoyensLancementAnnuel();
-    displayLancementAnnuel();
+        displayLancementEtValoRemorqueAnnuel();
+        diplayDepensesMoyensLancementAnnuel();
+        displayLancementAnnuel();
 
-    displayValoCelluleEtForfaitAnnuel();
-    displayValoJdStageAnnuel();
-    displayValoVolAnnuel();
-    diplayDepensesEntretienPlaneur();
-    displayValoMoteurAnnuel();
+        displayValoCelluleEtForfaitAnnuel();
+        displayValoJdStageAnnuel();
+        displayValoVolAnnuel();
+        diplayDepensesEntretienPlaneur();
+        displayValoMoteurAnnuel();
+    });
+    $('#moyenneAnnees').trigger('change');
 
     displayCFE();
 
