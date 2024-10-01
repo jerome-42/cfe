@@ -21,6 +21,17 @@ class Personne {
             throw new Exception("Impossible de changer le statut estAdmin de l'utilisateur");
     }
 
+    static public function modifieIsOwnerOfGlider($conn, $num, $isOwnerOfGlider) {
+        if ($isOwnerOfGlider === true)
+            $query = "UPDATE personnes set isOwnerOfGlider = true WHERE givavNumber = :num";
+        else
+            $query = "UPDATE personnes set isOwnerOfGlider = false WHERE givavNumber = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':num' => $num ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("Impossible de changer le statut isOwnerOfGlider de l'utilisateur");
+    }
+
     static public function modifieStatutNoRevealWhenInDebt($conn, $num, $statut) {
         if ($statut === true)
             $query = "UPDATE personnes set noRevealWhenInDebt = true WHERE givavNumber = :num";
@@ -41,12 +52,22 @@ class Personne {
         return $data; // on a besoin à minima d'id (pour /connexion)
     }
 
+    static public function creeSiNecessaire($conn, $user) {
+        $query = "INSERT IGNORE INTO personnes (name, email, givavNumber) VALUES (:name, :email, :num)";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':name' => $user['name'], ':email' => $user['mail'], ':num' => $user['number'] ]);
+        $data = self::load($conn, $user['number']);
+        $conn->commit();
+        return $data; // on a besoin à minima d'id (pour /connexion)
+    }
+
     // dans signups on a: { 'Instructeur': [ 'Prénom Nom', 'Prénom Nom2' }, 'Chef de piste': [ 'Prénom Nom' ] }
     // d est la date de l'inscription
     static public function getDebtPilotFromClicnNGlideSignups($conn, $d, $signups) {
         $pilots = [];
         $notResolved = [];
-        $q = "SELECT personnes.name, personnes.noRevealWhenInDebt, personnes.email, personnes.givavNumber, givavdebtor.balance, unix_timestamp(givavdebtor.since) AS since FROM personnes LEFT JOIN givavdebtor ON givavdebtor.givavNumber = personnes.givavNumber WHERE personnes.name LIKE :name AND (givavdebtor.since <= :d OR givavdebtor.since IS NULL)";
+        // certains prénoms sont avec des - d'autres non (JEAN-PIERRE, JEAN-LUC ...) on gère les 2 cas
+        $q = "SELECT personnes.name, personnes.noRevealWhenInDebt, personnes.email, personnes.givavNumber, givavdebtor.balance, unix_timestamp(givavdebtor.since) AS since FROM personnes LEFT JOIN givavdebtor ON givavdebtor.givavNumber = personnes.givavNumber WHERE (personnes.name LIKE :name OR REPLACE(:name, '-', ' ') = personnes.name) AND (givavdebtor.since <= :d OR givavdebtor.since IS NULL)";
         $sth = $conn->prepare($q);
         //var_dump($signups);
         foreach ($signups as $section => $names) {

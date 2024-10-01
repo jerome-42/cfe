@@ -87,6 +87,8 @@ var updateDetails = function() {
 		data.push("pas de CFE à réaliser");
 	    if (res.validated > 0)
 		data.push(durationToHuman(res.validated) + " validées");
+            if (res.private > 0)
+                data.push(durationToHuman(res.private)+ " sections/privés qui ne sont pas prises en compte (car au delà des 16 heures privés comptant pour la CFE) soit au total "+durationToHuman(res.validated+res.private)+" réalisées");
 	    if (res.submited === 0)
 		data.push("pas de CFE en attente de validation");
 	    else

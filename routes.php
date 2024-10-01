@@ -59,8 +59,8 @@ post('/api/pushStatsFile', function($conn, $pug, $env) {
     }
     if ($_FILES['data']['error'] !== UPLOAD_ERR_OK)
         return apiReturnError("upload error");
-    if ($_FILES['data']['size'] > 1000000)
-        return apiReturnError("file size > 1 Mo");
+    if ($_FILES['data']['size'] > 2000000)
+        return apiReturnError("file size > 2 Mo");
     $dstPath = null;
     switch ($_POST['what']) {
     case 'stats.js':
@@ -148,6 +148,31 @@ post('/changeAdmin', function($conn) {
     Personne::modifieStatutAdmin($conn, intval($_POST['num']), $status);
 });
 
+post('/changeIsOwnerOfGlider', function($conn) {
+    if (!isset($_SESSION['auth'])) {
+        echo "vous n'êtes pas connecté";
+        return http_response_code(500);
+    }
+    if (!isset($_SESSION['isAdmin'])) {
+        echo "vous n'êtes pas admin";
+        return http_response_code(500);
+    }
+    foreach ([ 'num', 'isOwnerOfGlider' ] as $elem) {
+        if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+            echo "le paramètre ".$elem." est absent";
+            return http_response_code(500);
+        }
+    }
+    if (!is_numeric($_POST['num'])) {
+        echo "le paramètre num doit être un entier";
+        return http_response_code(500);
+    }
+    $isOwnerOfGlider = false;
+    if ($_POST['isOwnerOfGlider'] === 'true')
+        $isOwnerOfGlider = true;
+    Personne::modifieIsOwnerOfGlider($conn, intval($_POST['num']), $isOwnerOfGlider);
+});
+
 post('/changeNoRevealWhenInDebt', function($conn) {
     if (!isset($_SESSION['auth'])) {
         echo "vous n'êtes pas connecté";
@@ -194,7 +219,7 @@ post('/connexion', function($conn, $pug, $env) {
         $givav = new SmartGlide($_POST['login'], $_POST['pass'], $env);
         $givav->login();
         $user = $givav->getName();
-        $userData = Personne::creeOuMAJ($conn, $user);
+        $userData = Personne::creeSiNecessaire($conn, $user);
         if (Personne::estAdmin($conn, $user['number']) === true) {
             $givav->getAndStoreGliders($conn);
         }
