@@ -26,6 +26,7 @@ get('/', function($conn, $pug, $env) {
     $proposals = new Proposals($env);
     $vars['proposals'] = $proposals->list();
     $vars['va'] = $cfe->getVA($_SESSION['givavNumber'], getYear());
+    $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
     $pug->displayFile('view/index.pug', $vars);
 });
 
@@ -1097,6 +1098,7 @@ get('/listeCFE', function($conn, $pug) {
     $lines = $cfe->getRecords($_SESSION['givavNumber']);
     $vars = $_SESSION;
     $vars['lines'] = $lines;
+    $vars['va'] = $cfe->getVA($_SESSION['givavNumber'], getYear());
     $pug->displayFile('view/listeCFE.pug', $vars);
 });
 

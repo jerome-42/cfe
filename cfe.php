@@ -153,7 +153,7 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
                   'rejected' => floatval($this->getLines('rejected', $givavNumber, $year)),
                   'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)),
                   'validated' => floatval($this->getLines2('validated', $givavNumber, $year)),
-                  'vaValidated' => 0 ];
+                  'vaValidated' => 0 ]; // va en exces et non comptabilisé
 
         $personne = new Personne($this->conn);
         if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 1) {
