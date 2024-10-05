@@ -42,6 +42,7 @@ block content
       table.table.table-striped(x-numero=$membre['givavNumber'])#list
         thead
           tr
+            th Id
             th Statut
             th Date
             th Bénéficiaire
@@ -52,6 +53,8 @@ block content
         tbody
           each line in $lines
             tr(x-id=$line['id'] x-validation=$line['status'])
+              td= $line['id']
+                button.btn.btn-primary.switchToVA VA
               td.validation(x-validated-by=$line['validatedName'])= $line['status']
               td= $line['workDate']
               td= $line['beneficiary']
@@ -61,6 +64,7 @@ block content
               td= $line['rejectedCause']
         tfoot
           tr
+            th Id
             th Statut
             th Date
             th Bénéficiaire

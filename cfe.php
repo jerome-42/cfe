@@ -85,7 +85,7 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
     }
 
     public function getRecordsByYear($givavNumber, $year) {
-        $query = 'SELECT *, validated.name as validatedName FROM cfe_records LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
+        $query = 'SELECT *, cfe_records.id, validated.name as validatedName FROM cfe_records LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':year' => $year, ':givavNumber' => $givavNumber ]);
         $lines = $sth->fetchAll();
@@ -224,5 +224,11 @@ ORDER BY workDate DESC';
             $stats['cfe']['declarationsCFE_n_anneesPrecedantes'][] = $cumulDeclarationCFE_n_anneesPrecedantes;
         }
         return $stats;
+    }
+
+    public function switchToVA($id) {
+        $q = "UPDATE cfe_records SET beneficiary = 'VA' WHERE id = :id";
+        $sth = $this->conn->prepare($q);
+        $sth->execute([ ':id' => $id ]);
     }
 }

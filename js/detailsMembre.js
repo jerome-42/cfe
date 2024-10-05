@@ -199,4 +199,19 @@ $(document).ready(function() {
     });
     updateDetails();
     $('#search').focus();
+
+    $('.switchToVA').click(function() {
+        var id = $(this).parents('tr').attr('x-id');
+        $.ajax({
+            url: '/switchToVA',
+            data: { id },
+	    dataType: 'json',
+            type: 'POST',
+            error: function() {
+	        alert("Impossible");
+            },
+            success: function(res) {
+            }
+        });
+    });
 });

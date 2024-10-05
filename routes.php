@@ -1316,6 +1316,16 @@ get('/sudo', function($conn, $pug) {
     return redirect('/');
 });
 
+post('/switchToVA', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $cfe = new CFE($conn);
+    if (!isset($_POST['id']) || !is_numeric($_POST['id']))
+        return apiReturnError("id is missing or not a number");
+    $cfe->switchToVA($_POST['id']);
+    echo '{ "ok": true }';
+});
+
 // si on arrive là c'est qu'aucune URL n'a matchée, donc => 404
 http_response_code(404);
 Phug::displayFile('view/404.pug');
