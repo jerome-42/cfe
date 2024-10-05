@@ -16,8 +16,10 @@ block content
             .progress.mt-2(role="progressbar" aria-label="heures réalisées" aria-valuenow=$validated aria-valuemin="0" aria-valuemax=$thencfetodo style="height: 30px")
               - $percent = ($validated/$thecfetodo)*100
               .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
-          if $va > 0
-            p.mt-2.mb-0 Vous avez aussi réalisé #{$durationToHuman($va)} pour votre Visite Annuelle
+          if $isOwnerOfGlider
+            p.mt-2.mb-0 Vous êtes propriétaire et/ou membre d'une section, vous avez réalisé #{$durationToHuman($vaValidated)} pour votre/vo Visite(s) Annuelle(s)
+            if $va
+              | (Vous pouvez déclarer au maximum #{durationToHuman($va)} pour celle(s)-çi)
 
 
       $reste = $thecfetodo - $validated
@@ -45,9 +47,7 @@ block content
           small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année)
           if $isOwnerOfGlider == 1
             br
-            | La&nbsp;
-            a(href="/cnb") CNB s'applique aux sections et propriétaires.
-            | &nbsp;En tant que propriétaire, seules 16 heures de travail sur votre machine sont comptabilisées. Lorsque vous travaillez pour le club, les sections ou d'autres propriétaires ces heures comptent.
+            | Vous êtes propriétaire et/ou membre de section, le nombre d'heure de CFE est calculé si votre machine n'est pas banalisée ou si votre machine ne fait pas assez d'heure avec un pilote non-propriétaire à bord.
 
       if $submited > 0
         .alert.alert-info #{durationToHuman($submited)} en attente de validation

@@ -130,6 +130,17 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
         return $lines[0]['duration'];
     }
 
+    public function getVA($givavNumber, $year) {
+        if (!is_numeric($year))
+            throw new Exception("l'année doit être un nombre");
+        $query = "SELECT minutes FROM va WHERE who = :who AND year = :year";
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ 'year' => $year, ':who' => $givavNumber ]);
+        if ($sth->rowCount() === 1)
+            return $sth->fetchAll()[0]['minutes'];
+        return null;
+    }
+
     public function isCompleted($membre) {
         if ($membre['cfeValidated'] >= $membre['cfeTODO'])
             return 1;
@@ -142,20 +153,23 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
                   'rejected' => floatval($this->getLines('rejected', $givavNumber, $year)),
                   'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)),
                   'validated' => floatval($this->getLines2('validated', $givavNumber, $year)),
-                  'va' => 0 ];
+                  'vaValidated' => 0 ];
 
         $personne = new Personne($this->conn);
         if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 1) {
             // c'est un propriétaire, on ne garde que maxi 16h de VA
             $nbHoursVA = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'VA'");
             $nbHoursOthers = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'VA'");
-            if ($nbHoursVA < 16*60) {
-                $data['validated'] = $nbHoursOthers + $nbHoursVA;
-                $data['va'] = 0;
-            }
-            else {
-                $data['validated'] = $nbHoursOthers + 16*60;
-                $data['va'] = $nbHoursVA - 16*60;
+            $va = $this->getVA($givavNumber, $year);
+            if ($va != null) {
+                if ($nbHoursVA <= $va) {
+                    $data['validated'] = $nbHoursOthers + $nbHoursVA;
+                    $data['vaValidated'] = $nbHoursVA;
+                }
+                else {
+                    $data['validated'] = $nbHoursOthers + $va;
+                    $data['vaValidated'] = $nbHoursVA - $va;
+                }
             }
         }
 

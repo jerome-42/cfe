@@ -115,6 +115,15 @@ $tables = [
   UNIQUE KEY `who` (`who`)
 ) ENGINE=InnoDB",
 
+    'va' => "CREATE TABLE `va` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `who` bigint unsigned NOT NULL,
+  `year` int unsigned NOT NULL,
+  `minutes` int unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `who` (`who`)
+) ENGINE=InnoDB",
+
     'settings' => [ "CREATE TABLE `settings` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `what` varchar(255) NOT NULL,

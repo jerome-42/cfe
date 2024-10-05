@@ -25,6 +25,7 @@ get('/', function($conn, $pug, $env) {
     $vars['durationSubmitted'] = $cfe->getSubmittedDuration();
     $proposals = new Proposals($env);
     $vars['proposals'] = $proposals->list();
+    $vars['va'] = $cfe->getVA($_SESSION['givavNumber'], getYear());
     $pug->displayFile('view/index.pug', $vars);
 });
 
@@ -810,6 +811,9 @@ get('/detailsMembre', function($conn, $pug) {
     $cfe = new CFE($conn);
     $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
     $vars['defaultCFE_TODOHour'] = $vars['defaultCFE_TODO'] / 60;
+    $vars['va'] = $cfe->getVA($num, getYear());
+    if ($vars['va'] != null)
+        $vars['va'] = $vars['va'] / 60; // on affiche en heure
     $vars['membre'] = Personne::load($conn, $num);
     $vars['membre']['todoHour'] = round($vars['membre']['todo'] / 60);
     if ($vars['membre']['todo'] === null || $vars['membre']['todoHour'] == $vars['defaultCFE_TODOHour'])
@@ -1234,6 +1238,7 @@ post('/updateMembreParams', function($conn) {
             return http_response_code(500);
         }
     }
+    // cfeTODO
     if ($_POST['cfeTODO'] === '') {
         $query = "DELETE FROM cfe_todo WHERE who = :num";
         $sth = $conn->prepare($query);
@@ -1252,6 +1257,27 @@ post('/updateMembreParams', function($conn) {
             ':who' => intval($_POST['num']),
             ':year' => getYear(),
             ':todo' => intval($_POST['cfeTODO']) * 60,
+        ]);
+    }
+    // VA
+    if ($_POST['va'] === '' || $_POST['va'] === '0') {
+        $query = "DELETE FROM va WHERE who = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([
+            ':num' => intval($_POST['num']),
+        ]);
+    } else {
+        if (!is_numeric($_POST['va']) ||
+            intval($_POST['va']) < 0 || intval($_POST['va']) > 200) {
+            echo "le nombre d'heure maximum de la visite annuelle doit être entre 0 et 200";
+            return http_response_code(500);
+        }
+        $query = "INSERT INTO va (who, year, minutes) VALUES (:who, :year, :minutes) ON DUPLICATE KEY UPDATE minutes = :minutes";
+        $sth = $conn->prepare($query);
+        $sth->execute([
+            ':who' => intval($_POST['num']),
+            ':year' => getYear(),
+            ':minutes' => intval($_POST['va']) * 60,
         ]);
     }
     $enableMultiDateDeclaration = 0;

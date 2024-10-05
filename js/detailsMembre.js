@@ -115,16 +115,19 @@ $(document).ready(function() {
     });
 
     $('#updateParams').click(function() {
-	var enableMultiDateDeclaration = 0;
+        let data = {
+	    num: $('#list').attr('x-numero'),
+	    cfeTODO: $('#cfeTODO').val(),
+	    enableMultiDateDeclaration: 0,
+            va: '',
+	}
 	if ($('#enableMultiDateDeclaration').is(':checked'))
-	    enableMultiDateDeclaration = 1;
+	    data.enableMultiDateDeclaration = 1;
+        if ($('#va').length > 0)
+            data.va = $('#va').val();
 	$.ajax({
             url: '/updateMembreParams',
-            data: {
-		num: $('#list').attr('x-numero'),
-		cfeTODO: $('#cfeTODO').val(),
-		enableMultiDateDeclaration: enableMultiDateDeclaration,
-	    },
+            data: data,
             type: 'POST',
             error: function() {
 		alert("Impossible");
