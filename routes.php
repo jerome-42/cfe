@@ -1268,7 +1268,7 @@ post('/updateMembreParams', function($conn) {
         ]);
     } else {
         if (!is_numeric($_POST['va']) ||
-            intval($_POST['va']) < 0 || intval($_POST['va']) > 200) {
+            floatval($_POST['va']) < 0 || floatval($_POST['va']) > 200) {
             echo "le nombre d'heure maximum de la visite annuelle doit être entre 0 et 200";
             return http_response_code(500);
         }
@@ -1277,7 +1277,7 @@ post('/updateMembreParams', function($conn) {
         $sth->execute([
             ':who' => intval($_POST['num']),
             ':year' => getYear(),
-            ':minutes' => intval($_POST['va']) * 60,
+            ':minutes' => floatval($_POST['va']) * 60,
         ]);
     }
     $enableMultiDateDeclaration = 0;
