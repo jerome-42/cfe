@@ -949,7 +949,7 @@ get('/exportAllData', function($conn) {
         if ($fd === false) {
             throw new Exception('Failed to open temporary file');
         }
-        $headers = [ 'membre', 'est propriétaire', 'CFE à faire (CNB complète)', 'heures VA maximales', 'heures CFE validées', 'heures VA en exces et non comptabilisées' ];
+        $headers = [ 'membre', 'est propriétaire', 'CFE à faire (CNB complète)', 'minutes VA maximales', 'minutes CFE validées', 'minutes VA en excès et non comptabilisées' ];
         fputcsv($fd, $headers);
         foreach (Personne::getAll($conn, $year) as $membre) {
             $statsCFE = $cfe->getStats($membre['givavNumber'], $year);
