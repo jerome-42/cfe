@@ -115,7 +115,7 @@ post('/api/updatePilotsList', function($conn, $pug, $env) {
     $q = "INSERT IGNORE INTO personnes_active (id_personne, year) VALUES (:id_personne, :year)";
     $sthInsertPersonnesActive = $conn->prepare($q);
     // si la personne a déjà un cfe_todo on ne l'écrase pas
-    $q = "INSERT IGNORE INTO cfe_todo (who, year, todo) VALUES (:id_personne, :year, :todo) ON DUPLICATE KEY UPDATE todo = :todo";
+    $q = "INSERT IGNORE INTO cfe_todo (who, year, todo) VALUES (:givavNumber, :year, :todo) ON DUPLICATE KEY UPDATE todo = :todo";
     $sthSetCFETodo = $conn->prepare($q);
     $q = "SELECT id FROM personnes WHERE name = :name";
     $sthGetId = $conn->prepare($q);
@@ -127,7 +127,7 @@ post('/api/updatePilotsList', function($conn, $pug, $env) {
         $idPersonne = $sthGetId->fetchAll()[0]['id'];
         $sthInsertPersonnesActive->execute([ ':id_personne' => $idPersonne, ':year' => getYear() ]);
         if ($pilot['nouveau_membre'] === true)
-            $sthSetCFETodo->execute([ ':id_personne' => $idPersonne, ':year' => getYear(), ':todo' => 0 ]);
+            $sthSetCFETodo->execute([ ':givavNumber' => $pilot['givavNumber'], ':year' => getYear(), ':todo' => 0 ]);
     }
     echo json_encode([ 'ok' => true ]);
 });

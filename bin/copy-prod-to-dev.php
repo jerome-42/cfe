@@ -9,7 +9,7 @@ $conn = new PDO("mysql:".$dsn, $config['database']['username'], $config['databas
 checkDatabase($conn, $config['database']['database']);
 $conn->beginTransaction();
 
-$tables = [ 'cfe_records', 'cfe_proposals', 'cfe_todo', 'flarm_logs', 'givavdebtor', 'glider', 'personnes', 'settings' ];
+$tables = [ 'cfe_records', 'cfe_proposals', 'cfe_todo', 'flarm_logs', 'givavdebtor', 'glider', 'personnes', 'personnes_active', 'settings' ];
 foreach ($tables as $table) {
     $query = "TRUNCATE TABLE ".$table;
     $conn->query($query);
