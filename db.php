@@ -106,13 +106,24 @@ $tables = [
   UNIQUE KEY `givavNumber` (`givavNumber`)
 ) ENGINE=InnoDB",
 
+    'personnes_active' => [
+        "CREATE TABLE `personnes_active` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id_personne` bigint unsigned NOT NULL,
+  `year` int unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB",
+        "ALTER TABLE `personnes_active` ADD UNIQUE INDEX `personnes_active_unique` (`id_personne`, `year`)",
+    ],
+
+
     'cfe_todo' => "CREATE TABLE `cfe_todo` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `who` bigint unsigned NOT NULL,
   `year` int unsigned NOT NULL,
   `todo` int unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `who` (`who`)
+  UNIQUE INDEX `cfe_todo_unique` (`who`, `year`)
 ) ENGINE=InnoDB",
 
     'va' => "CREATE TABLE `va` (
@@ -133,8 +144,6 @@ $tables = [
 ) ENGINE=InnoDB",
                     "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2023', 16*60)",
                     "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2024', 16*60)",
-                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2025', 16*60)",
-                    "INSERT INTO settings(what, value) VALUES ('defaultCFE_TODO_2026', 16*60)",
     ],
 ];
 

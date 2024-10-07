@@ -104,10 +104,30 @@ post('/api/updatePilotsList', function($conn, $pug, $env) {
     $pilots = json_decode($_POST['pilots'], true);
     if (json_last_error() !== JSON_ERROR_NONE)
         return apiReturnError("pilots is not json");
-    $q = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :givavNumber) ON DUPLICATE KEY UPDATE name = :name, email = :email";
+    $cfe = new CFE($conn);
+    $defaultCFE_TODO = $cfe->getDefaultCFE_TODO(getYear());
+    // toutes les personnes sont inactives, seules celles qui sont injectées ré-apparaîtront
+    $q = "DELETE FROM personnes_active WHERE year = :year";
     $sth = $conn->prepare($q);
+    $sth->execute([ ':year' => getYear() ]);
+    $q = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :givavNumber) ON DUPLICATE KEY UPDATE name = :name, email = :email";
+    $sthInsertPersonnes = $conn->prepare($q);
+    $q = "INSERT IGNORE INTO personnes_active (id_personne, year) VALUES (:id_personne, :year)";
+    $sthInsertPersonnesActive = $conn->prepare($q);
+    // si la personne a déjà un cfe_todo on ne l'écrase pas
+    $q = "INSERT IGNORE INTO cfe_todo (who, year, todo) VALUES (:id_personne, :year, :todo) ON DUPLICATE KEY UPDATE todo = :todo";
+    $sthSetCFETodo = $conn->prepare($q);
+    $q = "SELECT id FROM personnes WHERE name = :name";
+    $sthGetId = $conn->prepare($q);
     foreach ($pilots as $pilot) {
-        $sth->execute([ ':name' => $pilot['name'], ':email' => $pilot['email'], ':givavNumber' => $pilot['givavNumber'] ]);
+        $sthInsertPersonnes->execute([ ':name' => $pilot['name'], ':email' => $pilot['email'], ':givavNumber' => $pilot['givavNumber'] ]);
+        $sthGetId->execute([ ':name' => $pilot['name'] ]);
+        if ($sthGetId->rowCount() !== 1)
+            throw new Exception("Unable to retrieve last inserted membre");
+        $idPersonne = $sthGetId->fetchAll()[0]['id'];
+        $sthInsertPersonnesActive->execute([ ':id_personne' => $idPersonne, ':year' => getYear() ]);
+        if ($pilot['nouveau_membre'] === true)
+            $sthSetCFETodo->execute([ ':id_personne' => $idPersonne, ':year' => getYear(), ':todo' => 0 ]);
     }
     echo json_encode([ 'ok' => true ]);
 });
