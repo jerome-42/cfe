@@ -969,21 +969,32 @@ get('/exportAllData', function($conn) {
         if ($fd === false) {
             throw new Exception('Failed to open temporary file');
         }
-        $headers = [ 'membre', 'est propriétaire', 'CFE à faire (CNB complète)', 'minutes VA maximales', 'minutes CFE validées', 'minutes VA en excès et non comptabilisées', 'CFE complète' ];
+        $headers = [
+            /* 1 */ 'membre',
+            /* 2 */ 'est propriétaire',
+            /* 3 */ 'CFE à faire (CNB complète)',
+            /* 4 */ 'minutes CFE validées',
+            /* 5 */ 'CFE complète',
+            /* 6 */ 'minutes VA maximales',
+            /* 7 */ 'minutes VA en excès et non comptabilisées',
+            /* 8 */ 'minutes CFE validées règle VA maxi non appliquée',
+        ];
         fputcsv($fd, $headers);
         foreach (Personne::getAll($conn, $year) as $membre) {
             $statsCFE = $cfe->getStats($membre['givavNumber'], $year);
             $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], getYear());
-            $line = [ 'membre' => $membre['name'],
-                      'propriétaire' => $membre['isOwnerOfGlider'],
-                      'cfe' => $membre['cfeTODO'],
-                      'VA max' => $membre['vaMaxi'],
-                      'validated' => $statsCFE['validated'],
-                      'va' => $statsCFE['vaValidated'] ];
+            $line = [ /* 1 */ $membre['name'],
+                      /* 2 */ $membre['isOwnerOfGlider'],
+                      /* 3 */ $membre['cfeTODO'],
+                      /* 4 */ $statsCFE['validated'],
+            ];
             if ($cfe->isCompleted($membre))
-                $line['CFE comlète'] = 'oui';
+                $line[] = 'oui'; /* 5 */
             else
-                $line['CFE comlète'] = 'non';
+                $line[] = 'non'; /* 5 */
+            $line[] = $membre['vaMaxi']; /* 6 */
+            $line[] = $statsCFE['vaValidatedAndNotCount']; /* 7 */
+            $line[] = $statsCFE['validatedVANotRestricted']; /* 8 */
             fputcsv($fd, $line);
         }
         rewind($fd);

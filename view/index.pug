@@ -18,9 +18,9 @@ block content
               .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
           //if $isOwnerOfGlider && $va
           //  | Vous êtes propriétaire ou membre de section et vous pouvez déclarer au maximum #{durationToHuman($va)} pour votre/vos Visite(s) Annuelle(s).
-          //  if $vaValidated > 0
+          //  if $vaValidatedAndNotCount > 0
           //    br
-          //    | Vous avez aussi réalisé #{durationToHuman($vaValidated)} mais elles ne sont pas comptabilisées car elles dépassent le nombre d'heure maximum de visite annuelle.
+          //    | Vous avez aussi réalisé #{durationToHuman($vaValidatedAndNotCount)} mais elles ne sont pas comptabilisées car elles dépassent le nombre d'heure maximum de visite annuelle.
 
 
       $reste = $thecfetodo - $validated
