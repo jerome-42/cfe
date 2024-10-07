@@ -925,7 +925,7 @@ get('/exportAllData', function($conn) {
         outputName: $zipFilename,
         sendHttpHeaders: true, // enable output of HTTP headers
     );
-
+    $cfe = new CFE($conn);
     $years = exportAllData_getYears($conn);
     foreach ($years as $year) {
         // membres
@@ -943,6 +943,32 @@ get('/exportAllData', function($conn) {
                 data: $data,
             );
         }
+
+        // totaux CFE
+        $fd = fopen('php://temp/maxmemory:1048576', 'w');
+        if ($fd === false) {
+            throw new Exception('Failed to open temporary file');
+        }
+        $headers = [ 'membre', 'est propriétaire', 'CFE à faire (CNB complète)', 'heures VA maximales', 'heures CFE validées', 'heures VA en exces et non comptabilisées' ];
+        fputcsv($fd, $headers);
+        foreach (Personne::getAll($conn, $year) as $membre) {
+            $statsCFE = $cfe->getStats($membre['givavNumber'], $year);
+            $line = [ 'membre' => $membre['name'],
+                      'propriétaire' => $membre['isOwnerOfGlider'],
+                      'cfe' => $membre['cfeTODO'],
+                      'VA max' => $membre['vaMaxi'],
+                      'validated' => $statsCFE['validated'],
+                      'va' => $statsCFE['vaValidated'],
+            ];
+            fputcsv($fd, $line);
+        }
+        rewind($fd);
+        $csv = stream_get_contents($fd);
+        fclose($fd);
+        $zip->addFile(
+            fileName: 'cfe-totaux-'.$year.'.csv',
+            data: $csv,
+        );
     }
     $zip->finish();
 });

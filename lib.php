@@ -29,7 +29,7 @@ function exportAllData_getPersonnes($conn, $year) {
     }
     $membres = Personne::getAll($conn, $year);
     $columns = [ [ 'givavNumber', 'givav' ], [ 'name', 'nom' ], [ 'email', 'email' ],
-                 [ 'isAdmin', 'administrateur' ], [ 'cfeTODO', 'cfe' ] ];
+                 [ 'isAdmin', 'administrateur' ], [ 'cfeTODO', 'cfe' ], [ 'vaMaxi', 'va maxi' ] ];
     $headers = array_map(function($i) {
         return $i[1];
     }, $columns);
