@@ -199,7 +199,7 @@ $output['tableauDeBord'] = [
 
 $output['tableauDeBordAnnuel'] = [];
 
-foreach ([ 2, 5, 1 ] as $moyenneSurNbAnnee) {
+foreach ([ 1, 2, 5, 9 ] as $moyenneSurNbAnnee) {
     echo "tableau de bord annuel ".$moyenneSurNbAnnee." ans".PHP_EOL;
     $q = 'SELECT tableauDeBordAnnuel(:annee, :last_computation_date, :moyenne_sur_nb_annee) AS tdb';
     $sth = $db->prepare($q);

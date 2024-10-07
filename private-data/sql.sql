@@ -2642,3 +2642,188 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION simulationParcVolant() RETURNS TABLE (
+  membre VARCHAR,
+  categorie VARCHAR,
+  fraisTechnique DECIMAL,
+  typeFraisTechnique VARCHAR,
+  forfait DECIMAL,
+  nomForfait VARCHAR,
+  HDVSurMachineHorsClub DECIMAL, -- heures de vol payées en 2024 sur machine hors club (les propriétaires qui volent sur leurs machines ont 0)
+  HDVSurMachineClub DECIMAL, -- heures de vol école à payer avec parc volant
+  HDVEnEcole DECIMAL, -- heures de vol école à payer avec parc volant
+  remorques DECIMAL,
+  treuillees DECIMAL,
+  moteur DECIMAL
+  ) AS $$
+DECLARE
+   rMembre RECORD;
+   rVol RECORD;
+   rTest RECORD;
+   estInstructeur BOOLEAN;
+   estProprietaireOuSection BOOLEAN;
+   estEleve BOOLEAN;
+   estStagiaire BOOLEAN;
+   aSPLPlus25 BOOLEAN;
+   aSPLMoins25 BOOLEAN;
+   annee INT;
+BEGIN
+  annee := 2024;
+  FOR rMembre IN SELECT * FROM vfr_pilote WHERE pilote_actif IS true AND LOWER(licence_nom) NOT LIKE '%découverte%' AND club_nom LIKE '%AAVO%' ORDER BY nom LOOP
+    -- reset
+    estInstructeur := false;
+    estProprietaireOuSection := false;
+    estEleve := false;
+    estStagiaire := false;
+    aSPLMoins25 := false;
+    aSPLPlus25 := false;
+    categorie := NULL;
+    fraisTechnique := NULL;
+    typeFraisTechnique := NULL;
+    forfait := NULL;
+    nomForfait := NULL;
+    nomForfait := NULL;
+    HDVSurMachineHorsClub := NULL;
+    HDVSurMachineClub := NULL;
+    HDVEnEcole := NULL;
+    remorques := NULL;
+    treuillees := NULL;
+    moteur := NULL;
+    membre := CONCAT(rMembre.nom, ' ', rMembre.prenom);
+    -- est-il instructeur ?
+    IF rMembre.instructeur_actif IS true THEN
+      RAISE NOTICE '% est instructeur (vfr_pilote(id_pilote=%).instructeur_actif=true)', membre, rMembre.id_pilote;
+      estInstructeur := true;
+    END IF;
+    -- est-il élève ?
+    IF rMembre.lp_date IS NOT NULL THEN
+      RAISE NOTICE '% a une SPL (vfr_pilote(id_pilote=%).lp_date=%)', membre, rMembre.id_pilote, rMembre.lp_date;
+      IF rMembre.cat_age = '-25 ans' THEN
+        aSPLMoins25 := true;
+      ELSE
+        aSPLPlus25 := true;
+      END IF;
+    ELSE
+      RAISE NOTICE '% est élève (vfr_pilote(id_pilote=%).lp_date=NULL)', membre, rMembre.id_pilote;
+      estEleve := true;
+    END IF;
+    -- est-il stagiaire ?
+    SELECT nom_forfait, montant INTO rTest FROM vfr_forfait_pilote
+      JOIN vfr_gv_personne ON vfr_forfait_pilote.id_personne = rMembre.id_personne
+      WHERE EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = EXTRACT(YEAR FROM NOW())
+        AND LOWER(vfr_forfait_pilote.nom_forfait) LIKE '%stage%';
+    IF FOUND THEN
+      RAISE NOTICE '% est stagiaire (vfr_forfait_pilote(id_personne=%)%)', membre, rMembre.id_personne, rTest.nom_forfait;
+      estStagiaire := true;
+      forfait := rTest.montant;
+      nomForfait := rTest.nom_forfait;
+    END IF;
+    -- fait-il partie de l'ANEG ou de CORMEILLES ?
+    IF rMembre.tarif LIKE '%EGF%' OR rMembre.tarif LIKE '%CORMEILLES%' THEN
+      RAISE NOTICE '% est section (vfr_pilote(id_pilote=%).tarif=%)', membre, rMembre.id_pilote, rMembre.tarif;
+      estProprietaireOuSection := true;
+    END IF;
+    -- est-il propriétaire ? (est-il bénéficiaire d'une machine ?)
+    SELECT 1 INTO rTest FROM aeronef
+      JOIN aeronef_situation ON aeronef_situation.id_aeronef = aeronef.id_aeronef
+      JOIN aeronef_situation_benef ON aeronef_situation_benef.id_aeronef_situation = aeronef_situation.id_aeronef_situation
+      WHERE id_personne = rMembre.id_personne;
+    IF FOUND THEN
+      RAISE NOTICE '% est propriétaire (vfr_pilote(id_pilote=%))', membre, rMembre.id_pilote;
+      estProprietaireOuSection := true;
+    END IF;
+    -- a-t'il un forfait ?
+    SELECT nom_forfait, montant INTO rTest FROM vfr_forfait_pilote
+      JOIN vfr_gv_personne ON vfr_forfait_pilote.id_personne = rMembre.id_personne
+      WHERE EXTRACT(YEAR FROM vfr_forfait_pilote.date_debut) = EXTRACT(YEAR FROM NOW())
+      AND LOWER(vfr_forfait_pilote.nom_forfait) NOT LIKE '%récompense%';
+    IF FOUND THEN
+      forfait := rTest.montant;
+      nomForfait := rTest.nom_forfait;
+    END IF;
+
+    -- frais technique
+    SELECT INTO rTest cp_compte.libelle, li.montant FROM pilote
+      JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+      JOIN cp_piece pi ON pi.id_piece = li.id_piece
+      JOIN cp_piece_ligne li2 ON li2.id_piece = pi.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = li2.id_compte AND cp_compte.code LIKE '7561%'
+      WHERE pilote.id_personne = rMembre.id_personne AND
+      pi.date_echeance BETWEEN '2023-10-01' AND '2024-09-30' LIMIT 1;
+    typeFraisTechnique = rTest.libelle;
+    fraisTechnique = rTest.montant;
+
+
+
+    -- calculer le coût heure de vol sur machine hors club
+    HDVSurMachineHorsClub := 0;
+    FOR rVol IN SELECT *
+      FROM vfr_vol
+      WHERE saison = annee AND situation = 'B' AND (id_cdt_de_bord = rMembre.id_personne OR id_co_pilote = rMembre.id_personne)
+      ORDER BY date_vol ASC, decollage ASC
+    LOOP
+      IF rVol.id_cdt_de_bord = rMembre.id_personne THEN
+        SELECT INTO rTest piloteEstProprietaireDeMachine(rVol.id_cdt_de_bord, rVol.id_aeronef, rVol.date_vol) AS estProprietaire;
+        IF rTest.estProprietaire IS false THEN
+          HDVSurMachineHorsClub := HDVSurMachineHorsClub + rVol.prix_vol_cdb;
+        END IF;
+      ELSE
+        SELECT INTO rTest piloteEstProprietaireDeMachine(rVol.id_co_pilote, rVol.id_aeronef, rVol.date_vol) AS estProprietaire;
+        IF rTest.estProprietaire IS false THEN
+          HDVSurMachineHorsClub := HDVSurMachineHorsClub + rVol.prix_vol_co;
+        END IF;
+      END IF;
+    END LOOP;
+
+    -- calculer le coût heures de vol sur machine club
+    SELECT INTO rTest
+      SUM(COALESCE(prix_vol_cdb, 0)) AS hdv
+    FROM vfr_vol
+    WHERE saison = annee AND id_cdt_de_bord = rMembre.id_personne AND situation = 'C';
+    HDVSurMachineClub := rTest.hdv;
+    SELECT INTO rTest
+      COALESCE(SUM(COALESCE(prix_vol_co, 0)), 0) AS hdv
+    FROM vfr_vol
+    WHERE saison = annee AND id_co_pilote = rMembre.id_personne AND situation = 'C';
+    HDVSurMachineClub := HDVSurMachineClub + rTest.hdv;
+
+    -- calculer le coût heures de vol en instruction
+    SELECT INTO rTest
+      SUM(COALESCE(prix_vol_elv, 0)) AS hdv
+    FROM vfr_vol
+    WHERE saison = annee AND
+      id_eleve = rMembre.id_personne;
+    HDVEnEcole := rTest.hdv;
+
+    -- calculer le coût remorques, treuillées et moteur
+    SELECT INTO rTest
+      SUM(COALESCE(prix_remorque_elv, 0) + COALESCE(prix_remorque_cdb, 0) + COALESCE(prix_remorque_co, 0)) AS prix_remorque,
+      SUM(COALESCE(prix_treuil_elv, 0) + COALESCE(prix_treuil_cdb, 0) + COALESCE(prix_treuil_co, 0)) AS prix_treuil,
+      SUM(COALESCE(prix_moteur_elv, 0) + COALESCE(prix_moteur_cdb, 0) + COALESCE(prix_moteur_co, 0)) AS prix_moteur
+    FROM vfr_vol
+    WHERE saison = annee AND
+      (id_cdt_de_bord = rMembre.id_personne OR id_co_pilote = rMembre.id_personne OR id_eleve = rMembre.id_personne);
+    remorques := rTest.prix_remorque;
+    treuillees := rTest.prix_treuil;
+    moteur := rTest.prix_moteur;
+
+    IF estProprietaireOuSection IS true THEN
+      categorie := 'section/propriétaire';
+    ELSIF estInstructeur IS true THEN
+      categorie := 'instructeur';
+    ELSIF estStagiaire IS true THEN
+      categorie := 'stagiaire';
+    ELSIF estEleve IS true THEN
+      categorie := 'élève';
+    ELSIF aSPLMoins25 IS true THEN
+      categorie := 'SPL -25 ans';
+    ELSIF aSPLPlus25 IS true THEN
+      categorie := 'SPL +25 ans';
+    ELSE
+      RAISE EXCEPTION 'impossible de categoriser ce membre: %', membre;
+    END IF;
+    return NEXT;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
