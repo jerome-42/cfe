@@ -969,17 +969,21 @@ get('/exportAllData', function($conn) {
         if ($fd === false) {
             throw new Exception('Failed to open temporary file');
         }
-        $headers = [ 'membre', 'est propriétaire', 'CFE à faire (CNB complète)', 'minutes VA maximales', 'minutes CFE validées', 'minutes VA en excès et non comptabilisées' ];
+        $headers = [ 'membre', 'est propriétaire', 'CFE à faire (CNB complète)', 'minutes VA maximales', 'minutes CFE validées', 'minutes VA en excès et non comptabilisées', 'CFE complète' ];
         fputcsv($fd, $headers);
         foreach (Personne::getAll($conn, $year) as $membre) {
             $statsCFE = $cfe->getStats($membre['givavNumber'], $year);
+            $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], getYear());
             $line = [ 'membre' => $membre['name'],
                       'propriétaire' => $membre['isOwnerOfGlider'],
                       'cfe' => $membre['cfeTODO'],
                       'VA max' => $membre['vaMaxi'],
                       'validated' => $statsCFE['validated'],
-                      'va' => $statsCFE['vaValidated'],
-            ];
+                      'va' => $statsCFE['vaValidated'] ];
+            if ($cfe->isCompleted($membre))
+                $line['CFE comlète'] = 'oui';
+            else
+                $line['CFE comlète'] = 'non';
             fputcsv($fd, $line);
         }
         rewind($fd);
