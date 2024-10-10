@@ -11,7 +11,9 @@ block content
     h1 Liste des membres
   .row
     .col-md-1
-      button.btn.btn-danger.back Retour
+      .hstack.gap-4.mb-3
+        button.btn.btn-danger.back Retour
+        button.btn.btn-primary.download Télécharger
     .col-md-4.offset-md-2
       .row
 	.col-sm-2
@@ -45,7 +47,7 @@ block content
             th Affichage compte négatif
         tbody
           each membre in $membres
-            tr(x-num=$membre['givavNumber'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'] x-noRevealWhenInDebt=$membre['noRevealWhenInDebt'] x-isOwnerOfGlider=$membre['isOwnerOfGlider'])
+            tr(x-num=$membre['givavNumber'] x-name=$membre['name'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'] x-noRevealWhenInDebt=$membre['noRevealWhenInDebt'] x-isOwnerOfGlider=$membre['isOwnerOfGlider'])
               td
                 if ($inSudo == false) && ($currentUser != $membre['givavNumber'])
                   button.btn.btn-secondary.sudo
@@ -96,3 +98,4 @@ block content
             th Affichage compte négatif
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
+    button.btn.btn-primary.download Télécharger

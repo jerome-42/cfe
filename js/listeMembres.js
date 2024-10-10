@@ -74,6 +74,29 @@ var displayNoRevealWhenInDebt = function(elem) {
     elem.find('[data-bs-toggle="tooltip"]').tooltip();
 };
 
+var download = function() {
+    var csvContent = "data:text/csv;charset=utf-8,";
+    var row = [ 'nom', 'CFE à réaliser', 'CFE réalisée', 'CFE soldée' ];
+    csvContent += row.join(';') + "\r\n";
+    $('#list > tbody > tr').each(function() {
+        if ($(this).attr('x-num') === undefined)
+            return;
+        var row = [ $(this).attr('x-name'), Math.round($(this).attr('x-cfeTODO')/60),
+                    Math.round($(this).attr('x-cfeValidated')/60) ];
+        if ($(this).attr('x-cfeCompleted') === '1')
+            row.push("oui");
+        else
+            row.push("non");
+	csvContent += row.join(';') + "\r\n";
+    });
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "cfe.csv");
+    document.body.appendChild(link); // Required for FF
+    link.click();
+};
+
 var durationToHuman = function(d) {
     var hours = Math.round(parseInt(d) / 60);
     var minutes = parseInt(d) % 60;
@@ -232,6 +255,10 @@ $(document).ready(function() {
     $('.displayDetails').click(function() {
 	var numGivav = $(this).parents('tr').attr('x-num');
 	window.location = '/detailsMembre?numero='+numGivav;
+    });
+
+    $('.download').click(function() {
+        download();
     });
 
     $('#filter').on('change', function() {
