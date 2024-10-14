@@ -16,11 +16,24 @@ block content
             .progress.mt-2(role="progressbar" aria-label="heures réalisées" aria-valuenow=$validated aria-valuemin="0" aria-valuemax=$thencfetodo style="height: 30px")
               - $percent = ($validated/$thecfetodo)*100
               .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
-          //if $isOwnerOfGlider && $va
-          //  | Vous êtes propriétaire ou membre de section et vous pouvez déclarer au maximum #{durationToHuman($va)} pour votre/vos Visite(s) Annuelle(s).
-          //  if $vaValidatedAndNotCount > 0
-          //    br
-          //    | Vous avez aussi réalisé #{durationToHuman($vaValidatedAndNotCount)} mais elles ne sont pas comptabilisées car elles dépassent le nombre d'heure maximum de visite annuelle.
+          if $isOwnerOfGlider && $va
+            br
+            | Vous êtes propriétaire ou membre de section (ANEG ou CORMEILLES) et vous pouvez déclarer au maximum
+            b &nbsp;#{durationToHuman($va)}&nbsp;
+            | pour la
+            b &nbsp;visite annuelle&nbsp;
+            | de votre/vos machine(s).
+            if $vaValidatedAndNotCount > 0
+              br
+              | Vous avez aussi réalisé #{durationToHuman($vaValidatedAndNotCount)} mais elles ne sont pas comptabilisées car elles dépassent le nombre d'heure maximum de visite annuelle.
+            br
+            | Vous êtes assujettis à la
+            b &nbsp;CNB&nbsp;
+            | (Contribution à la Non-Banalisation), si votre/vos machine(s) ne vole(nt) pas suffisamment avec des pilotes non-propriétaire à bord, vous êtes redevable d'heures supplémentaires de CFE. Chaque machine doit faire
+            b &nbsp;20h&nbsp;
+            | de vol avec à bord un pilote non-propriétaire. Si ce n'est pas le cas, le propriétaire / les co-propriétaires / l'ensemble des membres de la section doivent le nombre d'heure restant x 2 en plus de leur CFE. Par exemple s'il manque 10h de vol banalisé au LS8 de l'ANEG, l'ensemble des membres ANEG doivent 20h de CFE supplémentaire, il suffit qu'un membre fasse 20h ou 2 membres fassent 10h chacun pour solder la CNB.
+            br
+            a(href="/cnb") Détails de la CNB
 
 
       $reste = $thecfetodo - $validated

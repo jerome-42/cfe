@@ -3,12 +3,29 @@ extends layout.pug
 block scripts
   title CNB
   script(src="js/cnb.js")
+  script(src="cache/stats.js")
 
 block content
   .container
     .row
       h1 CNB
     .row.mt-2
+      h3 Etat de vol des machines privées
+      table.table.table-striped#list
+        thead
+          tr
+            th Immatriculation
+            th Type
+            th Heure de vol avec pilote(s) non-propriétaire(s)
+            th Heure de vol à réaliser jusqu'à la banalisation complète
+        tbody
+        thead
+          tr
+            th Immatriculation
+            th Type
+            th Heure de vol avec pilote(s) non-propriétaire(s)
+            th Heure de vol à réaliser jusqu'à la banalisation complète
+    .row.mt-5
       .col
         p La CNB a été votée en CA le&nbsp;
           a(href="http://aavo.free.fr/membres/cc_aavo/2023/ca_aavo_2023_01_22.pdf" target="_blank") 22 janvier 2023
