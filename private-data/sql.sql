@@ -2827,3 +2827,60 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION exportRemorque(dateVolDebut DATE, dateVolFin DATE, immat VARCHAR) RETURNS TABLE (
+  nb_remorque INT,
+  nb_remorque_monoplace INT,
+  nb_remorque_biplace INT,
+  remorque_ponderation NUMERIC, -- 0.5 pour un 250, 1 pour un 500 ...
+  remorque_ponderation_monoplace NUMERIC,
+  remorque_ponderation_biplace NUMERIC,
+  details VARCHAR
+  ) AS $$
+DECLARE
+  rVol RECORD;
+  ponderation NUMERIC;
+  currentNbRemorque INT;
+  currentNbRemorqueMonoplace INT;
+  currentNbRemorqueBiplace INT;
+  currentRemorquePonderation NUMERIC;
+  currentRemorquePonderationMonoplace NUMERIC;
+  currentRemorquePonderationBiplace NUMERIC;
+  currentDetails VARCHAR[];
+BEGIN
+  currentNbRemorque := 0;
+  currentNbRemorqueMonoplace := 0;
+  currentNbRemorqueBiplace := 0;
+  currentRemorquePonderation := 0;
+  currentRemorquePonderationMonoplace := 0;
+  currentRemorquePonderationBiplace := 0;
+  currentDetails := '{}';
+  FOR rVol IN SELECT * FROM vfr_vol WHERE date_vol BETWEEN dateVolDebut AND dateVolFin AND mode_decollage = 'R' AND immatriculation_remorqueur = immat ORDER BY date_vol LOOP
+    currentNbRemorque := currentNbRemorque + 1;
+    ponderation := 0;
+    IF rVol.libelle_remorque = 'Demi-remorqué - 250m' THEN ponderation := 0.5;
+      ELSIF rVol.libelle_remorque = 'Remorqué standard - 500m' THEN ponderation := 1;
+      ELSIF rVol.libelle_remorque = '750m' THEN ponderation := 1.5;
+      ELSIF rVol.libelle_remorque = '1000m' THEN ponderation := 2;
+      ELSIF rVol.libelle_remorque = 'voltige - 1300m' THEN ponderation := 2.5;
+      ELSE currentDetails := array_append(currentDetails, CONCAT(rVol.date_vol, ': ', rVol.libelle_remorque));
+    END IF;
+    currentRemorquePonderation := currentRemorquePonderation + ponderation;
+    IF rVol.nb_places = 1 THEN
+      currentNbRemorqueMonoplace := currentNbRemorqueMonoplace + 1;
+      currentRemorquePonderationMonoplace := currentRemorquePonderationMonoplace + ponderation;
+    ELSE
+      currentNbRemorqueBiplace := currentNbRemorqueBiplace + 1;
+      currentRemorquePonderationBiplace := currentRemorquePonderationBiplace + ponderation;
+    END IF;
+  END LOOP;
+  nb_remorque := currentNbRemorque;
+  nb_remorque_monoplace := currentNbRemorqueMonoplace;
+  nb_remorque_biplace := currentNbRemorqueBiplace;
+  remorque_ponderation := currentRemorquePonderation;
+  remorque_ponderation_monoplace := currentRemorquePonderationMonoplace;
+  remorque_ponderation_biplace := currentRemorquePonderationBiplace;
+  details := array_to_string(currentDetails, ', ');
+  return NEXT;
+END;
+$$ LANGUAGE plpgsql VOLATILE;

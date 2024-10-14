@@ -8,7 +8,7 @@ $dsn = join(';', [ 'host='.$config['givav']['host'], 'dbname='.$config['givav'][
 $db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['password']);
 
 // id_ffvp peut être nul par exemple PILOTE EXTERIEUR et on ne veut pas celui-là
-$q = "SELECT id_personne, CONCAT(nom, ' ', prenom) AS name, courriel_1 AS email, no_national AS \"givavNumber\" FROM vfr_pilote WHERE pilote_actif IS true AND id_ffvp IS NOT NULL AND LOWER(licence_nom) NOT LIKE '%découverte%' AND club_nom LIKE '%AAVO%' ORDER BY 1";
+$q = "SELECT id_personne, CONCAT(nom, ' ', prenom) AS name, courriel_1 AS email, no_national AS \"givavNumber\" FROM vfr_pilote WHERE pilote_actif IS true AND id_ffvp IS NOT NULL AND LOWER(licence_nom) NOT LIKE '%découverte%' AND club_nom LIKE '%AAVO%' ORDER BY 2";
 $sth = $db->prepare($q);
 $sth->execute();
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
