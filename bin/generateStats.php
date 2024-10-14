@@ -215,6 +215,20 @@ foreach ([ 1, 2, 5, 9 ] as $moyenneSurNbAnnee) {
         'data' => $data,
     ];
 }
+
+echo "CNB".PHP_EOL;
+$q = "SELECT * from etatMachineCNB(:annee, :cnb) WHERE immatriculation NOT IN ('D-5345', 'F-CEHD', 'F-CFLX', 'F-CPLE') ORDER BY 1";
+$sth = $db->prepare($q);
+$params = [ ':annee' => $annee, ':cnb' => '20:00:00' ];
+$sth->execute($params);
+$data = $sth->fetchAll(PDO::FETCH_ASSOC);
+$output['CNB'] = [
+    'params' => $params,
+    'year' => $annee,
+    'requete' => $q,
+    'data' => $data,
+];
+
 // CURLStringFile n'existe pas en php 7 donc on triche avec un fichier temporaire
 $fichierStats = tempnam(sys_get_temp_dir(), 'stats.js');
 file_put_contents($fichierStats, 'var stats = '.json_encode($output).';');
