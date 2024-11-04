@@ -48,16 +48,6 @@ let displayCFE = function() {
             ],
         },
         options: {
-            scales: {
-                y: {
-                    ticks: {
-                        // Include a dollar sign in the ticks
-                        callback: function(value, index, ticks) {
-                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
-                        },
-                    },
-                },
-            },
             responsive: true,
             plugins: {
                 legend: {
