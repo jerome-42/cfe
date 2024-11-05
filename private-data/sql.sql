@@ -711,7 +711,7 @@ BEGIN
     -- TODO anonymisation
     nom := r.nom;
     IF r.prenom IS NOT NULL THEN
-      nom := r.prenom || ' ' || r.nom;
+      nom := r.nom || ' ' || r.prenom;
     END IF;
     --DEBUG RAISE NOTICE '%', nom;
     stats := setVarInData(stats, 'solde', r.solde);
@@ -1583,7 +1583,9 @@ BEGIN
         SELECT INTO r COALESCE(COUNT(*), 0) AS nb FROM pilote
           JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
           JOIN cp_piece pi ON pi.id_piece = li.id_piece
-          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+          WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV')
+          AND licence_nom NOT LIKE '%Découverte%'
+          AND pi.date_echeance BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
         IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
           cumulLicence := cumulLicence + r.nb;
         END IF;
@@ -1597,7 +1599,8 @@ BEGIN
           SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND
+            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV')
+            AND licence_nom NOT LIKE '%Découverte%' AND
             (
               (EXTRACT(MONTH FROM pi.date_echeance) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_echeance) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
             OR
@@ -1609,7 +1612,9 @@ BEGIN
           SELECT INTO r ROUND(COALESCE(COUNT(*), 0)/moyenne_sur_nb_annee) AS nb FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV') AND EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
+            WHERE type IN ('LICENCE_FFVP', 'LFFVV', 'LICVV')
+            AND licence_nom NOT LIKE '%Découverte%'
+            AND EXTRACT(YEAR FROM pi.date_echeance) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_echeance) < cette_annee
             AND EXTRACT(MONTH FROM pi.date_echeance) = EXTRACT(MONTH FROM rDate.start);
         END IF;
         IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
