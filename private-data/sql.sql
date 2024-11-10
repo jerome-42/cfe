@@ -2889,3 +2889,48 @@ BEGIN
   return NEXT;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+
+CREATE OR REPLACE FUNCTION calculPiloteSaisons(first_season INT, nb_seasons INT) RETURNS TABLE (
+  pilote VARCHAR,
+  stats JSONB
+  ) AS $$
+DECLARE
+  i INT;
+  r RECORD;
+  r2 RECORD;
+  registerPilote BOOLEAN;
+BEGIN
+  DROP TABLE IF EXISTS pilotesSaisons;
+  CREATE TEMPORARY TABLE pilotesSaisons(id SERIAL PRIMARY KEY, membre VARCHAR, saison INT, temps_vol INTERVAL, nb_vol INT, CONSTRAINT pilotessaisons_unique UNIQUE (membre, saison));
+  FOR i IN 0..nb_seasons LOOP
+    FOR r IN SELECT cdt_de_bord, SUM(temps_vol) AS temps_vol, COUNT(*) AS nb_vol FROM vfr_vol
+    JOIN vfr_pilote ON vfr_pilote.id_personne = vfr_vol.id_cdt_de_bord AND vfr_pilote.club_nom LIKE '%AAVO%'
+    WHERE saison = first_season + i AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé') GROUP BY cdt_de_bord LOOP
+      INSERT INTO pilotesSaisons(membre, saison, temps_vol, nb_vol) VALUES (r.cdt_de_bord, first_season + i, r.temps_vol, r.nb_vol) ON CONFLICT(membre, saison) DO UPDATE SET temps_vol = pilotesSaisons.temps_vol + r.temps_vol, nb_vol = pilotesSaisons.nb_vol + r.nb_vol;
+    END LOOP;
+
+    FOR r IN SELECT co_pilote, SUM(temps_vol) AS temps_vol, COUNT(*) AS nb_vol FROM vfr_vol
+    JOIN vfr_pilote ON vfr_pilote.id_personne = vfr_vol.id_co_pilote AND vfr_pilote.club_nom LIKE '%AAVO%'
+    WHERE saison = first_season + i AND nom_type_vol = '3 Vol partagé' GROUP BY co_pilote LOOP
+      INSERT INTO pilotesSaisons(membre, saison, temps_vol, nb_vol) VALUES (r.co_pilote, first_season + i, r.temps_vol, r.nb_vol) ON CONFLICT(membre, saison) DO UPDATE SET temps_vol = pilotesSaisons.temps_vol + r.temps_vol, nb_vol = pilotesSaisons.nb_vol + r.nb_vol;
+    END LOOP;
+
+  END LOOP;
+  FOR r IN SELECT DISTINCT(membre) FROM pilotesSaisons ORDER BY membre ASC LOOP
+    pilote := r.membre;
+    stats := '{}';
+    registerPilote := false;
+    FOR i IN 0..nb_seasons LOOP
+      SELECT * INTO r2 FROM pilotesSaisons WHERE membre = r.membre AND saison = first_season + i;
+      IF r2.nb_vol > 0 THEN
+        registerPilote := true;
+      END IF;
+      stats := setVarInData(stats, CONCAT('saison_', r2.saison, '_temps_vol'), r2.temps_vol);
+      stats := setVarInData(stats, CONCAT('saison_', r2.saison, '_nb_vol'), r2.nb_vol);
+    END LOOP;
+    IF registerPilote THEN
+      return NEXT;
+    END IF;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
