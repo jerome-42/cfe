@@ -2890,40 +2890,73 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION calculPiloteSaisons(first_season INT, nb_seasons INT) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION calculPiloteSaisons(first_season INT, last_season INT) RETURNS TABLE (
   pilote VARCHAR,
+  nb_saison_actif INT,
+  derniere_saison INT,
+  derniere_saison_nb_vol INT,
+  derniere_saison_temps_vol INTERVAL,
+  temps_vol_eleve INTERVAL,
+  temps_vol_saison_actuelle INTERVAL,
   stats JSONB
   ) AS $$
 DECLARE
   i INT;
   r RECORD;
   r2 RECORD;
+  r3 RECORD;
   registerPilote BOOLEAN;
+  a_vole_la_derniere_annee BOOLEAN;
 BEGIN
   DROP TABLE IF EXISTS pilotesSaisons;
   CREATE TEMPORARY TABLE pilotesSaisons(id SERIAL PRIMARY KEY, membre VARCHAR, saison INT, temps_vol INTERVAL, nb_vol INT, CONSTRAINT pilotessaisons_unique UNIQUE (membre, saison));
-  FOR i IN 0..nb_seasons LOOP
+  FOR i IN first_season..last_season LOOP
     FOR r IN SELECT cdt_de_bord, SUM(temps_vol) AS temps_vol, COUNT(*) AS nb_vol FROM vfr_vol
     JOIN vfr_pilote ON vfr_pilote.id_personne = vfr_vol.id_cdt_de_bord AND vfr_pilote.club_nom LIKE '%AAVO%'
-    WHERE saison = first_season + i AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé') GROUP BY cdt_de_bord LOOP
-      INSERT INTO pilotesSaisons(membre, saison, temps_vol, nb_vol) VALUES (r.cdt_de_bord, first_season + i, r.temps_vol, r.nb_vol) ON CONFLICT(membre, saison) DO UPDATE SET temps_vol = pilotesSaisons.temps_vol + r.temps_vol, nb_vol = pilotesSaisons.nb_vol + r.nb_vol;
+    WHERE saison = i AND nom_type_vol IN ('1 Vol en solo', '3 Vol partagé') GROUP BY cdt_de_bord LOOP
+      INSERT INTO pilotesSaisons(membre, saison, temps_vol, nb_vol) VALUES (r.cdt_de_bord, i, r.temps_vol, r.nb_vol) ON CONFLICT(membre, saison) DO UPDATE SET temps_vol = pilotesSaisons.temps_vol + r.temps_vol, nb_vol = pilotesSaisons.nb_vol + r.nb_vol;
     END LOOP;
 
     FOR r IN SELECT co_pilote, SUM(temps_vol) AS temps_vol, COUNT(*) AS nb_vol FROM vfr_vol
     JOIN vfr_pilote ON vfr_pilote.id_personne = vfr_vol.id_co_pilote AND vfr_pilote.club_nom LIKE '%AAVO%'
-    WHERE saison = first_season + i AND nom_type_vol = '3 Vol partagé' GROUP BY co_pilote LOOP
-      INSERT INTO pilotesSaisons(membre, saison, temps_vol, nb_vol) VALUES (r.co_pilote, first_season + i, r.temps_vol, r.nb_vol) ON CONFLICT(membre, saison) DO UPDATE SET temps_vol = pilotesSaisons.temps_vol + r.temps_vol, nb_vol = pilotesSaisons.nb_vol + r.nb_vol;
+    WHERE saison = i AND nom_type_vol = '3 Vol partagé' GROUP BY co_pilote LOOP
+      INSERT INTO pilotesSaisons(membre, saison, temps_vol, nb_vol) VALUES (r.co_pilote, i, r.temps_vol, r.nb_vol) ON CONFLICT(membre, saison) DO UPDATE SET temps_vol = pilotesSaisons.temps_vol + r.temps_vol, nb_vol = pilotesSaisons.nb_vol + r.nb_vol;
     END LOOP;
 
   END LOOP;
   FOR r IN SELECT DISTINCT(membre) FROM pilotesSaisons ORDER BY membre ASC LOOP
     pilote := r.membre;
+    derniere_saison := NULL;
+    derniere_saison_nb_vol := NULL;
+    derniere_saison_temps_vol := NULL;
+    temps_vol_eleve := NULL;
+    nb_saison_actif := 0;
     stats := '{}';
     registerPilote := false;
-    FOR i IN 0..nb_seasons LOOP
-      SELECT * INTO r2 FROM pilotesSaisons WHERE membre = r.membre AND saison = first_season + i;
+    a_vole_la_derniere_annee := false;
+    FOR i IN REVERSE last_season..first_season LOOP
+      SELECT * INTO r2 FROM pilotesSaisons WHERE membre = r.membre AND saison = i;
+      IF i = last_season THEN
+        temps_vol_saison_actuelle := r2.temps_vol;
+      END IF;
       IF r2.nb_vol > 0 THEN
+        nb_saison_actif := nb_saison_actif + 1;
         registerPilote := true;
+        IF derniere_saison IS NULL THEN
+          IF i = EXTRACT(YEAR FROM NOW()) THEN
+            a_vole_la_derniere_annee := true;
+          ELSE
+            IF a_vole_la_derniere_annee IS false THEN
+              derniere_saison := i;
+              derniere_saison_nb_vol := r2.nb_vol;
+              derniere_saison_temps_vol := r2.temps_vol;
+              IF temps_vol_eleve IS NULL THEN
+                SELECT SUM(temps_vol) AS temps_vol INTO r3 FROM vfr_vol WHERE eleve = pilote;
+                temps_vol_eleve := r3.temps_vol;
+              END IF;
+            END IF;
+          END IF;
+        END IF;
       END IF;
       stats := setVarInData(stats, CONCAT('saison_', r2.saison, '_temps_vol'), r2.temps_vol);
       stats := setVarInData(stats, CONCAT('saison_', r2.saison, '_nb_vol'), r2.nb_vol);
