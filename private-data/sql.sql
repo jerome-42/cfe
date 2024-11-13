@@ -2031,193 +2031,218 @@ BEGIN
           valo_lancement_n_anneesPrecedantes := array_append(valo_lancement_n_anneesPrecedantes, valo_cumulLancement_n_anneesPrecedantes);
 
     -- ============ DEPENSES GENERALES ============
-    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
-      JOIN cp_piece pi ON pi.id_piece = li.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE cp_compte.code like '6%'
-        AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
-        AND cp_compte.code NOT IN ( -- coût moyens de lancement
-          '6022100', -- essence avion
-          '6022101', -- huile avion - amortisseur et frein
-          '6022102', -- huile planeur turbo
-          '6022103', -- huile moteur avion
-          '6022110', -- Essence Véhicule
-          '6022120', -- Frais Fuel Chauffage
-          '6022130', -- Achat Essence Voiture
-          '6152210', -- M.O. Entretien Avion - WT9
-          '6152220', -- Fournitures Pièces Avion - WT9
-          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
-          '6152310', -- M.O. Entretien Avion - BXRO
-          '6152320', -- Fournitures Pièces Avion - BXRO
-          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
-          '6152410', -- M.O. Entretien - Treuil
-          '6152420', -- Fournitures Piéces - Treuil
-          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
-          )
-        AND cp_compte.code NOT IN ( -- coût entretien planeurs
-          '6151000', -- M.O. , Pièces détachées et entretien
-          '6151010', -- GNAV, OSAC & taxes diverses planeurs
-          '6151030', -- Simulateur
-          '6152110', -- M.O. Entretien - SF28
-          '6152120', -- Fourniture Pièces - SF28
-          '6152130', -- GNAV - Doc & Taxes - SF28
-          '6161100', -- Assurance Accident ANEPVV - Planeurs
-          '6161300' -- Assurance Accident ANEPVV - SF28
-          )
-        AND cp_compte.code NOT LIKE '68%' -- amortissements
-        -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
-        AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
-        AND sens = 'D' -- que les dépenses
-        AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    -- ancienne méthode
+    --SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+    --  JOIN cp_piece pi ON pi.id_piece = li.id_piece
+    --  JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+    --  WHERE cp_compte.code like '6%'
+    --    AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
+    --    AND cp_compte.code NOT IN ( -- coût moyens de lancement
+    --      '6022100', -- essence avion
+    --      '6022101', -- huile avion - amortisseur et frein
+    --      '6022102', -- huile planeur turbo
+    --      '6022103', -- huile moteur avion
+    --      '6022110', -- Essence Véhicule
+    --      '6022120', -- Frais Fuel Chauffage
+    --      '6022130', -- Achat Essence Voiture
+    --      '6152210', -- M.O. Entretien Avion - WT9
+    --      '6152220', -- Fournitures Pièces Avion - WT9
+    --      '6152230', -- GNAV - Doc & Taxes -  Avion WT9
+    --      '6152310', -- M.O. Entretien Avion - BXRO
+    --      '6152320', -- Fournitures Pièces Avion - BXRO
+    --      '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
+    --      '6152410', -- M.O. Entretien - Treuil
+    --      '6152420', -- Fournitures Piéces - Treuil
+    --      '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
+    --      )
+    --    AND cp_compte.code NOT IN ( -- coût entretien planeurs
+    --      '6151000', -- M.O. , Pièces détachées et entretien
+    --      '6151010', -- GNAV, OSAC & taxes diverses planeurs
+    --      '6151030', -- Simulateur
+    --      '6152110', -- M.O. Entretien - SF28
+    --      '6152120', -- Fourniture Pièces - SF28
+    --      '6152130', -- GNAV - Doc & Taxes - SF28
+    --      '6161100', -- Assurance Accident ANEPVV - Planeurs
+    --      '6161300' -- Assurance Accident ANEPVV - SF28
+    --      )
+    --    AND cp_compte.code NOT LIKE '68%' -- amortissements
+    --    -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
+    --    AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
+    --    AND sens = 'D' -- que les dépenses
+    --    AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    -- nouvelle méthode
+    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+      WHERE cp_budget_chapitre.libelle IN ('Eau', 'Fioul Chauffage', 'Electricite', 'Télécommunications',
+      'Télécommunications mobiles', 'Frais postaux', 'Fournitures administratives', 'Entretien et aménagement des locaux',
+      'Frais bancaires/virement des membres par CB', 'Frais bancaires - Abonnement, frais virement, etc...)',
+      'Frais bancaire - commision annuelle', 'Assurance des locaux & véhicule piste',
+      'Honoraires pour Edition des bulletins paye', 'Salaires Net Prestataires', 'Formation des salariés',
+      'Cotisations sociales du personnel - URSSAF', 'Cotisations sociales du personnel - ARRCO',
+      'Cotisations Humanis Mutuelle', 'Cotisations sociales du personnel - AMETIF', 'Salaires Brut',
+      'Congés Payés', 'Indemnités diverses', 'Taxe formation continue', 'Cotisations FFVV,commune, département, région, ...',
+      'Taxes directes', 'Frais déplacement personnel entretien', 'Fournitures de formation', 'Achats refacturés aux membres',
+      'Divers', 'Publicité et communication', 'Frais d''abonnement divers', 'Frais repas Comité Directeur & réception diverses',
+      'Frais de déplacement et de mission', 'Frais activité Voltige', 'Dépenses concours', 'Atelier - Prestations extérieurs',
+      'Atelier - Equipements et fournitures', 'Divers', 'Véhicules')
+        AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
+
     depenses_generales_cumul := depenses_generales_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_generales := array_append(depenses_generales, depenses_generales_cumul);
     END IF;
 
-    SELECT INTO r ROUND(SUM(COALESCE(montant, 0))/moyenne_sur_nb_annee, 0) AS somme FROM cp_piece_ligne li
-      JOIN cp_piece pi ON pi.id_piece = li.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE cp_compte.code like '6%'
-        AND type NOT IN ('RETRO_CELLULE', 'RETRO_MOTEUR') -- pas les rétrocessions (jeu à somme nulle)
-        AND cp_compte.code NOT IN ( -- coût moyens de lancement
-          '6022100', -- essence avion
-          '6022101', -- huile avion - amortisseur et frein
-          '6022102', -- huile planeur turbo
-          '6022103', -- huile moteur avion
-          '6022110', -- Essence Véhicule
-          '6022120', -- Frais Fuel Chauffage
-          '6022130', -- Achat Essence Voiture
-          '6152210', -- M.O. Entretien Avion - WT9
-          '6152220', -- Fournitures Pièces Avion - WT9
-          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
-          '6152310', -- M.O. Entretien Avion - BXRO
-          '6152320', -- Fournitures Pièces Avion - BXRO
-          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
-          '6152410', -- M.O. Entretien - Treuil
-          '6152420', -- Fournitures Piéces - Treuil
-          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
-          )
-        AND cp_compte.code NOT IN ( -- coût entretien planeurs
-          '6151000', -- M.O. , Pièces détachées et entretien
-          '6151010', -- GNAV, OSAC & taxes diverses planeurs
-          '6151030', -- Simulateur
-          '6152110', -- M.O. Entretien - SF28
-          '6152120', -- Fourniture Pièces - SF28
-          '6152130', -- GNAV - Doc & Taxes - SF28
-          '6161100', -- Assurance Accident ANEPVV - Planeurs
-          '6161300' -- Assurance Accident ANEPVV - SF28
-          )
-        AND cp_compte.code NOT LIKE '68%' -- amortissements
-        -- en 2019 les retro cellule sont dans le compte Achats d'études et prestations de services
-        AND NOT (cp_compte.code = '6040000' AND pi.libelle LIKE 'Retro. cellule%')
-        AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+      WHERE cp_budget_chapitre.libelle IN ('Eau', 'Fioul Chauffage', 'Electricite', 'Télécommunications',
+      'Télécommunications mobiles', 'Frais postaux', 'Fournitures administratives', 'Entretien et aménagement des locaux',
+      'Frais bancaires/virement des membres par CB', 'Frais bancaires - Abonnement, frais virement, etc...)',
+      'Frais bancaire - commision annuelle', 'Assurance des locaux & véhicule piste',
+      'Honoraires pour Edition des bulletins paye', 'Salaires Net Prestataires', 'Formation des salariés',
+      'Cotisations sociales du personnel - URSSAF', 'Cotisations sociales du personnel - ARRCO',
+      'Cotisations Humanis Mutuelle', 'Cotisations sociales du personnel - AMETIF', 'Salaires Brut',
+      'Congés Payés', 'Indemnités diverses', 'Taxe formation continue', 'Cotisations FFVV,commune, département, région, ...',
+      'Taxes directes', 'Frais déplacement personnel entretien', 'Fournitures de formation', 'Achats refacturés aux membres',
+      'Divers', 'Publicité et communication', 'Frais d''abonnement divers', 'Frais repas Comité Directeur & réception diverses',
+      'Frais de déplacement et de mission', 'Frais activité Voltige', 'Dépenses concours', 'Atelier - Prestations extérieurs',
+      'Atelier - Equipements et fournitures', 'Divers', 'Véhicules')
+        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
     depenses_generales_cumul_n_anneesPrecedantes := depenses_generales_cumul_n_anneesPrecedantes + r.somme;
     depenses_generales_n_anneesPrecedantes := array_append(depenses_generales_n_anneesPrecedantes, depenses_generales_cumul_n_anneesPrecedantes);
 
       -- ============ DEPENSES MOYENS LANCEMENTS ============
       -- entretien + essence
-    SELECT INTO r COALESCE(SUM(montant), 0) AS somme FROM cp_piece_ligne li
-      JOIN cp_piece pi ON pi.id_piece = li.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE
-          cp_compte.code IN (
-          '6022100', -- essence avion
-          '6022101', -- huile avion - amortisseur et frein
-          '6022102', -- huile planeur turbo
-          '6022103', -- huile moteur avion
-          '6022110', -- Essence Véhicule
-          '6022120', -- Frais Fuel Chauffage
-          '6022130', -- Achat Essence Voiture
-          '6152210', -- M.O. Entretien Avion - WT9
-          '6152220', -- Fournitures Pièces Avion - WT9
-          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
-          '6152310', -- M.O. Entretien Avion - BXRO
-          '6152320', -- Fournitures Pièces Avion - BXRO
-          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
-          '6152410', -- M.O. Entretien - Treuil
-          '6152420', -- Fournitures Piéces - Treuil
-          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
-          )
-        AND sens = 'D' -- que les dépenses
-        AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    -- ancienne méthode
+    --SELECT INTO r COALESCE(SUM(montant), 0) AS somme FROM cp_piece_ligne li
+    --  JOIN cp_piece pi ON pi.id_piece = li.id_piece
+    --  JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+    --  WHERE
+    --      cp_compte.code IN (
+    --      '6022100', -- essence avion
+    --      '6022101', -- huile avion - amortisseur et frein
+    --      '6022102', -- huile planeur turbo
+    --      '6022103', -- huile moteur avion
+    --      '6022110', -- Essence Véhicule
+    --      '6022120', -- Frais Fuel Chauffage
+    --      '6022130', -- Achat Essence Voiture
+    --      '6152210', -- M.O. Entretien Avion - WT9
+    --      '6152220', -- Fournitures Pièces Avion - WT9
+    --      '6152230', -- GNAV - Doc & Taxes -  Avion WT9
+    --      '6152310', -- M.O. Entretien Avion - BXRO
+    --      '6152320', -- Fournitures Pièces Avion - BXRO
+    --      '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
+    --      '6152410', -- M.O. Entretien - Treuil
+    --      '6152420', -- Fournitures Piéces - Treuil
+    --      '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
+    --      )
+    --    AND sens = 'D' -- que les dépenses
+    --    AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    -- nouvelle méthode
+    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+      WHERE cp_budget_chapitre.libelle IN ('Carburants Avions', 'Remorqueurs - Prestations extérieurs (GNAV, GSAC) WT9',
+      'Remorqueurs - Prestations extérieurs (GNAV, GSAC) KY', 'M.O AAVO - KY', 'Remorqueurs - Assurance (ANEPVV)  -  WT9',
+      'Remorqueurs - Assurance (ANEPVV) - KY', 'Remorqueurs - Pièces et petites fournitures -  WT9',
+      'Remorqueurs - Pièces et petites fournitures - KY', 'Treuil - Pièces et petites fournitures',
+      'Activité Treuillards')
+        AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
     depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
     END IF;
 
-    SELECT INTO r ROUND(SUM(montant)/moyenne_sur_nb_annee) AS somme FROM cp_piece_ligne li
-      JOIN cp_piece pi ON pi.id_piece = li.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE
-          cp_compte.code IN (
-          '6022100', -- essence avion
-          '6022101', -- huile avion - amortisseur et frein
-          '6022102', -- huile planeur turbo
-          '6022103', -- huile moteur avion
-          '6022110', -- Essence Véhicule
-          '6022120', -- Frais Fuel Chauffage
-          '6022130', -- Achat Essence Voiture
-          '6152210', -- M.O. Entretien Avion - WT9
-          '6152220', -- Fournitures Pièces Avion - WT9
-          '6152230', -- GNAV - Doc & Taxes -  Avion WT9
-          '6152310', -- M.O. Entretien Avion - BXRO
-          '6152320', -- Fournitures Pièces Avion - BXRO
-          '6152330', -- GNAV - Doc & Taxes -  Avion BXRO
-          '6152410', -- M.O. Entretien - Treuil
-          '6152420', -- Fournitures Piéces - Treuil
-          '6161200'  -- Assurance Accident ANEPVV - Remorqueurs
-          )
-        AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+      WHERE cp_budget_chapitre.libelle IN ('Carburants Avions', 'Remorqueurs - Prestations extérieurs (GNAV, GSAC) WT9',
+      'Remorqueurs - Prestations extérieurs (GNAV, GSAC) KY', 'M.O AAVO - KY', 'Remorqueurs - Assurance (ANEPVV)  -  WT9',
+      'Remorqueurs - Assurance (ANEPVV) - KY', 'Remorqueurs - Pièces et petites fournitures -  WT9',
+      'Remorqueurs - Pièces et petites fournitures - KY', 'Treuil - Pièces et petites fournitures',
+      'Activité Treuillards')
+        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
     depenses_moyens_lancement_cumul_n_anneesPrecedantes := depenses_moyens_lancement_cumul_n_anneesPrecedantes + r.somme;
     depenses_moyens_lancement_n_anneesPrecedantes := array_append(depenses_moyens_lancement_n_anneesPrecedantes, depenses_moyens_lancement_cumul_n_anneesPrecedantes);
 
       -- ============ DEPENSES ENTRETIEN PLANEURS ============
       -- entretien
-    SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
-      JOIN cp_piece pi ON pi.id_piece = li.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE
-          cp_compte.code IN (
-          '6151000', -- M.O. , Pièces détachées et entretien
-          '6151010', -- GNAV, OSAC & taxes diverses planeurs
-          '6151030', -- Simulateur
-          '6152110', -- M.O. Entretien - SF28
-          '6152120', -- Fourniture Pièces - SF28
-          '6152130', -- GNAV - Doc & Taxes - SF28
-          '6161100', -- Assurance Accident ANEPVV - Planeurs
-          '6161300' -- Assurance Accident ANEPVV - SF28
-          )
-        AND sens = 'D' -- que les dépenses
-        AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    -- ancienne méthode
+    --SELECT INTO r SUM(montant) AS somme FROM cp_piece_ligne li
+    --  JOIN cp_piece pi ON pi.id_piece = li.id_piece
+    --  JOIN cp_compte ON cp_compte.id_compte = li.id_compte
+    --  WHERE
+    --      cp_compte.code IN (
+    --      '6151000', -- M.O. , Pièces détachées et entretien
+    --      '6151010', -- GNAV, OSAC & taxes diverses planeurs
+    --      '6151030', -- Simulateur
+    --      '6152110', -- M.O. Entretien - SF28
+    --      '6152120', -- Fourniture Pièces - SF28
+    --      '6152130', -- GNAV - Doc & Taxes - SF28
+    --      '6161100', -- Assurance Accident ANEPVV - Planeurs
+    --      '6161300' -- Assurance Accident ANEPVV - SF28
+    --      )
+    --    AND sens = 'D' -- que les dépenses
+    --    AND li.date_piece BETWEEN rDate.start AND rDate.stop;
+    -- nouvelle méthode
+    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+      WHERE cp_budget_chapitre.libelle IN ('Coût des V.I Clubs',
+      'Coût des V.I Cadeau', 'Coût des Vols d''essai', 'Coût des Vols d''épreuve',
+      'Coût des V.I. Lycées Collèges', 'Coût des V.I. Armée', 'Coût de VI VIP', 'Cout des Vols BPP',
+      'Planeurs - Prestations de contrôle (GNAV, OSAC, LBA, ...)', 'Planeurs - Assurance (ANEPVV)',
+      'SF28 - Assurance (ANEPVV)', 'Planeurs - Pièces, petites fournitures er réparation ext.',
+      'Entetien & Fournitures piéces - F-CIRS', 'Entetien & Fournitures piéces- D -6216',
+      'Entetien & Fournitures piéces- F-CDVW', 'Entetien & Fournitures piéces- F-CJUN',
+      'Entetien & Fournitures piéces- F-CGFL', 'Entetien & Fournitures piéces- F-CGYG',
+      'Entetien & Fournitures piéces- F-CGUS', 'Entetien & Fournitures piéces- F-CHFI',
+      'Entetien & Fournitures piéces- F-CHHD', 'Entetien & Fournitures piéces- F-CHIC',
+      'Entetien & Fournitures piéces- F-CHIM', 'Entetien & Fournitures piéces- F-CHKU',
+      'Entetien & Fournitures piéces- F-CHUD', 'Entetien & Fournitures piéces- F-CIMC',
+      'Entretien et Fournitures piéces SF28', 'Cotisation GNAV SF28',
+      'Entetien & Fournitures piéces- ASK13 D-0538', 'Entetien & Fournitures piéces- F-CUBE',
+      'Entetien & Fournitures piéces- F-CGYD', 'Entretien & Fournitures pièces F-CIDM'
+      'Activité Instructeurs')
+        AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
     depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
     END IF;
 
-    SELECT INTO r ROUND(SUM(montant)/moyenne_sur_nb_annee) AS somme FROM cp_piece_ligne li
-      JOIN cp_piece pi ON pi.id_piece = li.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = li.id_compte
-      WHERE
-        cp_compte.code IN (
-          '6151000', -- M.O. , Pièces détachées et entretien
-          '6151010', -- GNAV, OSAC & taxes diverses planeurs
-          '6151030', -- Simulateur
-          '6152110', -- M.O. Entretien - SF28
-          '6152120', -- Fourniture Pièces - SF28
-          '6152130', -- GNAV - Doc & Taxes - SF28
-          '6161100', -- Assurance Accident ANEPVV - Planeurs
-          '6161300' -- Assurance Accident ANEPVV - SF28
-          )
-        AND sens = 'D' -- que les dépenses
-        AND EXTRACT(YEAR FROM li.date_piece) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM li.date_piece) < cette_annee
-        AND EXTRACT(MONTH FROM li.date_piece) = EXTRACT(MONTH FROM rDate.start);
+    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+      WHERE cp_budget_chapitre.libelle IN ('Coût des V.I Clubs',
+      'Coût des V.I Cadeau', 'Coût des Vols d''essai', 'Coût des Vols d''épreuve',
+      'Coût des V.I. Lycées Collèges', 'Coût des V.I. Armée', 'Coût de VI VIP', 'Cout des Vols BPP',
+      'Planeurs - Prestations de contrôle (GNAV, OSAC, LBA, ...)', 'Planeurs - Assurance (ANEPVV)',
+      'SF28 - Assurance (ANEPVV)', 'Planeurs - Pièces, petites fournitures er réparation ext.',
+      'Entetien & Fournitures piéces - F-CIRS', 'Entetien & Fournitures piéces- D -6216',
+      'Entetien & Fournitures piéces- F-CDVW', 'Entetien & Fournitures piéces- F-CJUN',
+      'Entetien & Fournitures piéces- F-CGFL', 'Entetien & Fournitures piéces- F-CGYG',
+      'Entetien & Fournitures piéces- F-CGUS', 'Entetien & Fournitures piéces- F-CHFI',
+      'Entetien & Fournitures piéces- F-CHHD', 'Entetien & Fournitures piéces- F-CHIC',
+      'Entetien & Fournitures piéces- F-CHIM', 'Entetien & Fournitures piéces- F-CHKU',
+      'Entetien & Fournitures piéces- F-CHUD', 'Entetien & Fournitures piéces- F-CIMC',
+      'Entretien et Fournitures piéces SF28', 'Cotisation GNAV SF28',
+      'Entetien & Fournitures piéces- ASK13 D-0538', 'Entetien & Fournitures piéces- F-CUBE',
+      'Entetien & Fournitures piéces- F-CGYD', 'Entretien & Fournitures pièces F-CIDM'
+      'Activité Instructeurs')
+        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
     depenses_entretien_planeurs_cumul_n_anneesPrecedantes := depenses_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme;
     depenses_entretien_planeurs_n_anneesPrecedantes := array_append(depenses_entretien_planeurs_n_anneesPrecedantes, depenses_entretien_planeurs_cumul_n_anneesPrecedantes);
 
