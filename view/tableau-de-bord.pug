@@ -26,11 +26,12 @@ block content
       button.btn.btn-primary#downloadDataSource Télécharger les données
   h2 Activité générale (licences et cotisation)
   .row
-    .col
+    .col-5
       div(style="width: 800px")
         canvas#licenceAnnuel
       p.mt-3
-        i Ces licences sont le reflet du nombre de membres qui volent à Chérence. Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques licences prisent à l'extérieur (~ 5). Hors licences découverte.
+        i Ces licences sont le reflet du nombre de membres qui volent à Chérence (hors licences ddécourverte). Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques membres qui prennent leurs licences à l'extérieur (~ 5).
+  .row
     .col
       div(style="width: 800px")
         canvas#valoFraisInfraAnnuel
@@ -40,7 +41,7 @@ block content
       div(style="width: 800px")
         canvas#depensesGeneralesAnnuel
       p.mt-3
-        i Dépenses générales (chauffage, élec, eau, salaires, charges, assurances, véhicules de piste, parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club hors essence avion et entretien (planeurs, avions et treuil))
+        i Dépenses générales (chauffage, élec, eau, télécom, salaires, fioul chauffage, assurances, véhicules de piste, parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club.
   hr.mt-5
   h2 Machines club
   .row
@@ -51,6 +52,7 @@ block content
         canvas#hdvClubAnnuel
       p.mt-3
         i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+  .row
     .col
       div(style="width: 800px;")
         canvas#valoCelluleEtForfaitAnnuel
@@ -59,12 +61,14 @@ block content
     .col
       div(style="width: 800px;")
         canvas#depensesEntretienPlaneursAnnuel
+      p.mt-3
+        i VI VIP, GNAV, assurances, entretien et pièces planeurs (hors amortissements)
   .row
     .col
       div(style="width: 800px;")
         canvas#valoJdStageAnnuel
       p.mt-3
-        i Ne concerne que les journées découvertes et les stages
+        i Ne concerne que les journées découvertes (2 et 3 jours) et les stages
     .col
       div(style="width: 1200px;")
         canvas#valoVolAnnuel
@@ -121,7 +125,7 @@ block content
       div(style="width: 800px;")
         canvas#depensesMoyensLancementAnnuel
       p.mt-3
-        i Concerne l'essence et l'entretien avion(s), ulm et treuil
+        i Eessence, entretien avion(s), ulm et treuil, assurances (hors amortissements)
   hr.mt-5
   .row  
     .col

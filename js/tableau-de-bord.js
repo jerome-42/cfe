@@ -1117,7 +1117,7 @@ let diplayDepensesMoyensLancementAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Dépenses moyens de lancement et assurance',
+                    text: 'Dépenses moyens de lancement',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -1389,7 +1389,7 @@ let displayValoVolAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Revenu heures de vol',
+                    text: 'Revenu heures de vol '+getStatsTableauDeBordAnnuel().params.annee,
                     font: { size: 24 },
                 },
                 datalabels: {
