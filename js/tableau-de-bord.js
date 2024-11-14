@@ -22,6 +22,49 @@ let getDateFromD = function(dString) {
     return d;
 };
 
+let tooltipDisplay_percent = function(context, targetLabels, formatter) {
+    let label = context.dataset.label || '';
+    if (label) {
+        label += ': ';
+    }
+    let value = context.dataset.data[context.dataIndex];
+    if (formatter === undefined)
+        label += value;
+    else
+        label += formatter(value, context);
+
+    let targetDataset; let targetLabel;
+    if (context.datasetIndex == 0) {
+        targetDataset = 1;
+        targetLabel = targetLabels[1];
+    }
+    if (context.datasetIndex == 1) {
+        targetDataset = 0;
+        targetLabel = targetLabels[0];
+    }
+    if (context.datasetIndex == 2) {
+        targetDataset = 3;
+        targetLabel = targetLabels[3];
+    }
+    if (context.datasetIndex == 3) {
+        targetDataset = 2;
+        targetLabel = targetLabels[2];
+    }
+
+    let targetValue = context.chart.getDatasetMeta(targetDataset)._dataset.data[context.dataIndex];
+    if (targetValue === undefined)
+        return label;
+    let moyenne = Math.round((value - targetValue) / targetValue * 100);
+    if (moyenne > 0)
+        moyenne = 'en progression de '+moyenne+' % par rapport à '+targetLabel;
+    if (moyenne < 0)
+        moyenne = 'en retrait de '+Math.abs(moyenne)+' % par rapport à '+targetLabel;
+    if (moyenne !== 0)
+        return label + ' ' + moyenne;
+    else
+        return label;
+};
+
 let displayCFE = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('cfe').getContext('2d');
@@ -29,7 +72,7 @@ let displayCFE = function() {
     let dataNAnneesPrecedantes = statsLocales.cfe.declarationsCFE_n_anneesPrecedantes;
     let labelNAnneesPrecedantes = 'Moyenne sur les '+statsLocales.cfe.moyenne_sur_nb_annee+' dernières années';
     if (statsLocales.cfe.moyenne_sur_nb_annee === 1)
-        labelNAnneesPrecedantes = "Heure de CFE "+(statsLocales.cfe.annee-1);
+        labelNAnneesPrecedantes = "Heures de CFE "+(statsLocales.cfe.annee-1);
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -57,6 +100,16 @@ let displayCFE = function() {
                     display: true,
                     text: 'Heure de CFE réalisées',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -486,6 +539,16 @@ let displayLicenceAnnuel = function() {
                     text: 'Licences',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -494,7 +557,6 @@ let displayLicenceAnnuel = function() {
                         weight: 'bold',
                     },
                     formatter: function (value, context) {
-                        return value;
                     }
                 },
             }
@@ -517,7 +579,7 @@ let displayValoInfraAnnuel = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenu cotisations '+getStatsTableauDeBordAnnuel().params.annee,
+                    label: 'Revenus généraux '+getStatsTableauDeBordAnnuel().params.annee,
                     data: dataCetteAnnee,
                 },
                 {
@@ -545,8 +607,21 @@ let displayValoInfraAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Revenu cotisations',
+                    text: 'Revenus généraux',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -610,6 +685,19 @@ let displayDepensesGeneralesAnnuel = function() {
                     text: 'Dépenses générales',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -667,6 +755,28 @@ let displayHDVClubAnnuel = function() {
                     text: 'Heures de vol machines CLUB',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee,
+                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -719,6 +829,16 @@ let displayHDVClubCDBAnnuel = function() {
                     text: 'Heures de vol machines CLUB en CDB',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -770,6 +890,16 @@ let displayHDVClubInstructionAnnuel = function() {
                     display: true,
                     text: 'Heures de vol instruction sur machines CLUB',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -829,6 +959,18 @@ let displayHDVBanaliseAnnuel = function() {
                     text: 'Heures de vol machines banalisées',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee,
+                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -880,6 +1022,16 @@ let displayHDVPilotesDansForfaitAnnuel = function() {
                     text: 'Heures de vol des pilotes au forfait sur les machines incluses dans le forfait (consommation des forfaits)',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -930,6 +1082,16 @@ let displayHDVPilotesHorsForfaitAnnuel = function() {
                     display: true,
                     text: 'Heures de vol hors forfait (vols solo, instruction, partagé, VI club, VI perso ...)',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -1011,6 +1173,21 @@ let displayLancementEtValoRemorqueAnnuel = function() {
                     text: 'Nombre de remorqués et revenu de tous les lancements',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee,
+                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -1060,6 +1237,16 @@ let displayVentilationSelonRemorqueur = function() {
                     display: true,
                     text: 'Nombre de remorqués par remorqueur '+getStatsTableauDeBordAnnuel().params.annee,
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -1119,6 +1306,19 @@ let diplayDepensesMoyensLancementAnnuel = function() {
                     display: true,
                     text: 'Dépenses moyens de lancement',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -1315,6 +1515,19 @@ let displayValoJdStageAnnuel = function() {
                     text: 'Revenu JD et stages',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -1389,7 +1602,7 @@ let displayValoVolAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Revenu heures de vol '+getStatsTableauDeBordAnnuel().params.annee,
+                    text: 'Détails des revenus heures de vol '+getStatsTableauDeBordAnnuel().params.annee,
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -1454,6 +1667,21 @@ let diplayDepensesEntretienPlaneur = function() {
                     text: 'Dépenses entretiens planeurs + assurance',
                     font: { size: 24 },
                 },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee,
+                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -1514,6 +1742,19 @@ let displayValoMoteurAnnuel = function() {
                     display: true,
                     text: 'Revenu temps moteur',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
