@@ -1474,23 +1474,29 @@ DECLARE
   -- lancements
   lancementR INT[] := '{}';
   cumulLancementR INT := 0;
+  lancementRCorrige INT[] := '{}';
+  cumulLancementRCorrige INT := 0;
   lancementT INT[] := '{}';
   cumulLancementT INT := 0;
   lancementA INT[] := '{}';
   cumulLancementA INT := 0;
 
   lancementRCumul INT[] := '{}';
+  lancementRCorrigeCumul INT[] := '{}';
   lancementTCumul INT[] := '{}';
   lancementACumul INT[] := '{}';
 
   lancementR_n_anneesPrecedantes INT[] := '{}';
   cumulLancementR_n_anneesPrecedantes INT := 0;
+  lancementRCorrige_n_anneesPrecedantes INT[] := '{}';
+  cumulLancementRCorrige_n_anneesPrecedantes INT := 0;
   lancementT_n_anneesPrecedantes INT[] := '{}';
   cumulLancementT_n_anneesPrecedantes INT := 0;
   lancementA_n_anneesPrecedantes INT[] := '{}';
   cumulLancementA_n_anneesPrecedantes INT := 0;
 
   lancementRCumul_n_anneesPrecedantes INT[] := '{}';
+  lancementRCorrigeCumul_n_anneesPrecedantes INT[] := '{}';
   lancementTCumul_n_anneesPrecedantes INT[] := '{}';
   lancementACumul_n_anneesPrecedantes INT[] := '{}';
 
@@ -1766,20 +1772,23 @@ BEGIN
           WHEN libelle_remorque = 'Remorqué standard - 500m' THEN 1
           WHEN libelle_remorque = '750m' THEN 1.5
           WHEN libelle_remorque = '1000m' THEN 2
-          ELSE 0 END) AS nbR, SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END) AS nbT, SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END) AS nbA
+          ELSE 0 END) AS nbR_corrige, SUM(CASE WHEN mode_decollage = 'R' THEN 1 ELSE 0 END) AS nbR, SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END) AS nbT, SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END) AS nbA
           FROM vfr_vol
           WHERE date_vol BETWEEN rDate.start AND rDate.stop
           AND categorie != 'U'; -- 'U' = remorqueur
         cumulLancementR := cumulLancementR + r.nbR;
+        cumulLancementRCorrige := cumulLancementRCorrige + r.nbR_corrige;
         cumulLancementT := cumulLancementT + r.nbT;
         cumulLancementA := cumulLancementA + r.nbA;
         IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
           -- ici on veut avoir mois par mois (sans cumul)
           lancementR := array_append(lancementR, r.nbR);
+          lancementRCorrige := array_append(lancementRCorrige, r.nbR);
           lancementT := array_append(lancementT, r.nbT);
           lancementA := array_append(lancementA, r.nbA);
           -- mais aussi avec les cumuls
           lancementRCumul := array_append(lancementRCumul, cumulLancementR);
+          lancementRCorrigeCumul := array_append(lancementRCorrigeCumul, cumulLancementRCorrige);
           lancementTCumul := array_append(lancementTCumul, cumulLancementT);
           lancementACumul := array_append(lancementACumul, cumulLancementA);
         END IF;
@@ -1791,7 +1800,8 @@ BEGIN
               WHEN libelle_remorque = '750m' THEN 1.5
               WHEN libelle_remorque = '1000m' THEN 2
               WHEN libelle_remorque = '1300m' THEN 2.6
-              ELSE 0 END)/moyenne_sur_nb_annee) AS nbR,
+              ELSE 0 END)/moyenne_sur_nb_annee) AS nbR_corrige,
+            ROUND(SUM(CASE WHEN mode_decollage = 'R' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbR,
             ROUND(SUM(CASE WHEN mode_decollage = 'T' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbT,
             ROUND(SUM(CASE WHEN mode_decollage = 'M' THEN 1 ELSE 0 END)/moyenne_sur_nb_annee) AS nbA
           FROM vfr_vol
@@ -1799,14 +1809,17 @@ BEGIN
           AND EXTRACT(MONTH FROM date_vol) = EXTRACT(MONTH FROM rDate.start)
           AND categorie != 'U'; -- 'U' = remorqueur
         cumulLancementR_n_anneesPrecedantes := cumulLancementR_n_anneesPrecedantes + r.nbR;
+        cumulLancementRCorrige_n_anneesPrecedantes := cumulLancementRCorrige_n_anneesPrecedantes + r.nbR_corrige;
         cumulLancementT_n_anneesPrecedantes := cumulLancementT_n_anneesPrecedantes + r.nbT;
         cumulLancementA_n_anneesPrecedantes := cumulLancementA_n_anneesPrecedantes + r.nbA;
         -- on veut sans cumul
         lancementR_n_anneesPrecedantes := array_append(lancementR_n_anneesPrecedantes, r.nbR);
+        lancementRCorrige_n_anneesPrecedantes := array_append(lancementRCorrige_n_anneesPrecedantes, r.nbR_corrige);
         lancementT_n_anneesPrecedantes := array_append(lancementT_n_anneesPrecedantes, r.nbT);
         lancementA_n_anneesPrecedantes := array_append(lancementA_n_anneesPrecedantes, r.nbA);
         -- et avec cumul
         lancementRCumul_n_anneesPrecedantes := array_append(lancementRCumul_n_anneesPrecedantes, cumulLancementR_n_anneesPrecedantes);
+        lancementRCorrigeCumul_n_anneesPrecedantes := array_append(lancementRCorrigeCumul_n_anneesPrecedantes, cumulLancementRCorrige_n_anneesPrecedantes);
         lancementTCumul_n_anneesPrecedantes := array_append(lancementTCumul_n_anneesPrecedantes, cumulLancementT_n_anneesPrecedantes);
         lancementACumul_n_anneesPrecedantes := array_append(lancementACumul_n_anneesPrecedantes, cumulLancementA_n_anneesPrecedantes);
 
@@ -1821,47 +1834,52 @@ BEGIN
 
     -- ============ VALORISATION ============
       -- ============ COTISATION ANNUELLE, FRAIS TECHNIQUE, NUITS DORTOIR ET FRAIS HANGAR / REMORQUE (FRAIS INFRA) ============
-          SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
-            JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-            JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND li.sens = 'D'
-            AND pi.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
-          IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les cotisations de l'année prochaine ce qu'on ne veut pas prendre en compte ici
-            valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.prix;
-          END IF;
+      -- ancienne méthode
+          --SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
+          --  JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
+          --  JOIN cp_piece pi ON pi.id_piece = li.id_piece
+          --  WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND li.sens = 'D'
+          --  AND pi.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
+          SELECT INTO r SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END) AS somme
+          FROM cp_piece_ligne ligne
+          JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+          LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+          WHERE cp_budget_chapitre.libelle IN ('Cotisations', 'Participations aux frais', 'Participations aux frais propriétaires',
+          'Participations aux frais planeur de passage', 'Participations aux frais hébergement',
+          'Frais Tech Senior 7/7', 'Frais Tech junior 7/7', 'Frais Tech senior semaine', 'Frais Tech sénior couple',
+          'Frais tech junior couple', 'Frais tech sénior 1ére inscription à/01 juin', 'Frais Tech junior 1ére inscription à/01 juin',
+          'Frais Tech sénior - stage 7 jours consécutifs', 'Frais Tech junior - stage 7 jours consécutifs', 'Frais Tech sénior - stage 15 jours consécutifs',
+          'Frais Tech - couple sénior - 1ére inscription à/01 juin', 'Enregistrement Concours - 25 ans', 'Recettes concours',
+          'Subventions de l''état', 'Subventions de la région', 'Subventions du département', 'Subventions de la ville', 'Subventions et Aides de la FFVV',
+          'Subventions de la FFAM', 'Subventions du comité régional', 'Dons des membres', 'Subvention diverses - CD3V0'
+          'Prestations diverses faites à des tiers', 'Manifestation organisée par le club', 'Subventions',
+          'Fournitures de formation', 'Produits achetés pour les membres', 'Vente Carburants', 'Produits financiers',
+          'Produits divers')
+          AND piece.date_piece BETWEEN rDate.start AND rDate.stop;
+          valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.somme;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
             valo_revenu_infra_membre := array_append(valo_revenu_infra_membre, valo_cumulRevenu_infra_membre);
           END IF;
 
         -- REVENU sur les 5 dernières années
-          IF EXTRACT(MONTH FROM rDate.start) = 1 THEN
-            -- le mois de janvier prend en compte les mois d'octobre, novembre, décembre et janvier
-            SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
-              JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-              JOIN cp_piece pi ON pi.id_piece = li.id_piece
-              WHERE (type = 'PRESTATION' OR (type = 'FVTE' AND LOWER(libelle) NOT LIKE 'dépannage%') OR libelle LIKE '%frais hangar ou en remorque%' OR
-                libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019, on compte quand même les forfaits dedans, il n'y a qu'une seule ligne pour assurance + cotisation + forfait
-                ) AND libelle NOT LIKE 'Carnet de vol%' AND li.sens = 'D' AND
-              (
-                (EXTRACT(MONTH FROM pi.date_piece) BETWEEN 10 AND 12 AND EXTRACT(YEAR FROM pi.date_piece) BETWEEN cette_annee - moyenne_sur_nb_annee - 1 AND cette_annee - 1)
-              OR
-              (
-                (EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
-                AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start)))
-              );
-            ELSE
-              SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
-                JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-                JOIN cp_piece pi ON pi.id_piece = li.id_piece
-                WHERE (type = 'PRESTATION' OR type = 'FVTE' OR libelle LIKE '%frais hangar ou en remorque%' OR
-                  libelle LIKE 'Cotisation annuelle%' OR libelle LIKE 'assurance + cotisation%' OR libelle LIKE 'Frais Tech%' OR libelle LIKE 'dortoir à l''année' OR libelle LIKE 'frais hangar%' -- pour 2019
-                  ) AND libelle NOT LIKE 'Carnet de vol%' AND
-                  EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
-                  AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start);
-          END IF;
-          IF EXTRACT(MONTH FROM rDate.start) < 10 THEN -- en octobre on commence les licences de l'année prochaine ce qu'on ne veut pas prendre en compte ici
-            valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.prix;
-          END IF;
+          SELECT INTO r SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+          FROM cp_piece_ligne ligne
+          JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+          LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
+          WHERE cp_budget_chapitre.libelle IN ('Cotisations', 'Participations aux frais', 'Participations aux frais propriétaires',
+          'Participations aux frais planeur de passage', 'Participations aux frais hébergement',
+          'Frais Tech Senior 7/7', 'Frais Tech junior 7/7', 'Frais Tech senior semaine', 'Frais Tech sénior couple',
+          'Frais tech junior couple', 'Frais tech sénior 1ére inscription à/01 juin', 'Frais Tech junior 1ére inscription à/01 juin',
+          'Frais Tech sénior - stage 7 jours consécutifs', 'Frais Tech junior - stage 7 jours consécutifs', 'Frais Tech sénior - stage 15 jours consécutifs',
+          'Frais Tech - couple sénior - 1ére inscription à/01 juin', 'Enregistrement Concours - 25 ans', 'Recettes concours',
+          'Subventions de l''état', 'Subventions de la région', 'Subventions du département', 'Subventions de la ville', 'Subventions et Aides de la FFVV',
+          'Subventions de la FFAM', 'Subventions du comité régional', 'Dons des membres', 'Subvention diverses - CD3V0'
+          'Prestations diverses faites à des tiers', 'Manifestation organisée par le club', 'Subventions',
+          'Fournitures de formation', 'Produits achetés pour les membres', 'Vente Carburants', 'Produits financiers',
+          'Produits divers')
+          AND EXTRACT(YEAR FROM piece.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM piece.date_piece) < cette_annee
+          AND EXTRACT(MONTH FROM piece.date_piece) = EXTRACT(MONTH FROM rDate.start);
+          valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.somme;
           valo_revenu_infra_membre_n_anneesPrecedantes := array_append(valo_revenu_infra_membre_n_anneesPrecedantes, valo_cumulRevenu_infra_membre_n_anneesPrecedantes);
 
       -- ============ COUT CELLULE ============
@@ -1996,7 +2014,7 @@ BEGIN
           SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type = 'FORFAIT' AND (LOWER(libelle) LIKE '%stage%' OR LOWER(libelle) LIKE '%découverte 2 jours%')
+            WHERE type = 'FORFAIT' AND (LOWER(libelle) LIKE '%stage%' OR LOWER(libelle) LIKE '%découverte%') AND LOWER(libelle) NOT LIKE '%découverte 1 jour'
             AND pi.date_piece BETWEEN rDate.start AND rDate.stop;
           valo_cumulJdStages := valo_cumulJdStages + r.prix;
           IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
@@ -2007,7 +2025,7 @@ BEGIN
           SELECT INTO r ROUND(COALESCE(SUM(montant), 0)/moyenne_sur_nb_annee) AS prix FROM pilote
             JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
             JOIN cp_piece pi ON pi.id_piece = li.id_piece
-            WHERE type = 'FORFAIT' AND (LOWER(libelle) LIKE '%stage%' OR LOWER(libelle) LIKE '%découverte 2 jours%')
+            WHERE type = 'FORFAIT' AND (LOWER(libelle) LIKE '%stage%' OR LOWER(libelle) LIKE '%découverte%') AND LOWER(libelle) NOT LIKE '%découverte 1 jour'
             AND EXTRACT(YEAR FROM pi.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM pi.date_piece) < cette_annee
             AND EXTRACT(MONTH FROM pi.date_piece) = EXTRACT(MONTH FROM rDate.start);
           valo_cumulJdStages_n_anneesPrecedantes := valo_cumulJdStages_n_anneesPrecedantes + r.prix;
@@ -2071,7 +2089,7 @@ BEGIN
     --    AND sens = 'D' -- que les dépenses
     --    AND li.date_piece BETWEEN rDate.start AND rDate.stop;
     -- nouvelle méthode
-    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
@@ -2086,7 +2104,9 @@ BEGIN
       'Taxes directes', 'Frais déplacement personnel entretien', 'Fournitures de formation', 'Achats refacturés aux membres',
       'Divers', 'Publicité et communication', 'Frais d''abonnement divers', 'Frais repas Comité Directeur & réception diverses',
       'Frais de déplacement et de mission', 'Frais activité Voltige', 'Dépenses concours', 'Atelier - Prestations extérieurs',
-      'Atelier - Equipements et fournitures', 'Divers', 'Véhicules')
+      'Atelier - Equipements et fournitures', 'Véhicules', 'Achat de matériel non volant',
+      'Réfection ou réparation de matériel non volant', 'Achat de matériel de sécurité')
+        AND LOWER(piece.libelle) NOT LIKE '%amortissements%'
         AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
 
     depenses_generales_cumul := depenses_generales_cumul + r.somme;
@@ -2094,7 +2114,7 @@ BEGIN
       depenses_generales := array_append(depenses_generales, depenses_generales_cumul);
     END IF;
 
-    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
@@ -2109,7 +2129,9 @@ BEGIN
       'Taxes directes', 'Frais déplacement personnel entretien', 'Fournitures de formation', 'Achats refacturés aux membres',
       'Divers', 'Publicité et communication', 'Frais d''abonnement divers', 'Frais repas Comité Directeur & réception diverses',
       'Frais de déplacement et de mission', 'Frais activité Voltige', 'Dépenses concours', 'Atelier - Prestations extérieurs',
-      'Atelier - Equipements et fournitures', 'Divers', 'Véhicules')
+      'Atelier - Equipements et fournitures', 'Véhicules', 'Achat de matériel non volant',
+      'Réfection ou réparation de matériel non volant', 'Achat de matériel de sécurité')
+        AND LOWER(piece.libelle) NOT LIKE '%amortissements%'
         AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
         AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
         AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
@@ -2144,7 +2166,7 @@ BEGIN
     --    AND sens = 'D' -- que les dépenses
     --    AND li.date_piece BETWEEN rDate.start AND rDate.stop;
     -- nouvelle méthode
-    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
@@ -2159,7 +2181,7 @@ BEGIN
       depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
     END IF;
 
-    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
@@ -2194,7 +2216,7 @@ BEGIN
     --    AND sens = 'D' -- que les dépenses
     --    AND li.date_piece BETWEEN rDate.start AND rDate.stop;
     -- nouvelle méthode
-    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
@@ -2213,14 +2235,14 @@ BEGIN
       'Entretien et Fournitures piéces SF28', 'Cotisation GNAV SF28',
       'Entetien & Fournitures piéces- ASK13 D-0538', 'Entetien & Fournitures piéces- F-CUBE',
       'Entetien & Fournitures piéces- F-CGYD', 'Entretien & Fournitures pièces F-CIDM'
-      'Activité Instructeurs')
+      'Activité Instructeurs', 'Achat de matériel volant', 'Réfection ou réparation de matériel volant')
         AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
     depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
     IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
       depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
     END IF;
 
-    SELECT INTO r SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
@@ -2239,7 +2261,7 @@ BEGIN
       'Entretien et Fournitures piéces SF28', 'Cotisation GNAV SF28',
       'Entetien & Fournitures piéces- ASK13 D-0538', 'Entetien & Fournitures piéces- F-CUBE',
       'Entetien & Fournitures piéces- F-CGYD', 'Entretien & Fournitures pièces F-CIDM'
-      'Activité Instructeurs')
+      'Activité Instructeurs', 'Achat de matériel volant', 'Réfection ou réparation de matériel volant')
         AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
         AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
         AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
@@ -2271,15 +2293,19 @@ BEGIN
 
     -- MOYENS DE LANCEMENT
     stats := setVarInData(stats, 'lancementR', lancementR);
+    stats := setVarInData(stats, 'lancementRCorrige', lancementRCorrige);
     stats := setVarInData(stats, 'lancementT', lancementT);
     stats := setVarInData(stats, 'lancementA', lancementA);
     stats := setVarInData(stats, 'lancementRCumul', lancementRCumul);
+    stats := setVarInData(stats, 'lancementRCorrigeCumul', lancementRCorrigeCumul);
     stats := setVarInData(stats, 'lancementTCumul', lancementTCumul);
     stats := setVarInData(stats, 'lancementACumul', lancementACumul);
     stats := setVarInData(stats, 'lancementR_n_anneesPrecedantes', lancementR_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementRCorrige_n_anneesPrecedantes', lancementRCorrige_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementT_n_anneesPrecedantes', lancementT_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementA_n_anneesPrecedantes', lancementA_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementRCumul_n_anneesPrecedantes', lancementRCumul_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'lancementRCorrigeCumul_n_anneesPrecedantes', lancementRCorrigeCumul_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementTCumul_n_anneesPrecedantes', lancementTCumul_n_anneesPrecedantes);
     stats := setVarInData(stats, 'lancementACumul_n_anneesPrecedantes', lancementACumul_n_anneesPrecedantes);
 
