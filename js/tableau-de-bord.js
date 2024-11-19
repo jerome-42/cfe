@@ -73,6 +73,143 @@ let tooltipDisplay_percent = function(context, targetLabels, formatter) {
         return label;
 };
 
+let displayBudgetRevenus = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('budgetRevenus').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let revenusVol = [];
+    for (let i = 0; i < 12; i++) {
+        revenusVol[i] = getStatsTableauDeBordAnnuel().data.valo_forfait[i] +
+            getStatsTableauDeBordAnnuel().data.valo_cellulePilotes[i] +
+            getStatsTableauDeBordAnnuel().data.valo_celluleInstruction[i] +
+            getStatsTableauDeBordAnnuel().data.valo_VI[i] +
+            getStatsTableauDeBordAnnuel().data.valo_jdStages[i] +
+            getStatsTableauDeBordAnnuel().data.valo_moteur[i];
+    }
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenus généraux '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_revenu_infra_membre,
+                },
+                {
+                    label: 'Revenus heures de vol '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: revenusVol,
+                },
+                {
+                    label: 'Revenus mise en l\'air '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.valo_lancement,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenus',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayBudgetDepenses = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('budgetDepenses').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Dépenses générales '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_generales,
+                },
+                {
+                    label: 'Dépenses entretiens planeurs '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs,
+                },
+                {
+                    label: 'Dépenses mise en l\'air '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenus',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
 let displayCFE = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('cfe').getContext('2d');
@@ -2048,6 +2185,8 @@ $(document).ready(function() {
     });
     $('#moyenneAnnees').val(2);
     $('#moyenneAnnees').change(function() {
+        displayBudgetRevenus();
+        displayBudgetDepenses();
         displayLicenceAnnuel();
         displayValoInfraAnnuel();
         displayDepensesGeneralesAnnuel();

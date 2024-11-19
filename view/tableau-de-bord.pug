@@ -24,6 +24,17 @@ block content
       select.form-select#moyenneAnnees
     .col-2.mt-4
       button.btn.btn-primary#downloadDataSource Télécharger les données
+  h2 Résumé
+  .row
+    .col-6
+      div(style="width: 800px")
+        canvas#budgetRevenus
+      p.mt-3
+        i Revenus heures de vol = forfaits + HDV (solo, partagés et instructions) + VI + stage + temps moteur
+    .col-6
+      div(style="width: 800px")
+        canvas#budgetDepenses
+  hr
   h2 Activité générale
   .row
     .col-5
