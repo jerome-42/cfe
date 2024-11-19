@@ -50,6 +50,14 @@ let tooltipDisplay_percent = function(context, targetLabels, formatter) {
         targetDataset = 2;
         targetLabel = targetLabels[2];
     }
+    if (context.datasetIndex == 4) {
+        targetDataset = 5;
+        targetLabel = targetLabels[5];
+    }
+    if (context.datasetIndex == 5) {
+        targetDataset = 4;
+        targetLabel = targetLabels[4];
+    }
 
     let targetValue = context.chart.getDatasetMeta(targetDataset)._dataset.data[context.dataIndex];
     if (targetValue === undefined)
@@ -765,18 +773,6 @@ let displayHDVClubAnnuel = function() {
                         }
                     }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return tooltipDisplay_percent(
-                                context,
-                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                                  getStatsTableauDeBordAnnuel().params.annee,
-                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                                  getStatsTableauDeBordAnnuel().params.annee ]);
-                        }
-                    }
-                },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
@@ -945,6 +941,14 @@ let displayHDVBanaliseAnnuel = function() {
                     label: 'HDV machines banalisées instruction moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                     data: getStatsTableauDeBordAnnuel().data.HDVBanaliseInstruction_n_anneesPrecedantes,
                 },
+                {
+                    label: 'HDV non-propriétaire sur machines banalisées '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseNonProprietaire,
+                },
+                {
+                    label: 'HDV moyenne non-propriétaire sur machines banalisée sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseNonProprietaire_n_anneesPrecedantes,
+                },
             ],
         },
         options: {
@@ -967,6 +971,68 @@ let displayHDVBanaliseAnnuel = function() {
                                 [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                                   getStatsTableauDeBordAnnuel().params.annee,
                                   'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee,
+                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee]);
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return value;
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayHDVBanaliseNonProprietaireAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('hdvBanaliseNonProprietaireAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'HDV non-propriétaire sur machines banalisées '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseNonProprietaire,
+                },
+                {
+                    label: 'HDV moyenne non-propriétaire sur machines banalisée sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.HDVBanaliseNonProprietaire_n_anneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Heures de vol de pilotes non-propriétaire sur machines banalisées',
+                    font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
                                   getStatsTableauDeBordAnnuel().params.annee ]);
                         }
                     }
@@ -1123,12 +1189,12 @@ let displayLancementEtValoRemorqueAnnuel = function() {
             datasets: [
                 {
                     label: 'Nombre de remorqué avec correction '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.lancementRCumul,
+                    data: getStatsTableauDeBordAnnuel().data.lancementRCorrigeCumul,
                     yAxisID: 'y',
                 },
                 {
                     label: 'Moyenne de remorqué sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                    data: getStatsTableauDeBordAnnuel().data.lancementRCumul_n_anneesPrecedantes,
+                    data: getStatsTableauDeBordAnnuel().data.lancementRCorrigeCumul_n_anneesPrecedantes,
                     yAxisID: 'y',
                 },
                 {
@@ -1200,6 +1266,81 @@ let displayLancementEtValoRemorqueAnnuel = function() {
                             return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
                         return value;
                     }
+                },
+            }
+        }
+    });
+};
+
+let displayRemorqueAnnuel = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('lancementRemorqueAnnuel').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Nombre de remorqué sans correction '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.lancementRCumul,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Moyenne de remorqué sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: getStatsTableauDeBordAnnuel().data.lancementRCumul_n_anneesPrecedantes,
+                    yAxisID: 'y',
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    position: 'left',
+                },
+                y1: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+            }, 
+           responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Nombre de remorqués non corrigé',
+                    font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee ]);
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
                 },
             }
         }
@@ -1452,6 +1593,21 @@ let displayValoCelluleEtForfaitAnnuel = function() {
                     display: true,
                     text: 'Revenu heures de vol et forfaits',
                     font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee,
+                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                  getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
                 },
                 datalabels: {
                     anchor: 'end',
@@ -1900,11 +2056,13 @@ $(document).ready(function() {
         displayHDVClubInstructionAnnuel();
 
         displayHDVBanaliseAnnuel();
+        displayHDVBanaliseNonProprietaireAnnuel();
 
         displayHDVPilotesDansForfaitAnnuel();
         displayHDVPilotesHorsForfaitAnnuel();
 
         displayLancementEtValoRemorqueAnnuel();
+        displayRemorqueAnnuel();
         diplayDepensesMoyensLancementAnnuel();
         displayVentilationSelonRemorqueur();
         displayLancementAnnuel();

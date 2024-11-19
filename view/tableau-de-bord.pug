@@ -30,18 +30,22 @@ block content
       div(style="width: 800px")
         canvas#licenceAnnuel
       p.mt-3
-        i Ces licences sont le reflet du nombre de membres qui volent à Chérence (hors licences ddécourverte). Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques membres qui prennent leurs licences à l'extérieur (~ 5).
+        i Ces licences sont le reflet du nombre de membres qui volent à Chérence (hors licences ddécourverte).
+         br
+         | Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques membres qui prennent leurs licences à l'extérieur (~ 5).
   .row
     .col
       div(style="width: 800px")
         canvas#valoFraisInfraAnnuel
       p.mt-3
-        i Ce sont les cotisations annuelles, frais technique, taxe hangar & remorque et nuits en dortoir
+        i Ce sont les cotisations annuelles, frais technique, taxe hangar & remorque, nuits en dortoir et subventions
     .col
       div(style="width: 800px")
         canvas#depensesGeneralesAnnuel
       p.mt-3
-        i Dépenses générales (chauffage, élec, eau, télécom, salaires, fioul chauffage, assurances, véhicules de piste, parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club (hors amortissements).
+        i Dépenses générales (chauffage, élec, eau, télécom, salaires, fioul chauffage, assurances, véhicules de piste,
+          br
+          | parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club (hors amortissements).
   hr.mt-5
   h2 Heures de vol
   .row
@@ -93,12 +97,17 @@ block content
         canvas#hdvClubInstructionAnnuel
   hr.mt-5
   h2 Activité des machines banalisées
-  .row.text-center
-    .col-6
+  .row
+    .col
       div(style="width: 800px;")
         canvas#hdvBanaliseAnnuel
       p.mt-3
         i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseNonProprietaireAnnuel
+      p.mt-3
+        i Vols hors instruction de pilotes non-propriétaire sur machines banalisées
   hr.mt-5
   h2 Activité des pilotes
   .row
@@ -133,6 +142,13 @@ block content
     .col
       div(style="width: 800px;")
         canvas#ventilationSelonRemorqueur
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#lancementRemorqueAnnuel
+      p.mt-3
+        i Remorqués sans correction
+  .row
     .col
       div(style="width: 800px;")
         canvas#depensesMoyensLancementAnnuel
