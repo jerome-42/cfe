@@ -217,14 +217,13 @@ foreach ([ 1, 2, 5, 9 ] as $moyenneSurNbAnnee) {
 }
 
 echo "CNB".PHP_EOL;
-$q = "SELECT * from etatMachineCNB(:annee, :cnb) WHERE immatriculation NOT IN ('D-5345', 'F-CEHD', 'F-CFLX', 'F-CPLE') ORDER BY 1";
+$q = "SELECT * from etatMachineCNB(:cnb, '".$annee."-01-01', '".$annee."-12-31') WHERE immatriculation NOT IN ('D-5345', 'F-CEHD', 'F-CFLX', 'F-CPLE') ORDER BY 1";
 $sth = $db->prepare($q);
-$params = [ ':annee' => $annee, ':cnb' => '20:00:00' ];
+$params = [ ':cnb' => '20:00:00' ];
 $sth->execute($params);
 $data = $sth->fetchAll(PDO::FETCH_ASSOC);
 $output['CNB'] = [
     'params' => $params,
-    'year' => $annee,
     'requete' => $q,
     'data' => $data,
 ];

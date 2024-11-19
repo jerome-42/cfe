@@ -1347,7 +1347,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
-CREATE OR REPLACE FUNCTION etatMachineCNB(annee INT, duree_cnb_a_faire_par_machine INTERVAL) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION etatMachineCNB(duree_cnb_a_faire_par_machine INTERVAL, date_start DATE, date_end DATE, inclure_instruction BOOLEAN) RETURNS TABLE (
   immatriculation VARCHAR,
   nom_type VARCHAR,
   temps_vol_proprietaire INTERVAL,
@@ -1367,7 +1367,9 @@ BEGIN
     liste_pilotes := '{}';
     temps_vol_proprietaire := '0:0:0'::interval;
     temps_vol_hors_proprietaire := '0:0:0'::interval;
-    FOR r2 IN SELECT * FROM vfr_vol WHERE vfr_vol.immatriculation = r.immatriculation AND vfr_vol.nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé') AND saison = annee LOOP
+    FOR r2 IN SELECT * FROM vfr_vol WHERE vfr_vol.immatriculation = r.immatriculation
+      AND ((inclure_instruction IS TRUE AND vfr_vol.nom_type_vol IN ('1 Vol en solo', '2 Vol d''instruction', '3 Vol partagé')) OR (inclure_instruction IS FALSE AND vfr_vol.nom_type_vol IN ('1 Vol en solo', '3 Vol partagé')))
+      AND date_vol BETWEEN date_start AND date_end LOOP
       IF r2.nom_type_vol = '1 Vol en solo' THEN
         IF piloteEstProprietaireDeMachine(r2.id_cdt_de_bord, r.id_aeronef, r2.date_vol) IS true THEN
           temps_vol_proprietaire := temps_vol_proprietaire + r2.temps_vol;
@@ -1408,8 +1410,8 @@ BEGIN
       END IF;
     END LOOP;
     -- on va chercher le(s) propriétaire(s)
-    proprietaires := array_to_string(getProprietaireMachine(r.id_aeronef, CONCAT(annee, '-01-01')::date), ', ');
-    SELECT COUNT(*) AS nbVol INTO r FROM vfr_vol WHERE vfr_vol.immatriculation = r.immatriculation AND saison = annee;
+    proprietaires := array_to_string(getProprietaireMachine(r.id_aeronef, date_start), ', ');
+    SELECT COUNT(*) AS nbVol INTO r FROM vfr_vol WHERE vfr_vol.immatriculation = r.immatriculation AND date_vol BETWEEN date_start AND date_end;
     IF temps_vol_proprietaire = '0:0:0'::interval AND r.nbVol > 0 THEN
       CONTINUE;
     END IF;
@@ -1431,6 +1433,7 @@ DECLARE
   r RECORD;
   r_vol RECORD;
   sub_json JSONB;
+  i INT;
   mise_en_l_air TEXT;
   mises_en_l_air TEXT[] := '{"R", "T", "M"}';
   cette_annee INT;
@@ -1458,6 +1461,10 @@ DECLARE
   cumulHDVBanaliseCDB_n_anneesPrecedantes INT := 0;
   HDVBanaliseInstruction_n_anneesPrecedantes INT[] := '{}';
   cumulHDVBanaliseInstruction_n_anneesPrecedantes INT := 0;
+  HDVBanaliseNonProprietaire INT[] := '{}';
+  cumulHDVBanaliseNonProprietaire INT := 0;
+  HDVBanaliseNonProprietaire_n_anneesPrecedantes INT[] := '{}';
+  cumulHDVBanaliseNonProprietaire_n_anneesPrecedantes INT := 0;
 
   -- HDV pilotes forfait (uniquement vol CDB, si un forfait école existe il faudra modifier la requête)
   HDVPilotesDansForfait INT[] := '{}';
@@ -1698,6 +1705,20 @@ BEGIN
             AND situation = 'B' AND nom_type_vol = '2 Vol d''instruction';
           cumulHDVBanaliseInstruction_n_anneesPrecedantes := cumulHDVBanaliseInstruction_n_anneesPrecedantes + r.duree;
           HDVBanaliseInstruction_n_anneesPrecedantes := array_append(HDVBanaliseInstruction_n_anneesPrecedantes, cumulHDVBanaliseInstruction_n_anneesPrecedantes);
+
+          -- heure de vol non-propriétaire sur machine banalisée
+          SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(etatMachineCNB.temps_vol_hors_proprietaire), '0'::interval)/3600)) AS duree FROM etatMachineCNB('0:0:0'::interval, rDate.start::date, rDate.stop::date, false);
+          cumulHDVBanaliseNonProprietaire := cumulHDVBanaliseNonProprietaire + r.duree;
+          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM NOW()) AND rDate.stop::date <= last_computation_date THEN
+            HDVBanaliseNonProprietaire := array_append(HDVBanaliseNonProprietaire, cumulHDVBanaliseNonProprietaire);
+          END IF;
+
+          -- heure de vol non-propriétaire sur machine banalisée sur les 5 dernières années
+          FOR i IN 1..moyenne_sur_nb_annee LOOP
+            SELECT INTO r ROUND(EXTRACT(EPOCH FROM COALESCE(SUM(etatMachineCNB.temps_vol_hors_proprietaire), '0'::interval)/3600)) AS duree FROM etatMachineCNB('0:0:0'::interval, (rDate.start - (interval '1 YEAR' * i))::date, (rDate.stop - (interval '1 YEAR' * i))::date, false);
+            cumulHDVBanaliseNonProprietaire_n_anneesPrecedantes := cumulHDVBanaliseNonProprietaire_n_anneesPrecedantes + r.duree;
+          END LOOP;
+          HDVBanaliseNonProprietaire_n_anneesPrecedantes := array_append(HDVBanaliseNonProprietaire_n_anneesPrecedantes, cumulHDVBanaliseNonProprietaire_n_anneesPrecedantes);
 
       -- ============ HEURES DE VOLS PILOTE ============
         -- heures de vol dans le forfait
@@ -2282,6 +2303,8 @@ BEGIN
     stats := setVarInData(stats, 'HDVBanaliseCDB_n_anneesPrecedantes', HDVBanaliseCDB_n_anneesPrecedantes);
     stats := setVarInData(stats, 'HDVBanaliseInstruction', HDVBanaliseInstruction);
     stats := setVarInData(stats, 'HDVBanaliseInstruction_n_anneesPrecedantes', HDVBanaliseInstruction_n_anneesPrecedantes);
+    stats := setVarInData(stats, 'HDVBanaliseNonProprietaire', HDVBanaliseNonProprietaire);
+    stats := setVarInData(stats, 'HDVBanaliseNonProprietaire_n_anneesPrecedantes', HDVBanaliseNonProprietaire_n_anneesPrecedantes);
 
     -- HDV CDB PILOTES DANS FORFAIT
     stats := setVarInData(stats, 'HDVPilotesDansForfait', HDVPilotesDansForfait);
@@ -2679,9 +2702,12 @@ BEGIN
       END IF;
     END IF;
 
-
     -- prix du vol pour les propriétaires (certains proprietaires n'ont pas de retrocession, donc pas de prix de cellule), on le calcule pour faire des stats
-    SELECT INTO r2 piloteEstProprietaireDeMachine(r.id_cdt_de_bord, r.id_aeronef, r.date_vol) AS estProprietaire;
+    IF r.id_cdt_de_bord IS NOT NULL THEN
+      SELECT INTO r2 piloteEstProprietaireDeMachine(r.id_cdt_de_bord, r.id_aeronef, r.date_vol) AS estProprietaire;
+    ELSIF r.id_eleve IS NOT NULL THEN
+      SELECT INTO r2 piloteEstProprietaireDeMachine(r.id_eleve, r.id_aeronef, r.date_vol) AS estProprietaire;
+    END IF;
     --DEBUG RAISE NOTICE '% % % %', aeronef, r.date_vol, r.cdt_de_bord, r2;
     prix_vol_si_la_machine_etait_club := 0; -- par defaut le prix est a 0
     proprietaire_vole_sur_sa_machine := false;
