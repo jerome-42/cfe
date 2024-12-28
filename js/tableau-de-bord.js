@@ -191,7 +191,7 @@ let displayBudgetDepenses = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Revenus',
+                    text: 'Dépenses',
                     font: { size: 24 },
                 },
                 datalabels: {
