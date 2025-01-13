@@ -257,7 +257,6 @@ post('/connexion', function($conn, $pug, $env) {
         $_SESSION['name'] = $user['name'];
         $_SESSION['mail'] = $user['mail'];
         $_SESSION['id'] = $userData['id'];
-        Personne::setActive($conn, $userData['id'], getYear());
         syslog(LOG_INFO, "CFE ".getClientIP()." ".$user['number']." ".$user['name']." logged");
         return redirect('/');
     }
