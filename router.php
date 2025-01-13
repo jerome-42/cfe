@@ -44,6 +44,7 @@ function doRoute($fct, $apiMode = false, $parameters = []) {
             // on met à jour admin
             if (isset($_SESSION['auth']) && isset($_SESSION['givavNumber'])) {
                 $data = Personne::load($env->mysql, $_SESSION['givavNumber']);
+                Personne::setActive($env->mysql, $_SESSION['id'], getYear());
                 $_SESSION['isAdmin'] = $data['isAdmin'] === 1 ? true : false;
                 $_SESSION['enableMultiDateDeclaration'] = $data['enableMultiDateDeclaration'] === 1 ? true : false;
                 $_SESSION['isOwnerOfGlider'] = $data['isOwnerOfGlider'];
