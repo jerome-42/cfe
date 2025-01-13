@@ -146,4 +146,11 @@ WHERE cfe_todo.year IS NULL OR cfe_todo.year = :year ORDER BY name";
         $sth->execute([ ':num' => $numGivav ]);
         return $sth->rowCount() === 1;
     }
+
+    static public function setActive($conn, $idPersonne) {
+        $q = "INSERT IGNORE INTO personnes_active (id_personne, year) VALUES (:id_personne, :year)";
+        $sth = $conn->prepare($q);
+        $sth->execute([ ':id_personne' => $idPersonne, ':year' => $year ]);
+        return $sth->rowCount() === 1;
+    }
 }
