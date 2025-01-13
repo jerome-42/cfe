@@ -131,10 +131,10 @@ class Personne {
         $query = "SELECT *, COALESCE(cfe_todo.todo, settings.value) AS cfeTODO, va.minutes AS vaMaxi
 FROM personnes
 JOIN personnes_active ON personnes_active.id_personne = personnes.id AND personnes_active.year = :year
-LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber
+LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber AND cfe_todo.year = :year
 LEFT JOIN va ON va.who = personnes.givavNumber
 JOIN settings ON what = :what
-WHERE cfe_todo.year IS NULL OR cfe_todo.year = :year ORDER BY name";
+ORDER BY name";
         $sth = $conn->prepare($query);
         $sth->execute([ ':what' => 'defaultCFE_TODO_'.$year, ':year' => $year ]);
         return $sth->fetchAll();
