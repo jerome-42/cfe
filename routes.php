@@ -982,7 +982,7 @@ get('/exportAllData', function($conn) {
         fputcsv($fd, $headers);
         foreach (Personne::getAll($conn, $year) as $membre) {
             $statsCFE = $cfe->getStats($membre['givavNumber'], $year);
-            $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], getYear());
+            $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], $year);
             $line = [ /* 1 */ $membre['name'],
                       /* 2 */ $membre['isOwnerOfGlider'],
                       /* 3 */ $membre['cfeTODO'],

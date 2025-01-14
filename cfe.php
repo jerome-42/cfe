@@ -69,7 +69,10 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
     }
 
     public function getAllRecords($year) {
-        $query = 'SELECT * FROM cfe_records WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
+        $query = 'SELECT cfe_records.*, personnes.name, personnes.givavNumber, personnes.isOwnerOfGlider, validation.name AS statusWho FROM cfe_records
+JOIN personnes ON personnes.givavNumber = cfe_records.who
+LEFT JOIN personnes validation ON validation.givavNumber = cfe_records.statusWho
+WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':year' => $year ]);
         $lines = $sth->fetchAll();
@@ -142,7 +145,7 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
     }
 
     public function isCompleted($membre) {
-        if ($membre['cfeValidated'] >= $membre['cfeTODO'])
+        if (intval($membre['cfeValidated']) >= intval($membre['cfeTODO']))
             return 1;
         else
             return 0;
@@ -160,8 +163,8 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
         $personne = new Personne($this->conn);
         if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 1) {
             // c'est un propriétaire, on ne garde que maxi 16h de VA
-            $nbHoursVA = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'VA'");
-            $nbHoursOthers = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'VA'");
+            $nbHoursVA = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'VA'"));
+            $nbHoursOthers = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'VA'"));
             $va = $this->getVA($givavNumber, $year);
             if ($va != null) {
                 if ($nbHoursVA <= $va) {

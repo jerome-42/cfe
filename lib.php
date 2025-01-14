@@ -56,7 +56,7 @@ function exportAllData_getRecords($conn, $year) {
         throw new Exception('Failed to open temporary file');
     }
     $cfe = new CFE($conn, null);
-    $columns = [ [ 'who', 'givav' ], [ 'registerDate', 'date enregistrement' ],
+    $columns = [ [ 'name', 'nom' ], [ 'isOwnerOfGlider', 'proprietaire' ], [ 'registerDate', 'date enregistrement' ],
                  [ 'workDate', 'date CFE' ], [ 'workType', 'type' ],
                  [ 'beneficiary', 'beneficiaire' ], [ 'duration', 'durée' ],
                  [ 'details', 'détails' ],

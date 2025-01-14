@@ -128,11 +128,11 @@ class Personne {
     }
 
     static public function getAll($conn, $year) {
-        $query = "SELECT *, COALESCE(cfe_todo.todo, settings.value) AS cfeTODO, va.minutes AS vaMaxi
+        $query = "SELECT *, CAST(COALESCE(cfe_todo.todo, settings.value) AS UNSIGNED) AS cfeTODO, va.minutes AS vaMaxi
 FROM personnes
 JOIN personnes_active ON personnes_active.id_personne = personnes.id AND personnes_active.year = :year
 LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber AND cfe_todo.year = :year
-LEFT JOIN va ON va.who = personnes.givavNumber
+LEFT JOIN va ON va.who = personnes.givavNumber AND va.year = :year
 JOIN settings ON what = :what
 ORDER BY name";
         $sth = $conn->prepare($query);
