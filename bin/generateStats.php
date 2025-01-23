@@ -46,6 +46,8 @@ $db = new PDO("pgsql:".$dsn, $config['givav']['username'], $config['givav']['pas
 
 $now = new DateTime();
 $annee = intval($now->format('Y'));
+if (isset($argv[1]))
+    $annee = intval($argv[1]);
 // on va chercher la date de fin
 $dateOfLastFlight = getDateOfLastFlight($db, $annee);
 
@@ -96,95 +98,6 @@ $output['statsMachinesPrecedente'] = [
     'data' => $data,
 ];
 
-//echo "statsMisesEnLAir ".$annee.PHP_EOL;
-//$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
-//$sth = $db->prepare($q);
-//$sth->execute([ ':start' => $dateDebut, ':end' => $dateFin ]);
-//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-//foreach ($data as &$line) {
-//    $line['stats'] = json_decode($line['stats']);
-//}
-//$output['statsMisesEnLAir'] = [
-//    'params' => [
-//        'date_debut' => $dateDebut,
-//        'date_fin' => $dateFin,
-//    ],
-//    'requete' => $q,
-//    'data' => $data,
-//];
-//
-//echo "statsMisesEnLAir ".$anneePrecedente.PHP_EOL;
-//$q = 'SELECT * FROM statsMisesEnLAir(:start, :end)';
-//$sth = $db->prepare($q);
-//$sth->execute([ ':start' => $dateDebutPrecedente, ':end' => $dateFinPrecedente ]);
-//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-//foreach ($data as &$line) {
-//    $line['stats'] = json_decode($line['stats']);
-//}
-//$output['statsMisesEnLAirAnneePrecedente'] = [
-//    'params' => [
-//        'date_debut' => $dateDebut,
-//        'date_fin' => $dateFin,
-//    ],
-//    'requete' => $q,
-//    'data' => $data,
-//];
-//
-//echo "statsForfait".PHP_EOL;
-//$q = 'SELECT * FROM statsForfait(:annee)';
-//$sth = $db->prepare($q);
-//$sth->execute([ ':annee' => $annee ]);
-//$output['statsForfait'] = [
-//    'params' => [
-//        'annee' => $annee,
-//    ],
-//    'requete' => $q,
-//    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
-//];
-//
-//echo "statsMembre".PHP_EOL;
-//$q = 'SELECT * FROM statsMembre(:annee)';
-//$sth = $db->prepare($q);
-//$sth->execute([ ':annee' => $annee ]);
-//$output['statsMembre'] = [
-//    'params' => [
-//        'annee' => $annee,
-//    ],
-//    'requete' => $q,
-//    'data' => $sth->fetchAll(PDO::FETCH_ASSOC),
-//];
-//
-//echo "statsAuCoursAnnee ".$annee.PHP_EOL;
-//$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
-//$sth = $db->prepare($q);
-//$sth->execute([ ':annee' => $annee ]);
-//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-//foreach ($data as &$line) {
-//    $line['stats'] = json_decode($line['stats']);
-//}
-//$output['statsAuCoursAnnee'] = [
-//    'params' => [
-//        'annee' => $annee,
-//    ],
-//    'requete' => $q,
-//    'data' => $data,
-//];
-//
-//echo "statsAuCoursAnnee ".$anneePrecedente.PHP_EOL;
-//$q = 'SELECT * FROM statsAuCoursAnnee(:annee)';
-//$sth = $db->prepare($q);
-//$sth->execute([ ':annee' => $anneePrecedente ]);
-//$data = $sth->fetchAll(PDO::FETCH_ASSOC);
-//foreach ($data as &$line) {
-//    $line['stats'] = json_decode($line['stats']);
-//}
-//$output['statsAuCoursAnneePrecedente'] = [
-//    'params' => [
-//        'annee' => $annee,
-//    ],
-//    'requete' => $q,
-//    'data' => $data,
-//];
 
 echo "tableau de bord".PHP_EOL;
 $q = 'SELECT tableauDeBord() AS tdb';
@@ -217,7 +130,7 @@ foreach ([ 1, 2, 5, 9 ] as $moyenneSurNbAnnee) {
 }
 
 echo "CNB".PHP_EOL;
-$q = "SELECT * from etatMachineCNB(:cnb, '".$annee."-01-01', '".$annee."-12-31') WHERE immatriculation NOT IN ('D-5345', 'F-CEHD', 'F-CFLX', 'F-CPLE') ORDER BY 1";
+$q = "SELECT * from etatMachineCNB(:cnb, '".$annee."-01-01', '".$annee."-12-31', true) WHERE immatriculation NOT IN ('D-5345', 'F-CEHD', 'F-CFLX', 'F-CPLE') ORDER BY 1";
 $sth = $db->prepare($q);
 $params = [ ':cnb' => '20:00:00' ];
 $sth->execute($params);
