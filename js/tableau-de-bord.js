@@ -78,15 +78,6 @@ let displayBudgetRevenus = function() {
     var ctx = document.getElementById('budgetRevenus').getContext('2d');
     if (Chart.getChart(ctx) !== undefined)
         Chart.getChart(ctx).destroy();
-    let revenusVol = [];
-    for (let i = 0; i < 12; i++) {
-        revenusVol[i] = getStatsTableauDeBordAnnuel().data.valo_forfait[i] +
-            getStatsTableauDeBordAnnuel().data.valo_cellulePilotes[i] +
-            getStatsTableauDeBordAnnuel().data.valo_celluleInstruction[i] +
-            getStatsTableauDeBordAnnuel().data.valo_VI[i] +
-            getStatsTableauDeBordAnnuel().data.valo_jdStages[i] +
-            getStatsTableauDeBordAnnuel().data.valo_moteur[i];
-    }
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -95,16 +86,20 @@ let displayBudgetRevenus = function() {
             ],
             datasets: [
                 {
-                    label: 'Revenus généraux '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.valo_revenu_infra_membre,
+                    label: 'Revenus activité générale '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.revenus2_generales,
                 },
                 {
-                    label: 'Revenus heures de vol '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: revenusVol,
+                    label: 'Revenus HdV '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.revenus2_entretien_planeurs,
                 },
                 {
-                    label: 'Revenus mise en l\'air '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.valo_lancement,
+                    label: 'Revenus envols '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.revenus2_moyens_lancement,
+                },
+                {
+                    label: 'Subvention mairie '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.revenus2_mairie,
                 },
             ],
         },
@@ -159,16 +154,20 @@ let displayBudgetDepenses = function() {
             ],
             datasets: [
                 {
-                    label: 'Dépenses générales '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses_generales,
+                    label: 'Dépenses activité générale '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses2_generales,
                 },
                 {
-                    label: 'Dépenses entretiens planeurs '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs,
+                    label: 'Dépenses HdV '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses2_entretien_planeurs,
                 },
                 {
-                    label: 'Dépenses mise en l\'air '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement,
+                    label: 'Dépenses envols '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses2_moyens_lancement,
+                },
+                {
+                    label: 'Dépenses budget mairie '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: getStatsTableauDeBordAnnuel().data.depenses2_mairie,
                 },
             ],
         },
@@ -192,6 +191,94 @@ let displayBudgetDepenses = function() {
                 title: {
                     display: true,
                     text: 'Dépenses',
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayBudgetResultat = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('budgetResultat').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let resultatGeneral = [];
+    let resultatHdv = [];
+    let resultatEnvols = [];
+    let resultatMairie = [];
+    let resultatGlobal = [];
+    for (let i = 0; i < 12; i++) {
+        resultatGeneral[i] = getStatsTableauDeBordAnnuel().data.revenus2_generales[i] - getStatsTableauDeBordAnnuel().data.depenses2_generales[i];
+        resultatHdv[i] = getStatsTableauDeBordAnnuel().data.revenus2_entretien_planeurs[i] - getStatsTableauDeBordAnnuel().data.depenses2_entretien_planeurs[i];
+        resultatEnvols[i] = getStatsTableauDeBordAnnuel().data.revenus2_moyens_lancement[i] - getStatsTableauDeBordAnnuel().data.depenses2_moyens_lancement[i];
+        resultatMairie[i] = getStatsTableauDeBordAnnuel().data.revenus2_mairie[i] - getStatsTableauDeBordAnnuel().data.depenses2_mairie[i];
+        resultatGlobal[i] = resultatGeneral[i] + resultatHdv[i] + resultatEnvols[i] + resultatMairie[i];
+    }
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Résultat activité générale '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: resultatGeneral,
+                    hidden: true,
+                },
+                {
+                    label: 'Résultat HdV '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: resultatHdv,
+                    hidden: true,
+                },
+                {
+                    label: 'Résultat envols '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: resultatEnvols,
+                    hidden: true,
+                },
+                {
+                    label: 'Résultat mairie '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: resultatMairie,
+                    hidden: true,
+                },
+                {
+                    label: 'Résultat global '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: resultatGlobal,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Résultat',
                     font: { size: 24 },
                 },
                 datalabels: {
@@ -2187,6 +2274,7 @@ $(document).ready(function() {
     $('#moyenneAnnees').change(function() {
         displayBudgetRevenus();
         displayBudgetDepenses();
+        displayBudgetResultat();
         displayLicenceAnnuel();
         displayValoInfraAnnuel();
         displayDepensesGeneralesAnnuel();
