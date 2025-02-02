@@ -1520,11 +1520,6 @@ DECLARE
   remorqueursCount1 INT[] := '{}';
 
   -- VALORISATION
-    -- cotisation annuelle, frais technique, nuits dortoir et frais hangar / remorque (frais infra)
-  valo_revenu_infra_membre NUMERIC[] := '{}';
-  valo_cumulRevenu_infra_membre NUMERIC := 0;
-  valo_revenu_infra_membre_n_anneesPrecedantes NUMERIC[] := '{}';
-  valo_cumulRevenu_infra_membre_n_anneesPrecedantes NUMERIC := 0;
     -- cellule
   valo_hdv NUMERIC[] := '{}';
   valo_cumulHDV NUMERIC := 0;
@@ -1571,18 +1566,6 @@ DECLARE
   depenses_generales_cumul NUMERIC := 0;
   depenses_generales_n_anneesPrecedantes NUMERIC[] := '{}';
   depenses_generales_cumul_n_anneesPrecedantes NUMERIC := 0;
-
-  -- dépenses moyens de lancement
-  depenses_moyens_lancement NUMERIC[] := '{}';
-  depenses_moyens_lancement_cumul NUMERIC := 0;
-  depenses_moyens_lancement_n_anneesPrecedantes NUMERIC[] := '{}';
-  depenses_moyens_lancement_cumul_n_anneesPrecedantes NUMERIC := 0;
-
-  -- dépenses entretien planeurs
-  depenses_entretien_planeurs NUMERIC[] := '{}';
-  depenses_entretien_planeurs_cumul NUMERIC := 0;
-  depenses_entretien_planeurs_n_anneesPrecedantes NUMERIC[] := '{}';
-  depenses_entretien_planeurs_cumul_n_anneesPrecedantes NUMERIC := 0;
 
   -- dépenses mairie
   depenses_mairie NUMERIC[] := '{}';
@@ -1888,55 +1871,6 @@ BEGIN
       END LOOP;
 
     -- ============ VALORISATION ============
-      -- ============ COTISATION ANNUELLE, FRAIS TECHNIQUE, NUITS DORTOIR ET FRAIS HANGAR / REMORQUE (FRAIS INFRA) ============
-      -- ancienne méthode
-          --SELECT INTO r COALESCE(SUM(montant), 0) AS prix FROM pilote
-          --  JOIN cp_piece_ligne li ON li.id_compte = pilote.id_compte
-          --  JOIN cp_piece pi ON pi.id_piece = li.id_piece
-          --  WHERE (type = 'PRESTATION' OR type = 'FVTE'  OR libelle LIKE '%frais hangar ou en remorque%') AND libelle NOT LIKE 'Carnet de vol%' AND li.sens = 'D'
-          --  AND pi.date_piece BETWEEN (CASE WHEN EXTRACT(MONTH FROM rDate.start) = 1 THEN rDate.start - interval '3 months' ELSE rDate.start END) AND rDate.stop;
-          SELECT INTO r SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END) AS somme
-          FROM cp_piece_ligne ligne
-          JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
-          LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
-          WHERE cp_budget_chapitre.libelle IN ('Cotisations', 'Participations aux frais', 'Participations aux frais propriétaires',
-          'Participations aux frais planeur de passage', 'Participations aux frais hébergement',
-          'Frais Tech Senior 7/7', 'Frais Tech junior 7/7', 'Frais Tech senior semaine', 'Frais Tech sénior couple',
-          'Frais tech junior couple', 'Frais tech sénior 1ére inscription à/01 juin', 'Frais Tech junior 1ére inscription à/01 juin',
-          'Frais Tech sénior - stage 7 jours consécutifs', 'Frais Tech junior - stage 7 jours consécutifs', 'Frais Tech sénior - stage 15 jours consécutifs',
-          'Frais Tech - couple sénior - 1ére inscription à/01 juin', 'Enregistrement Concours - 25 ans', 'Recettes concours',
-          'Subventions de l''état', 'Subventions de la région', 'Subventions du département', 'Subventions de la ville', 'Subventions et Aides de la FFVV',
-          'Subventions de la FFAM', 'Subventions du comité régional', 'Dons des membres', 'Subvention diverses - CD3V0'
-          'Prestations diverses faites à des tiers', 'Manifestation organisée par le club', 'Subventions',
-          'Fournitures de formation', 'Produits achetés pour les membres', 'Vente Carburants', 'Produits financiers',
-          'Produits divers')
-          AND piece.date_piece BETWEEN rDate.start AND rDate.stop;
-          valo_cumulRevenu_infra_membre := valo_cumulRevenu_infra_membre + r.somme;
-          IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM last_computation_date) AND rDate.stop::date <= last_computation_date THEN
-            valo_revenu_infra_membre := array_append(valo_revenu_infra_membre, valo_cumulRevenu_infra_membre);
-          END IF;
-
-        -- REVENU sur les 5 dernières années
-          SELECT INTO r SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END)/moyenne_sur_nb_annee AS somme
-          FROM cp_piece_ligne ligne
-          JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
-          LEFT JOIN cp_budget_chapitre ON cp_budget_chapitre.id_budget_chapitre = ligne.id_budget_chapitre
-          WHERE cp_budget_chapitre.libelle IN ('Cotisations', 'Participations aux frais', 'Participations aux frais propriétaires',
-          'Participations aux frais planeur de passage', 'Participations aux frais hébergement',
-          'Frais Tech Senior 7/7', 'Frais Tech junior 7/7', 'Frais Tech senior semaine', 'Frais Tech sénior couple',
-          'Frais tech junior couple', 'Frais tech sénior 1ére inscription à/01 juin', 'Frais Tech junior 1ére inscription à/01 juin',
-          'Frais Tech sénior - stage 7 jours consécutifs', 'Frais Tech junior - stage 7 jours consécutifs', 'Frais Tech sénior - stage 15 jours consécutifs',
-          'Frais Tech - couple sénior - 1ére inscription à/01 juin', 'Enregistrement Concours - 25 ans', 'Recettes concours',
-          'Subventions de l''état', 'Subventions de la région', 'Subventions du département', 'Subventions de la ville', 'Subventions et Aides de la FFVV',
-          'Subventions de la FFAM', 'Subventions du comité régional', 'Dons des membres', 'Subvention diverses - CD3V0'
-          'Prestations diverses faites à des tiers', 'Manifestation organisée par le club', 'Subventions',
-          'Fournitures de formation', 'Produits achetés pour les membres', 'Vente Carburants', 'Produits financiers',
-          'Produits divers')
-          AND EXTRACT(YEAR FROM piece.date_piece) >= cette_annee - moyenne_sur_nb_annee AND EXTRACT(YEAR FROM piece.date_piece) < cette_annee
-          AND EXTRACT(MONTH FROM piece.date_piece) = EXTRACT(MONTH FROM rDate.start);
-          valo_cumulRevenu_infra_membre_n_anneesPrecedantes := valo_cumulRevenu_infra_membre_n_anneesPrecedantes + r.somme;
-          valo_revenu_infra_membre_n_anneesPrecedantes := array_append(valo_revenu_infra_membre_n_anneesPrecedantes, valo_cumulRevenu_infra_membre_n_anneesPrecedantes);
-
       -- ============ COUT CELLULE ============
         -- REVENU CELLULE des machines club
           SELECT INTO r ROUND(SUM(COALESCE(prix_vol_cdb, 0) + COALESCE(prix_vol_co, 0) + COALESCE(prix_vol_elv, 0))) AS prix FROM vfr_vol
@@ -2137,7 +2071,7 @@ BEGIN
     END IF;
 
 
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
@@ -2169,69 +2103,6 @@ BEGIN
     depenses_generales_cumul_n_anneesPrecedantes := depenses_generales_cumul_n_anneesPrecedantes + r.somme;
     depenses_generales_n_anneesPrecedantes := array_append(depenses_generales_n_anneesPrecedantes, depenses_generales_cumul_n_anneesPrecedantes);
 
-      -- ============ DEPENSES ENVOLS ============
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
-      FROM cp_piece_ligne ligne
-      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
-      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Carburant  avion', 'Huile moteur avion',
-      'Location Matériel aéronautique', 'Entretien planeurs',
-      'GNAV, OSAC & taxes diverses planeurs', 'Entretien Remorqueurs', 'Fournitures Pièces Remorqueurs',
-      'Entretien Avion - WT9', 'Fournitures Pièces Avion - WT9', 'GNAV - Doc & Taxes -  Avion WT9',
-      'Fournitures Piéces - Treuil', 'Assurance Accident ANEPVV - Remorqueurs',
-      'ANEPVV Prévoyance Remorqueurs', 'Amortissement Moyens de lancement (Avions & Treuil)') AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
-
-    depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
-    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM last_computation_date) AND rDate.stop::date <= last_computation_date THEN
-      depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
-    END IF;
-
-
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
-      FROM cp_piece_ligne ligne
-      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
-      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Carburant  avion', 'Huile moteur avion',
-      'Location Matériel aéronautique', 'Entretien planeurs',
-      'GNAV, OSAC & taxes diverses planeurs', 'Entretien Remorqueurs', 'Fournitures Pièces Remorqueurs',
-      'Entretien Avion - WT9', 'Fournitures Pièces Avion - WT9', 'GNAV - Doc & Taxes -  Avion WT9',
-      'Fournitures Piéces - Treuil', 'Assurance Accident ANEPVV - Remorqueurs',
-      'ANEPVV Prévoyance Remorqueurs', 'Amortissement Moyens de lancement (Avions & Treuil)')
-        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
-        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
-    depenses_moyens_lancement_cumul_n_anneesPrecedantes := depenses_moyens_lancement_cumul_n_anneesPrecedantes + r.somme;
-    depenses_moyens_lancement_n_anneesPrecedantes := array_append(depenses_moyens_lancement_n_anneesPrecedantes, depenses_moyens_lancement_cumul_n_anneesPrecedantes);
-
-      -- ============ DEPENSES HdV ============
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
-      FROM cp_piece_ligne ligne
-      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
-      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Fourniture Pièces - SF28', 'GNAV - Doc & Taxes - SF28',
-      'Entretien des Remorques', 'Assurance Accident ANEPVV - Planeurs', 'Assurance Accident ANEPVV - SF28',
-      'ANEPVV Prévoyance SF28', 'Amortissement Planeurs', 'Amortissement Parachutes', 'Amortissement  regelcoatage des planeurs')
-      AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
-
-    depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
-    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM last_computation_date) AND rDate.stop::date <= last_computation_date THEN
-      depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
-    END IF;
-
-
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
-      FROM cp_piece_ligne ligne
-      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
-      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
-      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Fourniture Pièces - SF28', 'GNAV - Doc & Taxes - SF28',
-      'Entretien des Remorques', 'Assurance Accident ANEPVV - Planeurs', 'Assurance Accident ANEPVV - SF28',
-      'ANEPVV Prévoyance SF28', 'Amortissement Planeurs', 'Amortissement Parachutes', 'Amortissement  regelcoatage des planeurs')
-        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
-        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
-        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
-    depenses_entretien_planeurs_cumul_n_anneesPrecedantes := depenses_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme;
-    depenses_entretien_planeurs_n_anneesPrecedantes := array_append(depenses_entretien_planeurs_n_anneesPrecedantes, depenses_entretien_planeurs_cumul_n_anneesPrecedantes);
-
       -- ============ DEPENSES MAIRIE ============
     SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
       FROM cp_piece_ligne ligne
@@ -2247,7 +2118,7 @@ BEGIN
     END IF;
 
 
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
@@ -2283,7 +2154,7 @@ BEGIN
     END IF;
 
 
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END), 0) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
@@ -2318,7 +2189,7 @@ BEGIN
     END IF;
 
 
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END), 0) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
@@ -2364,7 +2235,7 @@ BEGIN
         AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
         AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
         AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
-    revenus_entretien_planeurs_cumul_n_anneesPrecedantes := revenus_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme - r2.somme;
+    revenus_entretien_planeurs_cumul_n_anneesPrecedantes := revenus_entretien_planeurs_cumul_n_anneesPrecedantes + (r.somme - r2.somme)/moyenne_sur_nb_annee;
     revenus_entretien_planeurs_n_anneesPrecedantes := array_append(revenus_entretien_planeurs_n_anneesPrecedantes, revenus_entretien_planeurs_cumul_n_anneesPrecedantes);
 
       -- ============ REVENUS MAIRIE ============
@@ -2380,7 +2251,7 @@ BEGIN
     END IF;
 
 
-    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END), 0) AS somme
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'D' THEN -montant ELSE montant END), 0)/moyenne_sur_nb_annee AS somme
       FROM cp_piece_ligne ligne
       JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
       JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
@@ -2457,10 +2328,6 @@ BEGIN
     stats := setVarInData(stats, 'nbRemorquesParRemorqueur', remorqueursCount);
 
   -- ============ ACTIVITES ============
-    -- COTISATION ANNUELLE, FRAIS TECHNIQUES, NUITS DORTOIR ET FRAIS HANGAR (FRAIS INFRA)
-    stats := setVarInData(stats, 'valo_revenu_infra_membre', valo_revenu_infra_membre);
-    stats := setVarInData(stats, 'valo_revenu_infra_membre_n_anneesPrecedantes', valo_revenu_infra_membre_n_anneesPrecedantes);
-    -- CELLULE
     stats := setVarInData(stats, 'valo_hdv', valo_hdv);
     stats := setVarInData(stats, 'valo_hdv_n_anneesPrecedantes', valo_hdv_n_anneesPrecedantes);
     -- MOTEUR
@@ -2488,14 +2355,6 @@ BEGIN
     -- ============ DEPENSES GENERALES ============
     stats := setVarInData(stats, 'depenses_generales', depenses_generales);
     stats := setVarInData(stats, 'depenses_generales_n_anneesPrecedantes', depenses_generales_n_anneesPrecedantes);
-
-    -- ============ DEPENSES MOYENS LANCEMENT ============
-    stats := setVarInData(stats, 'depenses_moyens_lancement', depenses_moyens_lancement);
-    stats := setVarInData(stats, 'depenses_moyens_lancement_n_anneesPrecedantes', depenses_moyens_lancement_n_anneesPrecedantes);
-
-    -- ============ DEPENSES ENTRETIEN PLANEURS ============
-    stats := setVarInData(stats, 'depenses_entretien_planeurs', depenses_entretien_planeurs);
-    stats := setVarInData(stats, 'depenses_entretien_planeurs_n_anneesPrecedantes', depenses_entretien_planeurs_n_anneesPrecedantes);
 
     -- ============ DEPENSES MAIRIE ============
     stats := setVarInData(stats, 'depenses_mairie', depenses_mairie);
