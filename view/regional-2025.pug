@@ -1,0 +1,127 @@
+extends layout-forms.pug
+
+block scripts
+  title Championnat Régional Chérence 2025
+  script(src="/js/regional-2025.js")
+
+block content
+  if $stored === false
+    .row
+      .col.text-center
+        .row
+          h1.display-4 Championnat Régional Chérence 2025
+        .row
+          h3.display-6 Du 25 mai au 1er juin 2025
+        hr.border.border-primary.border-3
+        .row
+          h3 Inscrivez-vous pour participer au Championnat Régional Chérence 2025 !
+        .row.mt-3
+          h5 Tarifs
+          .container.d-none.d-lg-block
+            .row
+              .col-3
+                .alert.alert-primary.text-center Inscription -25 ans
+                  br
+                  b 100€
+              .col-3
+                .alert.alert-success.text-center Inscription +25 ans
+                  br
+                  b 120€
+              .col-3
+                .alert.alert-info.text-center Par remorqué
+                  br
+                  b 35€
+              .col-3
+                .alert.alert-secondary.text-center Camping
+                  br
+                  b 70€ la semaine
+          .container.d-lg-none
+            .row
+              .col-3
+                .alert.alert-primary.text-center Inscription -25 ans
+                  br
+                  b 100€
+              .col-3
+                .alert.alert-success.text-center Inscription +25 ans
+                  br
+                  b 120€
+              .col-3
+                .alert.alert-info.text-center Par remorqué
+                  br
+                  b 35€
+              .col-3
+                .alert.alert-secondary.text-center Camping
+                  br
+                  b 70€ la semaine
+            
+        .row.mt-4
+          h5 Le scoring est au format multiclasse
+        .row.mt-4
+          h5 Hébergement
+          .col-8.offset-2.text-start
+            div
+              b Sur place :&nbsp;
+              | un dortoir, 2 chambres et des emplacements pour des tentes, avec sanitaires, cuisine et toutes les commodités.
+            div
+              b Aux alentours :&nbsp;
+              | possibilité de louer des gites dans le Vexin
+      .col-2.offset-1.d-none.d-sm-block
+        .row
+          img.img-fluid(src="/img/regional-2025-affiche.png")
+    hr.border.border-primary.border-3
+    .row.mt-5
+      h5 Formulaire d'inscription :
+    form(method="POST")
+      .row.mb-2
+        .col
+          label.form-label(for="nom") Nom
+          input.form-control(type="text" name="nom" placeholder="Nom")
+        .col
+          label.form-label(for="nom") Prénom
+          input.form-control(type="text" name="prenom" placeholder="Prénom")
+      .row.mb-2
+        .col
+          label.form-label(for="email") Email
+          input.form-control(type="email" name="email" placeholder="Email")#email
+        .col
+          label.form-label(for="telephone") Téléphone
+          input.form-control(type="text" name="telephone" placeholder="Téléphone")
+      .row.mb-2
+        .col
+          label.form-label(for="givav") Numéro Givav (optionnel)
+          input.form-control(type="text" name="givav" placeholder="xxxx (optionel)")
+        .col
+          label.form-label(for="club") Club
+          input.form-control(type="text" name="club" placeholder="Club")
+      .mb-2
+        label.form-label(for="immatVoiture") Immatriculation voiture de dépannage
+        input.form-control(type="text" name="immatVoiture" placeholder="AA-123-BB")
+      .row.mb-2
+        .col
+          label.form-label(for="typePlaneur") Type de planeur
+          input.form-control(type="text" name="typePlaneur" placeholder="Pégase ...")
+        .col
+          label.form-label(for="immatPlaneur") Immatriculation du planeur
+          input.form-control(type="text" name="immatPlaneur" placeholder="F-CXXX")
+        .col
+          label.form-label(for="numConcours") Numéro de concours
+          input.form-control(type="text" name="numConcours" placeholder="")
+      .row.mb-2
+        .col
+          label.form-label(for="typeIGC") Type d'enregistreur de vol
+          input.form-control(type="text" name="typeIGC" placeholder="PowerFlarm / Oudie IGC")
+        .col
+          label.form-label(for="numIGC") Identifiant IGC de l'enregistreur
+          input.form-control(type="text" name="numIGC" placeholder="")
+      .mb-2
+        label.form-label(for="herbergement") Type d'hébergement
+        select.form-control(name="hebergement")
+          option(value="Hébergement extérieur") Hébergement extérieur
+          option(value="Camping") Camping
+      .mb-2.form-check
+        input.form-check-input(type="checkbox" name="valide")#valide
+        label.form-check-label(for="valide") Je m’engage sur l’honneur à être en règle avec l’administration en ce qui concerne ma licence de pilote, les papiers de mon planeur, ainsi que la licence assurance FFVV.
+      .mb-2
+        button.btn.btn-primary(type="submit" disabled)#submit Enregistrer
+  else
+    h1 Merci, nous avons enregistré votre inscription, nous vous recontacterons bientôt.

@@ -69,7 +69,10 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
     }
 
     public function getAllRecords($year) {
-        $query = 'SELECT * FROM cfe_records WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
+        $query = 'SELECT cfe_records.*, personnes.name, personnes.givavNumber, personnes.isOwnerOfGlider, validation.name AS statusWho FROM cfe_records
+JOIN personnes ON personnes.givavNumber = cfe_records.who
+LEFT JOIN personnes validation ON validation.givavNumber = cfe_records.statusWho
+WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':year' => $year ]);
         $lines = $sth->fetchAll();
@@ -85,7 +88,7 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
     }
 
     public function getRecordsByYear($givavNumber, $year) {
-        $query = 'SELECT *, validated.name as validatedName FROM cfe_records LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
+        $query = 'SELECT *, cfe_records.id, validated.name as validatedName FROM cfe_records LEFT JOIN personnes validated ON validated.givavNumber = cfe_records.statusWho WHERE who = :givavNumber AND YEAR(workDate) = :year ORDER BY workDate DESC';
         $sth = $this->conn->prepare($query);
         $sth->execute([ ':year' => $year, ':givavNumber' => $givavNumber ]);
         $lines = $sth->fetchAll();
@@ -130,8 +133,19 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
         return $lines[0]['duration'];
     }
 
+    public function getVA($givavNumber, $year) {
+        if (!is_numeric($year))
+            throw new Exception("l'année doit être un nombre");
+        $query = "SELECT minutes FROM va WHERE who = :who AND year = :year";
+        $sth = $this->conn->prepare($query);
+        $sth->execute([ 'year' => $year, ':who' => $givavNumber ]);
+        if ($sth->rowCount() === 1)
+            return $sth->fetchAll()[0]['minutes'];
+        return null;
+    }
+
     public function isCompleted($membre) {
-        if ($membre['cfeValidated'] >= $membre['cfeTODO'])
+        if (intval($membre['cfeValidated']) >= intval($membre['cfeTODO']))
             return 1;
         else
             return 0;
@@ -142,20 +156,25 @@ WHERE cfe_records.status = 'submitted' ORDER BY cfe_records.workDate ASC";
                   'rejected' => floatval($this->getLines('rejected', $givavNumber, $year)),
                   'thecfetodo' => floatval($this->getCFE_TODO($givavNumber, $year)),
                   'validated' => floatval($this->getLines2('validated', $givavNumber, $year)),
-                  'va' => 0 ];
+                  // on compte toutes les CFE si la règle des VA maxi n'est pas appliquée
+                  'validatedVANotRestricted' => floatval($this->getLines2('validated', $givavNumber, $year)),
+                  'vaValidatedAndNotCount' => 0 ]; // va en exces et non comptabilisé
 
         $personne = new Personne($this->conn);
         if ($personne->load($this->conn, $givavNumber)['isOwnerOfGlider'] === 1) {
             // c'est un propriétaire, on ne garde que maxi 16h de VA
-            $nbHoursVA = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'VA'");
-            $nbHoursOthers = $this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'VA'");
-            if ($nbHoursVA < 16*60) {
-                $data['validated'] = $nbHoursOthers + $nbHoursVA;
-                $data['va'] = 0;
-            }
-            else {
-                $data['validated'] = $nbHoursOthers + 16*60;
-                $data['va'] = $nbHoursVA - 16*60;
+            $nbHoursVA = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary = 'VA'"));
+            $nbHoursOthers = floatval($this->getLines2('validated', $givavNumber, $year, " AND beneficiary != 'VA'"));
+            $va = $this->getVA($givavNumber, $year);
+            if ($va != null) {
+                if ($nbHoursVA <= $va) {
+                    $data['validated'] = $nbHoursOthers + $nbHoursVA;
+                    $data['vaValidatedAndNotCount'] = 0;
+                }
+                else {
+                    $data['validated'] = $nbHoursOthers + $va;
+                    $data['vaValidatedAndNotCount'] = $nbHoursVA - $va;
+                }
             }
         }
 
@@ -224,5 +243,11 @@ ORDER BY workDate DESC';
             $stats['cfe']['declarationsCFE_n_anneesPrecedantes'][] = $cumulDeclarationCFE_n_anneesPrecedantes;
         }
         return $stats;
+    }
+
+    public function switchToVA($id) {
+        $q = "UPDATE cfe_records SET beneficiary = 'VA' WHERE id = :id";
+        $sth = $this->conn->prepare($q);
+        $sth->execute([ ':id' => $id ]);
     }
 }

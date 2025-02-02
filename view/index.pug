@@ -16,8 +16,24 @@ block content
             .progress.mt-2(role="progressbar" aria-label="heures réalisées" aria-valuenow=$validated aria-valuemin="0" aria-valuemax=$thencfetodo style="height: 30px")
               - $percent = ($validated/$thecfetodo)*100
               .progress-bar(style="width: "+$percent+"%;") #{$durationToHuman($validated)} réalisés soit #{round($percent)} %
-          if $va > 0
-            p.mt-2.mb-0 Vous avez aussi réalisé #{$durationToHuman($va)} pour votre Visite Annuelle
+          if $isOwnerOfGlider && $va
+            br
+            | Vous êtes propriétaire ou membre de section (ANEG ou CORMEILLES) et vous pouvez déclarer au maximum
+            b &nbsp;#{durationToHuman($va)}&nbsp;
+            | pour la
+            b &nbsp;visite annuelle&nbsp;
+            | de votre/vos machine(s).
+            if $vaValidatedAndNotCount > 0
+              br
+              | Vous avez aussi réalisé #{durationToHuman($vaValidatedAndNotCount)} mais elles ne sont pas comptabilisées car elles dépassent le nombre d'heure maximum de visite annuelle.
+            br
+            | Vous êtes assujettis à la
+            b &nbsp;CNB&nbsp;
+            | (Contribution à la Non-Banalisation), si votre/vos machine(s) ne vole(nt) pas suffisamment avec des pilotes non-propriétaire à bord, vous êtes redevable d'heures supplémentaires de CFE. Chaque machine doit faire
+            b &nbsp;20h&nbsp;
+            | de vol avec à bord un pilote non-propriétaire. Si ce n'est pas le cas, le propriétaire / les co-propriétaires / l'ensemble des membres de la section doivent le nombre d'heure restant x 2 en plus de leur CFE. Par exemple s'il manque 10h de vol banalisé au LS8 de l'ANEG, l'ensemble des membres ANEG doivent 20h de CFE supplémentaire, il suffit qu'un membre fasse 20h ou 2 membres fassent 10h chacun pour solder la CNB.
+            br
+            a(href="/cnb") Détails de la CNB
 
 
       $reste = $thecfetodo - $validated
@@ -45,9 +61,7 @@ block content
           small.text-muted &nbsp;Si vous êtes nouveau inscrit vous n'avez pas d'heure à faire (bonus 1ère année)
           if $isOwnerOfGlider == 1
             br
-            | La&nbsp;
-            a(href="/cnb") CNB s'applique aux sections et propriétaires.
-            | &nbsp;En tant que propriétaire, seules 16 heures de travail sur votre machine sont comptabilisées. Lorsque vous travaillez pour le club, les sections ou d'autres propriétaires ces heures comptent.
+            | Vous êtes propriétaire et/ou membre de section, le nombre d'heure de CFE est calculé si votre machine n'est pas banalisée ou si votre machine ne fait pas assez d'heure avec un pilote non-propriétaire à bord. Mais si votre machine fait le nombre d'heure de banalisation vous ne serez redevable que de #{durationToHuman($defaultCFE_TODO)}.
 
       if $submited > 0
         .alert.alert-info #{durationToHuman($submited)} en attente de validation
@@ -73,7 +87,7 @@ block content
               default
                 - $color = 'bg-info'
 
-            span.badge.text-black.rounded-pill.mx-2.px-2.py-2.proposal(class=$color x-id=$proposal['id'] x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-who=$proposal['who'] x-whoEmail=$proposal['whoEmail']) (#{proposal['priority']}) #{my_substr($proposal['title'], 30)}
+            span.badge.rounded-pill.mx-2.px-2.py-2.proposal(class=$color x-id=$proposal['id'] x-title=$proposal['title'] x-details=$proposal['details'] x-workType=$proposal['workType'] x-notValidAfterDate=$proposal['notValidAfterDate'] x-who=$proposal['who'] x-whoEmail=$proposal['whoEmail']) (#{proposal['priority']}) #{my_substr($proposal['title'], 30)}
 
     .row.d-block.d-sm-none.justify-content-md-center
       .btn-group-vertical(role="group")

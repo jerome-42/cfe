@@ -128,7 +128,13 @@ class Personne {
     }
 
     static public function getAll($conn, $year) {
-        $query = "SELECT *, COALESCE(cfe_todo.todo, settings.value) AS cfeTODO FROM personnes LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber JOIN settings ON what = :what WHERE cfe_todo.year IS NULL OR cfe_todo.year = :year ORDER BY name";
+        $query = "SELECT *, CAST(COALESCE(cfe_todo.todo, settings.value) AS UNSIGNED) AS cfeTODO, va.minutes AS vaMaxi
+FROM personnes
+JOIN personnes_active ON personnes_active.id_personne = personnes.id AND personnes_active.year = :year
+LEFT JOIN cfe_todo ON cfe_todo.who = personnes.givavNumber AND cfe_todo.year = :year
+LEFT JOIN va ON va.who = personnes.givavNumber AND va.year = :year
+JOIN settings ON what = :what
+ORDER BY name";
         $sth = $conn->prepare($query);
         $sth->execute([ ':what' => 'defaultCFE_TODO_'.$year, ':year' => $year ]);
         return $sth->fetchAll();
@@ -138,6 +144,13 @@ class Personne {
         $query = "SELECT 1 FROM personnes WHERE givavNumber = :num AND isAdmin IS true";
         $sth = $conn->prepare($query);
         $sth->execute([ ':num' => $numGivav ]);
+        return $sth->rowCount() === 1;
+    }
+
+    static public function setActive($conn, $idPersonne, $year) {
+        $q = "INSERT IGNORE INTO personnes_active (id_personne, year) VALUES (:id_personne, :year)";
+        $sth = $conn->prepare($q);
+        $sth->execute([ ':id_personne' => $idPersonne, ':year' => $year ]);
         return $sth->rowCount() === 1;
     }
 }

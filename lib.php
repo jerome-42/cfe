@@ -29,7 +29,7 @@ function exportAllData_getPersonnes($conn, $year) {
     }
     $membres = Personne::getAll($conn, $year);
     $columns = [ [ 'givavNumber', 'givav' ], [ 'name', 'nom' ], [ 'email', 'email' ],
-                 [ 'isAdmin', 'administrateur' ], [ 'cfeTODO', 'cfe' ] ];
+                 [ 'isAdmin', 'administrateur' ], [ 'cfeTODO', 'cfe' ], [ 'vaMaxi', 'va maxi' ] ];
     $headers = array_map(function($i) {
         return $i[1];
     }, $columns);
@@ -56,7 +56,7 @@ function exportAllData_getRecords($conn, $year) {
         throw new Exception('Failed to open temporary file');
     }
     $cfe = new CFE($conn, null);
-    $columns = [ [ 'who', 'givav' ], [ 'registerDate', 'date enregistrement' ],
+    $columns = [ [ 'name', 'nom' ], [ 'isOwnerOfGlider', 'proprietaire' ], [ 'registerDate', 'date enregistrement' ],
                  [ 'workDate', 'date CFE' ], [ 'workType', 'type' ],
                  [ 'beneficiary', 'beneficiaire' ], [ 'duration', 'durée' ],
                  [ 'details', 'détails' ],

@@ -25,6 +25,8 @@ get('/', function($conn, $pug, $env) {
     $vars['durationSubmitted'] = $cfe->getSubmittedDuration();
     $proposals = new Proposals($env);
     $vars['proposals'] = $proposals->list();
+    $vars['va'] = $cfe->getVA($_SESSION['givavNumber'], getYear());
+    $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
     $pug->displayFile('view/index.pug', $vars);
 });
 
@@ -102,10 +104,30 @@ post('/api/updatePilotsList', function($conn, $pug, $env) {
     $pilots = json_decode($_POST['pilots'], true);
     if (json_last_error() !== JSON_ERROR_NONE)
         return apiReturnError("pilots is not json");
-    $q = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :givavNumber) ON DUPLICATE KEY UPDATE name = :name, email = :email";
+    $cfe = new CFE($conn);
+    $defaultCFE_TODO = $cfe->getDefaultCFE_TODO(getYear());
+    // toutes les personnes sont inactives, seules celles qui sont injectées ré-apparaîtront
+    $q = "DELETE FROM personnes_active WHERE year = :year";
     $sth = $conn->prepare($q);
+    $sth->execute([ ':year' => getYear() ]);
+    $q = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :givavNumber) ON DUPLICATE KEY UPDATE name = :name, email = :email";
+    $sthInsertPersonnes = $conn->prepare($q);
+    $q = "INSERT IGNORE INTO personnes_active (id_personne, year) VALUES (:id_personne, :year)";
+    $sthInsertPersonnesActive = $conn->prepare($q);
+    // si la personne a déjà un cfe_todo on ne l'écrase pas
+    $q = "INSERT IGNORE INTO cfe_todo (who, year, todo) VALUES (:givavNumber, :year, :todo) ON DUPLICATE KEY UPDATE todo = :todo";
+    $sthSetCFETodo = $conn->prepare($q);
+    $q = "SELECT id FROM personnes WHERE name = :name";
+    $sthGetId = $conn->prepare($q);
     foreach ($pilots as $pilot) {
-        $sth->execute([ ':name' => $pilot['name'], ':email' => $pilot['email'], ':givavNumber' => $pilot['givavNumber'] ]);
+        $sthInsertPersonnes->execute([ ':name' => $pilot['name'], ':email' => $pilot['email'], ':givavNumber' => $pilot['givavNumber'] ]);
+        $sthGetId->execute([ ':name' => $pilot['name'] ]);
+        if ($sthGetId->rowCount() !== 1)
+            throw new Exception("Unable to retrieve last inserted membre");
+        $idPersonne = $sthGetId->fetchAll()[0]['id'];
+        $sthInsertPersonnesActive->execute([ ':id_personne' => $idPersonne, ':year' => getYear() ]);
+        if ($pilot['nouveau_membre'] === true)
+            $sthSetCFETodo->execute([ ':givavNumber' => $pilot['givavNumber'], ':year' => getYear(), ':todo' => 0 ]);
     }
     echo json_encode([ 'ok' => true ]);
 });
@@ -810,6 +832,9 @@ get('/detailsMembre', function($conn, $pug) {
     $cfe = new CFE($conn);
     $vars['defaultCFE_TODO'] = $cfe->getDefaultCFE_TODO(getYear());
     $vars['defaultCFE_TODOHour'] = $vars['defaultCFE_TODO'] / 60;
+    $vars['va'] = $cfe->getVA($num, getYear());
+    if ($vars['va'] != null)
+        $vars['va'] = $vars['va'] / 60; // on affiche en heure
     $vars['membre'] = Personne::load($conn, $num);
     $vars['membre']['todoHour'] = round($vars['membre']['todo'] / 60);
     if ($vars['membre']['todo'] === null || $vars['membre']['todoHour'] == $vars['defaultCFE_TODOHour'])
@@ -920,7 +945,7 @@ get('/exportAllData', function($conn) {
         outputName: $zipFilename,
         sendHttpHeaders: true, // enable output of HTTP headers
     );
-
+    $cfe = new CFE($conn);
     $years = exportAllData_getYears($conn);
     foreach ($years as $year) {
         // membres
@@ -938,6 +963,47 @@ get('/exportAllData', function($conn) {
                 data: $data,
             );
         }
+
+        // totaux CFE
+        $fd = fopen('php://temp/maxmemory:1048576', 'w');
+        if ($fd === false) {
+            throw new Exception('Failed to open temporary file');
+        }
+        $headers = [
+            /* 1 */ 'membre',
+            /* 2 */ 'est propriétaire',
+            /* 3 */ 'CFE à faire (CNB complète)',
+            /* 4 */ 'minutes CFE validées',
+            /* 5 */ 'CFE complète',
+            /* 6 */ 'minutes VA maximales',
+            /* 7 */ 'minutes VA en excès et non comptabilisées',
+            /* 8 */ 'minutes CFE validées règle VA maxi non appliquée',
+        ];
+        fputcsv($fd, $headers);
+        foreach (Personne::getAll($conn, $year) as $membre) {
+            $statsCFE = $cfe->getStats($membre['givavNumber'], $year);
+            $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], $year);
+            $line = [ /* 1 */ $membre['name'],
+                      /* 2 */ $membre['isOwnerOfGlider'],
+                      /* 3 */ $membre['cfeTODO'],
+                      /* 4 */ $statsCFE['validated'],
+            ];
+            if ($cfe->isCompleted($membre))
+                $line[] = 'oui'; /* 5 */
+            else
+                $line[] = 'non'; /* 5 */
+            $line[] = $membre['vaMaxi']; /* 6 */
+            $line[] = $statsCFE['vaValidatedAndNotCount']; /* 7 */
+            $line[] = $statsCFE['validatedVANotRestricted']; /* 8 */
+            fputcsv($fd, $line);
+        }
+        rewind($fd);
+        $csv = stream_get_contents($fd);
+        fclose($fd);
+        $zip->addFile(
+            fileName: 'cfe-totaux-'.$year.'.csv',
+            data: $csv,
+        );
     }
     $zip->finish();
 });
@@ -1093,6 +1159,7 @@ get('/listeCFE', function($conn, $pug) {
     $lines = $cfe->getRecords($_SESSION['givavNumber']);
     $vars = $_SESSION;
     $vars['lines'] = $lines;
+    $vars['va'] = $cfe->getVA($_SESSION['givavNumber'], getYear());
     $pug->displayFile('view/listeCFE.pug', $vars);
 });
 
@@ -1234,6 +1301,7 @@ post('/updateMembreParams', function($conn) {
             return http_response_code(500);
         }
     }
+    // cfeTODO
     if ($_POST['cfeTODO'] === '') {
         $query = "DELETE FROM cfe_todo WHERE who = :num";
         $sth = $conn->prepare($query);
@@ -1252,6 +1320,27 @@ post('/updateMembreParams', function($conn) {
             ':who' => intval($_POST['num']),
             ':year' => getYear(),
             ':todo' => intval($_POST['cfeTODO']) * 60,
+        ]);
+    }
+    // VA
+    if ($_POST['va'] === '' || $_POST['va'] === '0') {
+        $query = "DELETE FROM va WHERE who = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([
+            ':num' => intval($_POST['num']),
+        ]);
+    } else {
+        if (!is_numeric($_POST['va']) ||
+            floatval($_POST['va']) < 0 || floatval($_POST['va']) > 200) {
+            echo "le nombre d'heure maximum de la visite annuelle doit être entre 0 et 200";
+            return http_response_code(500);
+        }
+        $query = "INSERT INTO va (who, year, minutes) VALUES (:who, :year, :minutes) ON DUPLICATE KEY UPDATE minutes = :minutes";
+        $sth = $conn->prepare($query);
+        $sth->execute([
+            ':who' => intval($_POST['num']),
+            ':year' => getYear(),
+            ':minutes' => floatval($_POST['va']) * 60,
         ]);
     }
     $enableMultiDateDeclaration = 0;
@@ -1314,6 +1403,16 @@ get('/sudo', function($conn, $pug) {
     $_SESSION['mail'] = $newUser['mail'];
     $_SESSION['id'] = $newUser['id'];
     return redirect('/');
+});
+
+post('/switchToVA', function($conn, $pug) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $cfe = new CFE($conn);
+    if (!isset($_POST['id']) || !is_numeric($_POST['id']))
+        return apiReturnError("id is missing or not a number");
+    $cfe->switchToVA($_POST['id']);
+    echo '{ "ok": true }';
 });
 
 // si on arrive là c'est qu'aucune URL n'a matchée, donc => 404

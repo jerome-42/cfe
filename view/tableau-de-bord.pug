@@ -15,93 +15,131 @@ block scripts
 
 block content
   .row
-    .col-10
+    .col-7
       h1 Tableau de bord
       p.small Source: base de données GIVAV
         br
         i#activity
+    .col-3.mt-4
+      select.form-select#moyenneAnnees
     .col-2.mt-4
       button.btn.btn-primary#downloadDataSource Télécharger les données
-  h2 Activité générale (licences et cotisation)
+  h2 Résumé
   .row
-    .col
+    .col-6
+      div(style="width: 800px")
+        canvas#budgetRevenus
+      p.mt-3
+        i Revenus heures de vol = forfaits + HDV (solo, partagés et instructions) + VI + stage + temps moteur
+    .col-6
+      div(style="width: 800px")
+        canvas#budgetDepenses
+  hr
+  h2 Activité générale
+  .row
+    .col-5
       div(style="width: 800px")
         canvas#licenceAnnuel
       p.mt-3
-        i Ces licences sont le reflet du nombre de membres qui volent à Chérence. Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques licences prisent à l'extérieur (~ 5)
+        i Ces licences sont le reflet du nombre de membres qui volent à Chérence (hors licences ddécourverte).
+         br
+         | Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques membres qui prennent leurs licences à l'extérieur (~ 5).
+  .row
     .col
       div(style="width: 800px")
         canvas#valoFraisInfraAnnuel
       p.mt-3
-        i Ce sont les cotisations annuelles, frais technique, taxe hangar & remorque et nuits en dortoir
+        i Ce sont les cotisations annuelles, frais technique, taxe hangar & remorque, nuits en dortoir et subventions
     .col
       div(style="width: 800px")
         canvas#depensesGeneralesAnnuel
       p.mt-3
-        i Dépenses générales (chauffage, élec, eau, salaires, charges, assurances, véhicules de piste, parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club hors essence avion et entretien (planeurs, avions et treuil))
+        i Dépenses générales (chauffage, élec, eau, télécom, salaires, fioul chauffage, assurances, véhicules de piste,
+          br
+          | parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club (hors amortissements).
   hr.mt-5
-  h2 Machines club
+  h2 Heures de vol
   .row
-    p Il y a 2 types de machines: les machines club (qui appartiennent au club) et les machines banalisées (dont le propriétaire est privé). Les heures de vol des machines club participent au budget du club, les heures de vol des machines banalisées sont reversées à leurs propriétaires.
+    p Il y a 2 types de machines: les machines club (qui appartiennent au club) et les machines banalisées (dont le propriétaire est privé). Les heures de vol des machines club participent au budget du club, les heures de vol des machines banalisées sont reversées en intégralité à leurs propriétaires. Les machines bi-places JX et IM ont un statut particulier à mi-chemin entre club et banalisé.
   .row
     .col
       div(style="width: 800px;")
         canvas#hdvClubAnnuel
       p.mt-3
         i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+  .row
     .col
       div(style="width: 800px;")
         canvas#valoCelluleEtForfaitAnnuel
       p.mt-3
-        i Les forfaits sont comptabilisés au moment de leur souscription
+        i Uniquement les forfaits des commandants de bord, ne concerne pas les journées découvertes
     .col
       div(style="width: 800px;")
         canvas#depensesEntretienPlaneursAnnuel
+      p.mt-3
+        i VI VIP, GNAV, assurances, entretien et pièces planeurs (hors amortissements)
   .row
     .col
       div(style="width: 800px;")
         canvas#valoJdStageAnnuel
       p.mt-3
-        i Ne concerne que les journées découvertes et les stages
+        i Somme des journées découvertes (hors 1 jour) et les stages
     .col
-      div(style="width: 1200px;")
+      div(style="width: 800px;")
         canvas#valoVolAnnuel
+      p.mt-3
+        i Forfaits = forfaits commandant de bord (campagne loisir, perfo ...)
+          br
+          | Heures de vol = vols solo et partagés
+          br
+          | VI = VI et journées découverte 1 jour
+          br
+          | Journées découvertes et stages = journées découvertes 2, 3, 5 et 6 jours ainsi que les stages
   hr.mt-5
-  h3 Détails Machines club
+  h4 Détails Machines club
   .row
     .col
       div(style="width: 800px;")
         canvas#hdvClubCDBAnnuel
       p.mt-3
-        i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+        i CDB = vols solo et vols partagés
     .col
       div(style="width: 800px;")
         canvas#hdvClubInstructionAnnuel
   hr.mt-5
-  h2 Machines banalisées
-  .row.text-center
+  h2 Activité des machines banalisées
+  .row
     .col
-      div(style="width: 1200px;")
+      div(style="width: 800px;")
         canvas#hdvBanaliseAnnuel
       p.mt-3
         i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseNonProprietaireAnnuel
+      p.mt-3
+        i Vols hors instruction de pilotes non-propriétaire sur machines banalisées
   hr.mt-5
-  h2 Pilotes
+  h2 Activité des pilotes
   .row
     .col
-      div(style="width: 1200px;")
+      div(style="width: 800px;")
         canvas#hdvPilotesHorsForfait
       i Ce sont les vols qui ne sont pas au forfait (vols solo, partagé, instruction, VI perso, VI club ...)
-  hr.mt-5
-  h2 Forfaits
-  .row
     .col
-      div(style="width: 1200px;")
+      div(style="width: 800px;")
         canvas#hdvPilotesDansForfait
       p.mt-3
         i Ce sont les heures de vol en tant que commandant de bord (vols solo) lorsque le commandant de bord vole sur une machine comprise dans son forfait
         br
         i Ne sont pas comptabilisé les forfaits journées découvertes, stage et forfait école (années 2020 et 2021)
+  h3 Temps moteur
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#valoMoteurAnnuel
+      p.mt-3
+        i Il s'agit du temps moteur du F-CPPM (SF28)
   hr.mt-5
   h2 Moyens de lancement
   .row
@@ -114,22 +152,24 @@ block content
         i Ne sont pas comptés les lancements autonomes transformées en treuillées en fin d'année
     .col
       div(style="width: 800px;")
+        canvas#ventilationSelonRemorqueur
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#lancementRemorqueAnnuel
+      p.mt-3
+        i Remorqués sans correction
+  .row
+    .col
+      div(style="width: 800px;")
         canvas#depensesMoyensLancementAnnuel
       p.mt-3
-        i Concerne l'essence et l'entretien avion(s), ulm et treuil
-  hr.mt-5
+        i Eessence, entretien avion(s), ulm et treuil, assurances (hors amortissements)
   .row  
     .col
       div(style="width: 800px;")
         canvas#lancementAnnuel
   hr.mt-5
-  h2 Temps moteur
-  .row
-    .col
-      div(style="width: 1200px;")
-        canvas#valoMoteurAnnuel
-      p.mt-3
-        i Il s'agit du temps moteur du F-CPPM (SF28)
   h2 Heures de CFE réalisées
   .row
     .col
