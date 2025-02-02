@@ -1567,6 +1567,18 @@ DECLARE
   depenses_generales_n_anneesPrecedantes NUMERIC[] := '{}';
   depenses_generales_cumul_n_anneesPrecedantes NUMERIC := 0;
 
+  -- dépenses moyens de lancement
+  depenses_moyens_lancement NUMERIC[] := '{}';
+  depenses_moyens_lancement_cumul NUMERIC := 0;
+  depenses_moyens_lancement_n_anneesPrecedantes NUMERIC[] := '{}';
+  depenses_moyens_lancement_cumul_n_anneesPrecedantes NUMERIC := 0;
+
+  -- dépenses entretien planeurs
+  depenses_entretien_planeurs NUMERIC[] := '{}';
+  depenses_entretien_planeurs_cumul NUMERIC := 0;
+  depenses_entretien_planeurs_n_anneesPrecedantes NUMERIC[] := '{}';
+  depenses_entretien_planeurs_cumul_n_anneesPrecedantes NUMERIC := 0;
+
   -- dépenses mairie
   depenses_mairie NUMERIC[] := '{}';
   depenses_mairie_cumul NUMERIC := 0;
@@ -2103,6 +2115,68 @@ BEGIN
     depenses_generales_cumul_n_anneesPrecedantes := depenses_generales_cumul_n_anneesPrecedantes + r.somme;
     depenses_generales_n_anneesPrecedantes := array_append(depenses_generales_n_anneesPrecedantes, depenses_generales_cumul_n_anneesPrecedantes);
 
+      -- ============ DEPENSES ENVOLS ============
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
+      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Carburant  avion', 'Huile moteur avion',
+      'Location Matériel aéronautique', 'Entretien planeurs',
+      'GNAV, OSAC & taxes diverses planeurs', 'Entretien Remorqueurs', 'Fournitures Pièces Remorqueurs',
+      'Entretien Avion - WT9', 'Fournitures Pièces Avion - WT9', 'GNAV - Doc & Taxes -  Avion WT9',
+      'Fournitures Piéces - Treuil', 'Assurance Accident ANEPVV - Remorqueurs',
+      'ANEPVV Prévoyance Remorqueurs', 'Amortissement Moyens de lancement (Avions & Treuil)') AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
+    depenses_moyens_lancement_cumul := depenses_moyens_lancement_cumul + r.somme;
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM last_computation_date) AND rDate.stop::date <= last_computation_date THEN
+      depenses_moyens_lancement := array_append(depenses_moyens_lancement, depenses_moyens_lancement_cumul);
+    END IF;
+
+
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
+      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Carburant  avion', 'Huile moteur avion',
+      'Location Matériel aéronautique', 'Entretien planeurs',
+      'GNAV, OSAC & taxes diverses planeurs', 'Entretien Remorqueurs', 'Fournitures Pièces Remorqueurs',
+      'Entretien Avion - WT9', 'Fournitures Pièces Avion - WT9', 'GNAV - Doc & Taxes -  Avion WT9',
+      'Fournitures Piéces - Treuil', 'Assurance Accident ANEPVV - Remorqueurs',
+      'ANEPVV Prévoyance Remorqueurs', 'Amortissement Moyens de lancement (Avions & Treuil)')
+        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
+    depenses_moyens_lancement_cumul_n_anneesPrecedantes := depenses_moyens_lancement_cumul_n_anneesPrecedantes + r.somme;
+    depenses_moyens_lancement_n_anneesPrecedantes := array_append(depenses_moyens_lancement_n_anneesPrecedantes, depenses_moyens_lancement_cumul_n_anneesPrecedantes);
+
+      -- ============ DEPENSES HdV ============
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
+      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Fourniture Pièces - SF28', 'GNAV - Doc & Taxes - SF28',
+      'Entretien des Remorques', 'Assurance Accident ANEPVV - Planeurs', 'Assurance Accident ANEPVV - SF28',
+      'ANEPVV Prévoyance SF28', 'Amortissement Planeurs', 'Amortissement Parachutes', 'Amortissement  regelcoatage des planeurs')
+      AND ligne.date_piece BETWEEN rDate.start AND rDate.stop;
+
+    depenses_entretien_planeurs_cumul := depenses_entretien_planeurs_cumul + r.somme;
+    IF EXTRACT(MONTH FROM rDate.stop) <= EXTRACT(MONTH FROM last_computation_date) AND rDate.stop::date <= last_computation_date THEN
+      depenses_entretien_planeurs := array_append(depenses_entretien_planeurs, depenses_entretien_planeurs_cumul);
+    END IF;
+
+
+    SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
+      FROM cp_piece_ligne ligne
+      JOIN cp_piece piece ON ligne.id_piece = piece.id_piece
+      JOIN cp_compte ON cp_compte.id_compte = ligne.id_compte
+      WHERE ligne.operation IS NOT NULL AND cp_compte.libelle IN ('Fourniture Pièces - SF28', 'GNAV - Doc & Taxes - SF28',
+      'Entretien des Remorques', 'Assurance Accident ANEPVV - Planeurs', 'Assurance Accident ANEPVV - SF28',
+      'ANEPVV Prévoyance SF28', 'Amortissement Planeurs', 'Amortissement Parachutes', 'Amortissement  regelcoatage des planeurs')
+        AND EXTRACT(YEAR FROM ligne.date_piece) >= cette_annee - moyenne_sur_nb_annee
+        AND EXTRACT(YEAR FROM ligne.date_piece) < cette_annee
+        AND EXTRACT(MONTH FROM ligne.date_piece) = EXTRACT(MONTH FROM rDate.start);
+    depenses_entretien_planeurs_cumul_n_anneesPrecedantes := depenses_entretien_planeurs_cumul_n_anneesPrecedantes + r.somme;
+    depenses_entretien_planeurs_n_anneesPrecedantes := array_append(depenses_entretien_planeurs_n_anneesPrecedantes, depenses_entretien_planeurs_cumul_n_anneesPrecedantes);
+
       -- ============ DEPENSES MAIRIE ============
     SELECT INTO r COALESCE(SUM(CASE WHEN sens = 'C' THEN -montant ELSE montant END), 0) AS somme
       FROM cp_piece_ligne ligne
@@ -2355,6 +2429,14 @@ BEGIN
     -- ============ DEPENSES GENERALES ============
     stats := setVarInData(stats, 'depenses_generales', depenses_generales);
     stats := setVarInData(stats, 'depenses_generales_n_anneesPrecedantes', depenses_generales_n_anneesPrecedantes);
+
+    -- ============ DEPENSES MOYENS LANCEMENT ============
+    stats := setVarInData(stats, 'depenses_moyens_lancement', depenses_moyens_lancement);
+    stats := setVarInData(stats, 'depenses_moyens_lancement_n_anneesPrecedantes', depenses_moyens_lancement_n_anneesPrecedantes);
+
+    -- ============ DEPENSES ENTRETIEN PLANEURS ============
+    stats := setVarInData(stats, 'depenses_entretien_planeurs', depenses_entretien_planeurs);
+    stats := setVarInData(stats, 'depenses_entretien_planeurs_n_anneesPrecedantes', depenses_entretien_planeurs_n_anneesPrecedantes);
 
     -- ============ DEPENSES MAIRIE ============
     stats := setVarInData(stats, 'depenses_mairie', depenses_mairie);
