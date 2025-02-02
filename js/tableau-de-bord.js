@@ -87,19 +87,19 @@ let displayBudgetRevenus = function() {
             datasets: [
                 {
                     label: 'Revenus activité générale '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.revenus2_generales,
+                    data: getStatsTableauDeBordAnnuel().data.revenus_generales,
                 },
                 {
                     label: 'Revenus HdV '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.revenus2_entretien_planeurs,
+                    data: getStatsTableauDeBordAnnuel().data.revenus_entretien_planeurs,
                 },
                 {
                     label: 'Revenus envols '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.revenus2_moyens_lancement,
+                    data: getStatsTableauDeBordAnnuel().data.revenus_moyens_lancement,
                 },
                 {
                     label: 'Subvention mairie '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.revenus2_mairie,
+                    data: getStatsTableauDeBordAnnuel().data.revenus_mairie,
                 },
             ],
         },
@@ -155,19 +155,19 @@ let displayBudgetDepenses = function() {
             datasets: [
                 {
                     label: 'Dépenses activité générale '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses2_generales,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_generales,
                 },
                 {
                     label: 'Dépenses HdV '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses2_entretien_planeurs,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs,
                 },
                 {
                     label: 'Dépenses envols '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses2_moyens_lancement,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement,
                 },
                 {
                     label: 'Dépenses budget mairie '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.depenses2_mairie,
+                    data: getStatsTableauDeBordAnnuel().data.depenses_mairie,
                 },
             ],
         },
@@ -220,10 +220,10 @@ let displayBudgetResultat = function() {
     let resultatMairie = [];
     let resultatGlobal = [];
     for (let i = 0; i < 12; i++) {
-        resultatGeneral[i] = getStatsTableauDeBordAnnuel().data.revenus2_generales[i] - getStatsTableauDeBordAnnuel().data.depenses2_generales[i];
-        resultatHdv[i] = getStatsTableauDeBordAnnuel().data.revenus2_entretien_planeurs[i] - getStatsTableauDeBordAnnuel().data.depenses2_entretien_planeurs[i];
-        resultatEnvols[i] = getStatsTableauDeBordAnnuel().data.revenus2_moyens_lancement[i] - getStatsTableauDeBordAnnuel().data.depenses2_moyens_lancement[i];
-        resultatMairie[i] = getStatsTableauDeBordAnnuel().data.revenus2_mairie[i] - getStatsTableauDeBordAnnuel().data.depenses2_mairie[i];
+        resultatGeneral[i] = getStatsTableauDeBordAnnuel().data.revenus_generales[i] - getStatsTableauDeBordAnnuel().data.depenses_generales[i];
+        resultatHdv[i] = getStatsTableauDeBordAnnuel().data.revenus_entretien_planeurs[i] - getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs[i];
+        resultatEnvols[i] = getStatsTableauDeBordAnnuel().data.revenus_moyens_lancement[i] - getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement[i];
+        resultatMairie[i] = getStatsTableauDeBordAnnuel().data.revenus_mairie[i] - getStatsTableauDeBordAnnuel().data.depenses_mairie[i];
         resultatGlobal[i] = resultatGeneral[i] + resultatHdv[i] + resultatEnvols[i] + resultatMairie[i];
     }
     new Chart(ctx, {
@@ -801,8 +801,8 @@ let displayValoInfraAnnuel = function() {
     var ctx = document.getElementById('valoFraisInfraAnnuel').getContext('2d');
     if (Chart.getChart(ctx) !== undefined)
         Chart.getChart(ctx).destroy();
-    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.valo_revenu_infra_membre;
-    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.valo_revenu_infra_membre_n_anneesPrecedantes;
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.revenus_generales;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.revenus_generales_n_anneesPrecedantes;
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -915,6 +915,156 @@ let displayDepensesGeneralesAnnuel = function() {
                 title: {
                     display: true,
                     text: 'Dépenses générales',
+                    font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayRevenusHdV = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('revenusHdV').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.revenus_entretien_planeurs;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.revenus_entretien_planeurs_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Revenus HdV '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Revenus HdV',
+                    font: { size: 24 },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return tooltipDisplay_percent(
+                                context,
+                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                                getStatsTableauDeBordAnnuel().params.annee ],
+                                function (value, context) {
+                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                                });
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            }
+        }
+    });
+};
+
+let displayDepensesHdV = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('depensesHdV').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs;
+    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs_n_anneesPrecedantes;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+            ],
+            datasets: [
+                {
+                    label: 'Dépenses HdV '+getStatsTableauDeBordAnnuel().params.annee,
+                    data: dataCetteAnnee,
+                },
+                {
+                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
+                    data: dataNAnneesPrecedantes,
+                },
+            ],
+        },
+        options: {
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Dépenses HdV',
                     font: { size: 24 },
                 },
                 tooltip: {
@@ -1626,81 +1776,6 @@ let displayVentilationSelonRemorqueur = function() {
     });
 };
 
-let diplayDepensesMoyensLancementAnnuel = function() {
-    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('depensesMoyensLancementAnnuel').getContext('2d');
-    if (Chart.getChart(ctx) !== undefined)
-        Chart.getChart(ctx).destroy();
-    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement;
-    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement_n_anneesPrecedantes;
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [
-                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
-            ],
-            datasets: [
-                {
-                    label: 'Dépenses moyens de lancement '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: dataCetteAnnee,
-                },
-                {
-                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
-                },
-            ],
-        },
-        options: {
-            scales: {
-                y: {
-                    ticks: {
-                        // Include a dollar sign in the ticks
-                        callback: function(value, index, ticks) {
-                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
-                        },
-                    },
-                },
-            },
-            //maintainAspectRatio: false,
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Dépenses moyens de lancement',
-                    font: { size: 24 },
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return tooltipDisplay_percent(
-                                context,
-                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                                getStatsTableauDeBordAnnuel().params.annee ],
-                                function (value, context) {
-                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-                                });
-                        }
-                    }
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    color: 'black',
-                    font: {
-                        weight: 'bold',
-                    },
-                    formatter: function (value, context) {
-                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-                    }
-                },
-            }
-        }
-    });
-};
-
 let displayLancementAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('lancementAnnuel').getContext('2d');
@@ -2001,83 +2076,6 @@ let displayValoVolAnnuel = function() {
     });
 };
 
-let diplayDepensesEntretienPlaneur = function() {
-    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
-    var ctx = document.getElementById('depensesEntretienPlaneursAnnuel').getContext('2d');
-    if (Chart.getChart(ctx) !== undefined)
-        Chart.getChart(ctx).destroy();
-    let dataCetteAnnee = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs;
-    let dataNAnneesPrecedantes = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs_n_anneesPrecedantes;
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [
-                'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
-            ],
-            datasets: [
-                {
-                    label: 'Dépenses entretien planeurs '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: dataCetteAnnee,
-                },
-                {
-                    label: 'Moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                    data: dataNAnneesPrecedantes,
-                },
-            ],
-        },
-        options: {
-            scales: {
-                y: {
-                    ticks: {
-                        // Include a dollar sign in the ticks
-                        callback: function(value, index, ticks) {
-                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
-                        },
-                    },
-                },
-            },
-            //maintainAspectRatio: false,
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Dépenses entretiens planeurs + assurance',
-                    font: { size: 24 },
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return tooltipDisplay_percent(
-                                context,
-                                [ 'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                                  getStatsTableauDeBordAnnuel().params.annee,
-                                  'la moyenne sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                                  getStatsTableauDeBordAnnuel().params.annee ],
-                                function (value, context) {
-                                    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-                                });
-                        }
-                    }
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    color: 'black',
-                    font: {
-                        weight: 'bold',
-                    },
-                    formatter: function (value, context) {
-                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-                    }
-                },
-            }
-        }
-    });
-};
-
 let displayValoMoteurAnnuel = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('valoMoteurAnnuel').getContext('2d');
@@ -2278,6 +2276,8 @@ $(document).ready(function() {
         displayLicenceAnnuel();
         displayValoInfraAnnuel();
         displayDepensesGeneralesAnnuel();
+        displayDepensesHdV();
+        displayRevenusHdV();
         displayHDVClubAnnuel();
         displayHDVClubCDBAnnuel();
         displayHDVClubInstructionAnnuel();
@@ -2290,14 +2290,12 @@ $(document).ready(function() {
 
         displayLancementEtValoRemorqueAnnuel();
         displayRemorqueAnnuel();
-        diplayDepensesMoyensLancementAnnuel();
         displayVentilationSelonRemorqueur();
         displayLancementAnnuel();
 
         displayValoCelluleEtForfaitAnnuel();
         displayValoJdStageAnnuel();
         displayValoVolAnnuel();
-        diplayDepensesEntretienPlaneur();
         displayValoMoteurAnnuel();
     });
     $('#moyenneAnnees').trigger('change');

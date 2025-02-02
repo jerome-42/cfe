@@ -58,11 +58,18 @@ block content
       p.mt-3
         i Dépenses générales (chauffage, élec, eau, télécom, salaires, fioul chauffage, assurances, véhicules de piste,
           br
-          | parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club (hors amortissements).
+          | parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club.
   hr.mt-5
   h2 Heures de vol
   .row
     p Il y a 2 types de machines: les machines club (qui appartiennent au club) et les machines banalisées (dont le propriétaire est privé). Les heures de vol des machines club participent au budget du club, les heures de vol des machines banalisées sont reversées en intégralité à leurs propriétaires. Les machines bi-places JX et IM ont un statut particulier à mi-chemin entre club et banalisé.
+  .row
+    .col
+      div(style="width: 800px")
+        canvas#revenusHdV
+    .col
+      div(style="width: 800px")
+        canvas#depensesHdV
   .row
     .col
       div(style="width: 800px;")
@@ -161,12 +168,6 @@ block content
         canvas#lancementRemorqueAnnuel
       p.mt-3
         i Remorqués sans correction
-  .row
-    .col
-      div(style="width: 800px;")
-        canvas#depensesMoyensLancementAnnuel
-      p.mt-3
-        i Eessence, entretien avion(s), ulm et treuil, assurances (hors amortissements)
   .row  
     .col
       div(style="width: 800px;")
