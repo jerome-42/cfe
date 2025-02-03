@@ -1871,18 +1871,6 @@ let displayLancementEtValoRemorqueAnnuel = function() {
                     data: getStatsTableauDeBordAnnuel().data.lancementRCorrigeCumul_n_anneesPrecedantes,
                     yAxisID: 'y',
                 },
-                {
-                    label: 'Revenu des moyens de lancement '+getStatsTableauDeBordAnnuel().params.annee,
-                    data: getStatsTableauDeBordAnnuel().data.valo_lancement,
-                    yAxisID: 'y1',
-                    currency: true,
-                },
-                {
-                    label: 'Moyenne revenus des moyens de lancement sur les '+getStatsTableauDeBordAnnuel().data.moyenne_sur_nb_annee+' dernières années',
-                    data: getStatsTableauDeBordAnnuel().data.valo_lancement_n_anneesPrecedantes,
-                    yAxisID: 'y1',
-                    currency: true,
-                },
             ],
         },
         options: {
@@ -1910,7 +1898,7 @@ let displayLancementEtValoRemorqueAnnuel = function() {
                 },
                 title: {
                     display: true,
-                    text: 'Nombre de remorqués et revenu de tous les lancements',
+                    text: 'Nombre de remorqués',
                     font: { size: 24 },
                 },
                 tooltip: {

@@ -26,6 +26,13 @@ block content
       button.btn.btn-primary#downloadDataSource Télécharger les données
   h2 Résumé
   .row
+    p Le budget est présenté sous la forme de 4 silots:
+    ul
+      li * Activité générale : le revenus des frais techniques, des VI et des JD versus telecom, salaires ...
+      li * Heures de vol : les heures de vol et les forfaits versus l'entretien des planeurs
+      li * Envols : les revenus des remorqués et treuillées versus l'entretien des remorqueurs et du treuil
+      li * Mairie : le budget de la mairie permet l'entretien de la plateforme (pavillon, Toro ...)
+  .row
     .col-6
       div(style="width: 800px")
         canvas#budgetResultat
@@ -38,6 +45,14 @@ block content
         canvas#budgetDepenses
   hr
   h2 Activité générale
+  p Ce sont les revenus des cotisations à l'association, les frais techniques, des VI et des JD versus telecom, salaires ...
+  .row
+    .col
+      div(style="width: 800px")
+        canvas#valoFraisInfraAnnuel
+    .col
+      div(style="width: 800px")
+        canvas#depensesGeneralesAnnuel
   .row
     .col-5
       div(style="width: 800px")
@@ -46,23 +61,9 @@ block content
         i Ces licences sont le reflet du nombre de membres qui volent à Chérence (hors licences ddécourverte).
          br
          | Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques membres qui prennent leurs licences à l'extérieur (~ 5).
-  .row
-    .col
-      div(style="width: 800px")
-        canvas#valoFraisInfraAnnuel
-      p.mt-3
-        i Ce sont les cotisations annuelles, frais technique, taxe hangar & remorque, nuits en dortoir et subventions
-    .col
-      div(style="width: 800px")
-        canvas#depensesGeneralesAnnuel
-      p.mt-3
-        i Dépenses générales (chauffage, élec, eau, télécom, salaires, fioul chauffage, assurances, véhicules de piste,
-          br
-          | parachutes, radio, batteries, bref tous les achats nécessaires pour faire tourner le club.
   hr.mt-5
   h2 Heures de vol
-  .row
-    p Il y a 2 types de machines: les machines club (qui appartiennent au club) et les machines banalisées (dont le propriétaire est privé). Les heures de vol des machines club participent au budget du club, les heures de vol des machines banalisées sont reversées en intégralité à leurs propriétaires. Les machines bi-places JX et IM ont un statut particulier à mi-chemin entre club et banalisé.
+  p Les heures de vol et les forfaits versus l'entretien des planeurs
   .row
     .col
       div(style="width: 800px")
@@ -70,13 +71,14 @@ block content
     .col
       div(style="width: 800px")
         canvas#depensesHdV
+  .row.mt-5
+    p Il y a 2 types de machines: les machines club (qui appartiennent au club) et les machines banalisées (dont le propriétaire est privé). Les heures de vol des machines club participent au budget du club, les heures de vol des machines banalisées sont reversées en intégralité à leurs propriétaires. Les machines bi-places JX et IM ont un statut particulier à mi-chemin entre club et banalisé.
   .row
     .col
       div(style="width: 800px;")
         canvas#hdvClubAnnuel
       p.mt-3
         i CDB = vols solo et vols partagés. Instruction = vols d'instruction
-  .row
     .col
       div(style="width: 800px;")
         canvas#valoCelluleEtForfaitAnnuel
@@ -100,7 +102,7 @@ block content
           br
           | Journées découvertes et stages = journées découvertes 2, 3, 5 et 6 jours ainsi que les stages
   hr.mt-5
-  h4 Détails Machines club
+  h2 Détails Machines club
   .row
     .col
       div(style="width: 800px;")
@@ -183,6 +185,7 @@ block content
   .row
   hr.mt-5
   h2 Budget mairie
+  p Le budget de la mairie permet l'entretien de la plateforme (pavillon, Toro ...)
   .row
     .col
       div(style="width: 800px")
