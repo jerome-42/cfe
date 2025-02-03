@@ -297,6 +297,105 @@ let displayBudgetResultat = function() {
     });
 };
 
+let displayBudgetResultatBarGraph = function() {
+    let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    var ctx = document.getElementById('budgetResultatBarGraph').getContext('2d');
+    if (Chart.getChart(ctx) !== undefined)
+        Chart.getChart(ctx).destroy();
+    let revenusGeneral = null;
+    let depensesGeneral = null;
+    let revenusHdV = null;
+    let depensesHdv = null;
+    let revenusEnvols = null;
+    let depensesEnvols = null;
+    let revenusMairie = null;
+    let depensesMairie = null;
+    for (let i = 0; i < 12; i++) {
+        if (getStatsTableauDeBordAnnuel().data.revenus_generales[i] != null)
+            revenusGeneral = getStatsTableauDeBordAnnuel().data.revenus_generales[i];
+        if (getStatsTableauDeBordAnnuel().data.depenses_generales[i] != null)
+            depensesGeneral = getStatsTableauDeBordAnnuel().data.depenses_generales[i];
+        if (getStatsTableauDeBordAnnuel().data.revenus_entretien_planeurs[i] != null)
+            revenusHdV = getStatsTableauDeBordAnnuel().data.revenus_entretien_planeurs[i];
+        if (getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs[i] != null)
+            depensesHdV = getStatsTableauDeBordAnnuel().data.depenses_entretien_planeurs[i];
+        if (getStatsTableauDeBordAnnuel().data.revenus_moyens_lancement[i] != null)
+            revenusEnvols = getStatsTableauDeBordAnnuel().data.revenus_moyens_lancement[i];
+        if (getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement[i] != null)
+            depensesEnvols = getStatsTableauDeBordAnnuel().data.depenses_moyens_lancement[i];
+        if (getStatsTableauDeBordAnnuel().data.revenus_mairie[i] != null)
+            revenusMairie = getStatsTableauDeBordAnnuel().data.revenus_mairie[i];
+        if (getStatsTableauDeBordAnnuel().data.depenses_mairie[i] != null)
+            depensesMairie = getStatsTableauDeBordAnnuel().data.depenses_mairie[i];
+    }
+    let data1 = [ revenusGeneral, revenusEnvols, revenusHdV, revenusMairie ];
+    let data2 = [ depensesGeneral, depensesEnvols, depensesHdV, depensesMairie ];
+    let data3 = [ revenusGeneral - depensesGeneral,
+                       revenusEnvols - depensesEnvols,
+                       revenusHdV - depensesHdV,
+                       revenusMairie - depensesMairie ];
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'Activité Générale', 'Envols', 'HdV', 'mairie',
+            ],
+            datasets: [
+                {
+                    data: data1,
+                    label: 'Revenus',
+                    backgroundColor: '#069bff',
+                },
+                {
+                    data: data2,
+                    label: 'Dépenses',
+                    backgroundColor: '#01cf31',
+                },
+                {
+                    data: data3,
+                    label: 'Résultats',
+                    backgroundColor: '#8c7977',
+                },
+            ],
+        },
+        options: {
+            //maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Budget '+getStatsTableauDeBordAnnuel().params.annee,
+                    font: { size: 24 },
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: 'black',
+                    font: {
+                        weight: 'bold',
+                    },
+                    formatter: function (value, context) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+                    }
+                },
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        // Include a dollar sign in the ticks
+                        callback: function(value, index, ticks) {
+                            return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' €';
+                        },
+                    },
+                },
+            },
+        },
+    });
+};
+
 let displayRevenusMoyensLancement = function() {
     let formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
     var ctx = document.getElementById('revenusMoyensLancement').getContext('2d');
@@ -2561,6 +2660,7 @@ $(document).ready(function() {
         displayBudgetRevenus();
         displayBudgetDepenses();
         displayBudgetResultat();
+        displayBudgetResultatBarGraph();
         displayLicenceAnnuel();
         displayValoInfraAnnuel();
         displayDepensesGeneralesAnnuel();
