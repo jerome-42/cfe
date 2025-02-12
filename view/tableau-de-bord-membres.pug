@@ -1,0 +1,111 @@
+extends layout.pug
+
+block scripts
+  title Tableau de bord
+  script.
+    var statsLocales = !{$statsLocales};
+
+  script(src="/js/jszip.js")
+  script(type="module" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js")
+  script(type="module" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0")
+  script(src="js/tableau-de-bord-membres.js")
+  script(src="cache/stats.js")
+
+block content
+  .row
+    .col-7
+      h1 Tableau de bord
+      p.small Source: base de données GIVAV
+        br
+        i#activity
+    .col-3.mt-4
+      select.form-select#moyenneAnnees
+    .col-2.mt-4
+      button.btn.btn-primary#downloadDataSource Télécharger les données
+  h2 Activité générale
+  .row
+    .col-5
+      div(style="width: 800px")
+        canvas#licenceAnnuel
+      p.mt-3
+        i Ces licences sont le reflet du nombre de membres qui volent à Chérence (hors licences ddécourverte).
+         br
+         | Quelques exceptions: quelques licences qui ne volent pas (~ 5) et quelques membres qui prennent leurs licences à l'extérieur (~ 5).
+  hr.mt-5
+  h2 Heures de vol
+  p Les heures de vol et les forfaits versus l'entretien des planeurs
+  .row.mt-5
+    p Il y a 2 types de machines: les machines club (qui appartiennent au club) et les machines banalisées (dont le propriétaire est privé). Les heures de vol des machines club participent au budget du club, les heures de vol des machines banalisées sont reversées en intégralité à leurs propriétaires. Les machines bi-places JX et IM ont un statut particulier à mi-chemin entre club et banalisé.
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubAnnuel
+      p.mt-3
+        i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+  hr.mt-5
+  h2 Détails Machines club
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubCDBAnnuel
+      p.mt-3
+        i CDB = vols solo et vols partagés
+    .col
+      div(style="width: 800px;")
+        canvas#hdvClubInstructionAnnuel
+  hr.mt-5
+  h2 Activité des machines banalisées
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseAnnuel
+      p.mt-3
+        i CDB = vols solo et vols partagés. Instruction = vols d'instruction
+    .col
+      div(style="width: 800px;")
+        canvas#hdvBanaliseNonProprietaireAnnuel
+      p.mt-3
+        i Vols hors instruction de pilotes non-propriétaire sur machines banalisées
+  hr.mt-5
+  h2 Activité des pilotes
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#hdvPilotesHorsForfait
+      i Ce sont les vols qui ne sont pas au forfait (vols solo, partagé, instruction, VI perso, VI club ...)
+    .col
+      div(style="width: 800px;")
+        canvas#hdvPilotesDansForfait
+      p.mt-3
+        i Ce sont les heures de vol en tant que commandant de bord (vols solo) lorsque le commandant de bord vole sur une machine comprise dans son forfait
+        br
+        i Ne sont pas comptabilisé les forfaits journées découvertes, stage et forfait école (années 2020 et 2021)
+  hr.mt-5
+  h2 Moyens de lancement
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#lancementEtValoRemorqueAnnuel
+      p.mt-3
+        i Les remorqués corrigés sont les remorqués en fonction de l'altitude de largage (0.5 pour les 250m, 1 pour les 500m, 1.5 pour les 750m, 2 pour les 1000m et 2.6 pour les 1300m, les autres remorqués ne sont pas comptabilisés comme par exemple les dépannages sur les terrains extérieurs)
+      p
+        i Ne sont pas comptés les lancements autonomes transformées en treuillées en fin d'année
+    .col
+      div(style="width: 800px;")
+        canvas#ventilationSelonRemorqueur
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#lancementRemorqueAnnuel
+      p.mt-3
+        i Remorqués sans correction
+  .row  
+    .col
+      div(style="width: 800px;")
+        canvas#lancementAnnuel
+  hr.mt-5
+  h2 Heures de CFE réalisées
+  .row
+    .col
+      div(style="width: 800px;")
+        canvas#cfe
