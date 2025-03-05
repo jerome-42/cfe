@@ -18,7 +18,6 @@ block content
         .col-sm-9
           input.form-control(type="text" placeholder="")#search
   - $total = []
-  - $totalVA = []
   - $currentYear = 0
   .row
     .col-12
@@ -39,27 +38,16 @@ block content
             $year = $line['year']
             if array_key_exists($year, $total) == false
               - $total[$year] = 0
-              - $totalVA[$year] = 0
-            if $line['status'] == 'validated' && $line['beneficiary'] != 'VA'
+            if $line['status'] == 'validated'
               - $total[$year] = $total[$year] + $line['duration']
-            if $line['status'] == 'validated' && $line['beneficiary'] == 'VA'
-              - $totalVA[$year] = $totalVA[$year] + $line['duration']
             if $line['year'] != $currentYear
-              - $warningVA = ''
               if $currentYear != 0
-                if $totalVA[$currentYear] >= $va
-                  - $total[$currentYear] = $total[$currentYear] + $va
-                  - $warningVA = ". "+durationToHuman($totalVA[$currentYear] - $va)+" de VA n'ont pas été prises en compte car le nombre maximum de VA est de " + durationToHuman($va)
-                else
-                  - $total[$currentYear] = $total[$currentYear] + $totalVA[$currentYear]
                 tr.table-info(x-type="sum")
                   td
                   td Total des CFE
                     b  validées
                     |  sur l'année 
                     b= $currentYear
-                    if $warningVA != ''
-                      = $warningVA
                   td
                   td
                   td

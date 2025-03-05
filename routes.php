@@ -1199,10 +1199,12 @@ get('/listeMembres', function($conn, $pug) {
         $membre['cfeValidated'] = $cfe->getValidated($membre['givavNumber'], getYear());
         $membre['cfeCompleted'] = $cfe->isCompleted($membre);
     }
+    $statsYear = $cfe->getStatsYear();
     $vars = array_merge($_SESSION, [ 'currentUser' => $_SESSION['givavNumber'],
-                                                 'inSudo' => isset($_SESSION['inSudo']),
-                                                 'membres' => $membres,
-                                                 'defaultCFE_TODO' => $defaultCFE_TODO,
+                                     'inSudo' => isset($_SESSION['inSudo']),
+                                     'membres' => $membres,
+                                     'defaultCFE_TODO' => $defaultCFE_TODO,
+                                     'statsYear' => $statsYear,
     ]);
     $pug->displayFile('view/listeMembres.pug', $vars);
 });
@@ -1268,16 +1270,22 @@ get('/tableau-de-bord', function($conn, $pug) {
         echo "Partie protégée par un mot de passe";
         return;
     } else {
-        if ($_SERVER['PHP_AUTH_USER'] !== 'tableau' || $_SERVER['PHP_AUTH_PW'] !== 'cherence') {
-            header('WWW-Authenticate: Basic realm="Tableau de bord"');
-            header('HTTP/1.0 401 Unauthorized');
-            echo "Partie protégée par un mot de passe";
+        if (($_SERVER['PHP_AUTH_USER'] == 'tableau' && $_SERVER['PHP_AUTH_PW'] == 'cherence')) {
+            $cfe = new CFE($conn);
+            $statsLocales = $cfe->getStatsTableauDeBord(date("Y"));
+            $pug->displayFile('view/tableau-de-bord.pug', array_merge($_SESSION, [ 'statsLocales' => json_encode($statsLocales) ]));
             return;
         }
     }
+    header('WWW-Authenticate: Basic realm="Tableau de bord"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo "Partie protégée par un mot de passe";
+});
+
+get('/tableau-de-bord-membres', function($conn, $pug) {
     $cfe = new CFE($conn);
     $statsLocales = $cfe->getStatsTableauDeBord(date("Y"));
-    $pug->displayFile('view/tableau-de-bord.pug', array_merge($_SESSION, [ 'statsLocales' => json_encode($statsLocales) ]));
+    $pug->displayFile('view/tableau-de-bord-membres.pug', array_merge($_SESSION, [ 'statsLocales' => json_encode($statsLocales) ]));
 });
 
 get('/validation', function($conn, $pug) {

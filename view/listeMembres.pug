@@ -96,6 +96,26 @@ block content
             th Propriétaire
             th Admin
             th Affichage compte négatif
+  .row
+    .col-4
+      p Statistiques annuelles
+      table.table.table-striped
+        thead
+          tr
+            th Année
+            th Nombre de participant
+            th Nombre d'heures validées
+        tbody
+          each line in $statsYear
+            tr
+              td= $line['year']
+              td= $line['nb_membres']
+              td= $line['hours']
+        tfoot
+          tr
+            th Année
+            th Nombre de participant
+            th Nombre d'heures validées
   .hstack.gap-4.mb-3
     button.btn.btn-danger.back Retour
     button.btn.btn-primary.download Télécharger

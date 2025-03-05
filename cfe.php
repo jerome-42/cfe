@@ -123,6 +123,17 @@ WHERE YEAR(workDate) = :year ORDER BY workDate DESC';
         return intval($lines[0]['value']);
     }
 
+    public function getStatsYear() {
+        $query = "SELECT extract(year FROM workDate) AS year,
+count(distinct(who)) AS nb_membres,
+round(sum(duration)/60) AS hours
+FROM cfe_records WHERE status = 'validated' GROUP BY extract(year FROM workDate) ORDER BY 1 DESC";
+        $sth = $this->conn->prepare($query);
+        $sth->execute();
+        $lines = $sth->fetchAll();
+        return $lines;
+    }
+
     public function getSubmittedDuration() {
         $query = "SELECT SUM(duration) AS duration FROM cfe_records WHERE YEAR(workDate) = YEAR(NOW()) AND status = 'submitted'";
         $sth = $this->conn->prepare($query);
