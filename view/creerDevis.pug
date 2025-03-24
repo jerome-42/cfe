@@ -1,0 +1,40 @@
+extends layout.pug
+
+block scripts
+  title Créer un devis
+  script(src="https://cdn.jsdelivr.net/npm/jquery-ui@1.14.1/dist/jquery-ui.min.js" integrity="sha256-AlTido85uXPlSyyaZNsjJXeCs07eSv3r43kyCVc8ChI=" crossorigin="anonymous")
+  link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-ui@1.14.1/themes/base/theme.min.css")
+  script(src="https://cdn.jsdelivr.net/npm/jquery-file-upload@4.0.11/js/jquery.uploadfile.min.js" integrity="sha256-4RfqSBFKfPPSZG1qUfDKAfuRkU36AI4QgfxyXWLcIMM=" crossorigin="anonymous")
+  link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-file-upload@4.0.11/css/uploadfile.min.css")
+  script(src="/js/jquery.fileupload.js")
+  script(src="/js/creerDevis.js")
+
+block content
+  h3 Envoyer un devis pour le compte de l'AAVO
+  form(method="POST")#quote
+    .row
+      .col-6
+        label.form-label(for="details") Résumé du devis (en quelques mots) :
+        textarea.form-control#details(name="details" rows="6" cols="50") #{$line['details']}
+    .row.mt-4
+      h4 Liste des fichiers
+      .col-6.mb-3
+        label.form-label(for="fileUpload") Envoyer un fichier
+        input.form-control(type="file" multiple action="/ajoutFichierAuDevis")#fileUpload
+      table.table.table-striped#list
+        thead
+          tr
+            th(width="15%") Nom
+            th(width="10%") Type de fichier
+            th(width="10%") Taille
+            th(width="10%") Actions
+        tbody
+    .row.mt-3.mb-3
+    .row.d-block.d-sm-none.justify-content-md-center
+      .btn-group-vertical(role="group")
+        button.btn.btn-success.enregistrer Enregistrer
+        button.btn.btn-danger.abandon Abandonner
+    .row.d-none.d-sm-block.justify-content-md-center
+      .btn-group
+        button.btn.btn-success.enregistrer Enregistrer
+        button.btn.btn-danger.abandon Abandonner

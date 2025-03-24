@@ -24,6 +24,7 @@ block content
             option(value="validated") Les membres ayant validés leurs CFE
             option(value="0") Dispensés de CFE
             option(value="admin") Les admin
+            option(value="treasurer") Les trésoriers
             option(value="not0notDefault") Ni à CFE 0 ni au défaut
             option(value="noRevealWhenInDebt") Ne sortent pas lors de la vérification avec Click'n Glide des comptes négatifs
     .col-md-3
@@ -44,10 +45,11 @@ block content
             th Détails
             th Propriétaire
             th Admin
+            th Trésorier
             th Affichage compte négatif
         tbody
           each membre in $membres
-            tr(x-num=$membre['givavNumber'] x-name=$membre['name'] x-isAdmin=$membre['isAdmin'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'] x-noRevealWhenInDebt=$membre['noRevealWhenInDebt'] x-isOwnerOfGlider=$membre['isOwnerOfGlider'])
+            tr(x-num=$membre['givavNumber'] x-name=$membre['name'] x-isAdmin=$membre['isAdmin'] x-isTreasurer=$membre['isTreasurer'] x-cfeTODO=$membre['cfeTODO'] x-cfeValidated=$membre['cfeValidated'], x-cfeCompleted=$membre['cfeCompleted'] x-noRevealWhenInDebt=$membre['noRevealWhenInDebt'] x-isOwnerOfGlider=$membre['isOwnerOfGlider'])
               td
                 if ($inSudo == false) && ($currentUser != $membre['givavNumber'])
                   button.btn.btn-secondary.sudo
@@ -72,6 +74,7 @@ block content
                   span.d-none.d-sm-block2 &nbsp;Détails
               td.isOwnerOfGlider
               td.isAdmin
+              td.isTreasurer
               td.noRevealWhenInDebt
           tr.sum
             td.text-end
@@ -95,6 +98,7 @@ block content
             th Détails
             th Propriétaire
             th Admin
+            th Trésorier
             th Affichage compte négatif
   .row
     .col-4

@@ -1,6 +1,9 @@
 var proposalId = null;
 
 $(document).ready(function() {
+    $(".creerDevis").click(function() {
+        window.location = "/creerDevis";
+    });
     $(".declaration").click(function() {
         window.location = "/declaration";
     });
@@ -9,6 +12,9 @@ $(document).ready(function() {
     });
     $(".listeCFE").click(function() {
         window.location = "/listeCFE";
+    });
+    $(".listeDevis").click(function() {
+        window.location = "/listeDevis";
     });
     $(".listeFormulaires").click(function() {
         window.location = "/listeFormulaires";

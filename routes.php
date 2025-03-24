@@ -195,6 +195,31 @@ post('/changeIsOwnerOfGlider', function($conn) {
     Personne::modifieIsOwnerOfGlider($conn, intval($_POST['num']), $isOwnerOfGlider);
 });
 
+post('/changeTreasurer', function($conn) {
+    if (!isset($_SESSION['auth'])) {
+        echo "vous n'êtes pas connecté";
+        return http_response_code(500);
+    }
+    if (!isset($_SESSION['isAdmin'])) {
+        echo "vous n'êtes pas admin";
+        return http_response_code(500);
+    }
+    foreach ([ 'num', 'status' ] as $elem) {
+        if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+            echo "le paramètre ".$elem." est absent";
+            return http_response_code(500);
+        }
+    }
+    if (!is_numeric($_POST['num'])) {
+        echo "le paramètre num doit être un entier";
+        return http_response_code(500);
+    }
+    $status = false;
+    if ($_POST['status'] === 'true')
+        $status = true;
+    Personne::modifieStatutTreasurer($conn, intval($_POST['num']), $status);
+});
+
 post('/changeNoRevealWhenInDebt', function($conn) {
     if (!isset($_SESSION['auth'])) {
         echo "vous n'êtes pas connecté";
@@ -218,6 +243,39 @@ post('/changeNoRevealWhenInDebt', function($conn) {
     if ($_POST['status'] === 'true')
         $status = true;
     Personne::modifieStatutNoRevealWhenInDebt($conn, intval($_POST['num']), $status);
+});
+
+post('/changeStatutDevis', function($conn) {
+    if (!isset($_SESSION['auth'])) {
+        echo "vous n'êtes pas connecté";
+        return http_response_code(500);
+    }
+    if (!isset($_SESSION['isAdmin'])) {
+        echo "vous n'êtes pas admin";
+        return http_response_code(500);
+    }
+    if (Personne::isTreasurer($conn, $_SESSION['givavNumber']) === false) {
+        echo "impossible de modifier ce devis, vous n'êtes pas trésorier";
+        return http_response_code(500);
+    }
+    foreach ([ 'num', 'status' ] as $elem) {
+        if (!isset($_POST[$elem]) || $_POST[$elem] === '') {
+            echo "le paramètre ".$elem." est absent";
+            return http_response_code(500);
+        }
+    }
+    if (!is_numeric($_POST['num'])) {
+        echo "le paramètre num doit être un entier";
+        return http_response_code(500);
+    }
+    if ($_POST['status'] != 'rejected' && $_POST['status'] != 'validated') {
+        echo "le paramètre status devrait être rejected ou validated";
+        return http_response_code(500);
+    }
+    $quotes = new Devis($conn);
+    $quote = $quotes->get($_POST['num']);
+    $quotes->updateStatus($_POST['num'], $_POST['status']);
+    echo "ok";
 });
 
 get('/cnb', function($conn, $pug) {
@@ -266,6 +324,26 @@ post('/connexion', function($conn, $pug, $env) {
     }
     $vars['error'] = "Pilote inconnu du GIVAV";
     $pug->displayFile('view/connexion.pug', $vars);
+});
+
+get('/creerDevis', function($conn, $pug) {
+    if (!isset($_SESSION['auth'])) {
+        return redirect('/connexion');
+    }
+    $pug->displayFile('view/creerDevis.pug');
+});
+
+// le contenu des fichiers est dans le json, ça pourrait être plus joli
+post('/creerDevis', function($conn, $pug) {
+    if (!isset($_SESSION['auth'])) {
+        return redirect('/connexion');
+    }
+    $quotes = new Devis($conn);
+    $id = $quotes->create($_POST['details'], $_SESSION['givavNumber']);
+    foreach ($_POST['files'] as $file) {
+        $quotes->addFile($id, $file['name'], $file['size'], $file['type'], $file['data']);
+    }
+    echo "ok";
 });
 
 get('/debiteurDuJour', function($conn, $pug, $env) {
@@ -797,6 +875,22 @@ get('/deleteFormAnswer', function($conn, $pug, $env) {
     redirect('/listeFormulaires?formulaire='.$answer['name']);
 });
 
+post('/detailsDevis', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    if (!is_numeric($_POST['id']))
+        return apiReturnError("id doit être un nombre");
+    $quotes = new Devis($conn);
+    $quote = $quotes->get($_POST['id']);
+    if (Personne::isTreasurer($conn, $_SESSION['givavNumber']) === false) {
+        if ($quote['who'] != $_SESSION['givavNumber']) {
+            echo json_encode([ 'error' => "Vous ne pouvez pas voir un devis dont vous n'êtes pas l'initiateur" ]);
+            return;
+        }
+    }
+    echo json_encode($quote);
+});
+
 get('/detailsMachine', function($conn, $pug) {
     if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
         return redirect('/');
@@ -1008,6 +1102,30 @@ get('/exportAllData', function($conn) {
     $zip->finish();
 });
 
+get('/fichierDevis', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    if (!is_numeric($_GET['id']))
+        return apiReturnError("id doit être un nombre");
+    $quotes = new Devis($conn);
+    $file = $quotes->getFile($_GET['id']);
+    $quote = $quotes->get($file['quotation_id']);
+    if (Personne::isTreasurer($conn, $_SESSION['givavNumber']) === false) {
+        if ($quote['who'] != $_SESSION['givavNumber'])
+            throw new Exception("Vous ne pouvez pas voir un fichier dont vous n'êtes pas l'initiateur");
+    }
+    if (isset($_GET['telecharger']))
+        header('Content-Disposition: attachment; filename="'.$file['filename'].'"');
+    else
+        header('Content-Disposition: inline; filename="'.$file['filename'].'"');
+    header('Expires: 0');
+    header('Cache-Control: must-revalidate');
+    header('Pragma: public');
+    header('Content-type: '.$file['mime']);
+    echo base64_decode($quotes->getFileData($_GET['id']));
+});
+
+
 get('/forms/$what', function($conn, $pug, $env, $parameters) {
     if (count($parameters) === 0) {
         http_response_code(404);
@@ -1152,6 +1270,21 @@ get('/listeDernieresCFE', function($conn, $pug) {
     $pug->displayFile('view/listeDernieresCFE.pug', $vars);
 });
 
+get('/listeDevis', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    $vars = $_SESSION;
+    $quotes = new Devis($conn);
+    if (Personne::isTreasurer($conn, $_SESSION['givavNumber']) === true) {
+        $lines = $quotes->listAll($_SESSION['givavNumber']);
+        $vars['listeDevis'] = $lines;
+        return $pug->displayFile('view/listeDevisTous.pug', $vars);
+    }
+    $lines = $quotes->listMine($_SESSION['givavNumber']);
+    $vars['listeDevis'] = $lines;
+    $pug->displayFile('view/listeDevis.pug', $vars);
+});
+
 get('/listeCFE', function($conn, $pug) {
     if (!isset($_SESSION['auth']))
         return redirect('/');
@@ -1260,6 +1393,23 @@ get('/refreshCache', function($conn, $pug, $env) {
 get('/robots.txt', function($conn) {
     header('Content-Type: text/plain');
     echo "User-agent: *".PHP_EOL."Disallow: /".PHP_EOL;
+});
+
+post('/supprimerDevis', function($conn, $pug) {
+    if (!isset($_SESSION['auth']))
+        return redirect('/');
+    if (!is_numeric($_POST['id']))
+        return apiReturnError("id doit être un nombre");
+    $quotes = new Devis($conn);
+    $quote = $quotes->get($_POST['id']);
+    if (Personne::isTreasurer($conn, $_SESSION['givavNumber']) === true) {
+        $quotes->delete($_POST['id']);
+        echo "ok";
+        return;
+    }
+    if ($quote['who'] != $_SESSION['givavNumber'])
+        return apiReturnError("Vous ne pouvez pas supprimer un devis dont vous n'êtes pas l'initiateur");
+    $quotes->delete($_POST['id']);
 });
 
 get('/tableau-de-bord', function($conn, $pug) {

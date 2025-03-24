@@ -1,0 +1,90 @@
+extends layout.pug
+
+block scripts
+  title Liste des devis
+  script(src="js/listeDevis.js")
+
+block content
+  .row
+    h1 Liste des devis
+  .row
+    .col-md-1
+      .hstack.gap-4.mb-3
+        button.btn.btn-danger.back Retour
+    .col-md-3
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="Détails")#search
+  .row
+    .col-12
+      table.table.table-striped#list
+        thead
+          tr
+            th(width="10%") Voir
+            th(width="10%") Supprimer
+            th(width="10%") Statut
+            th(width="10%") Date
+            th(width="60%") Détails
+        tbody
+          each devis in $listeDevis
+            tr(x-id=$devis['id'])
+              td
+                button.btn.btn-primary.displayDetails
+                  i.bi.bi-binoculars-fill.me-2
+                  span.d-none.d-sm-block2 &nbsp;Voir
+              td
+                if ($devis['status'] == 'submitted')
+                  button.btn.btn-danger.delete
+                    i.bi.bi-trash.me-2
+                    span.d-none.d-sm-block2 &nbsp;Supprimer
+              td
+                case $devis['status']
+                  when 'submitted'
+                    span Soumis
+                  when 'validated'
+                    span Validé
+                  default
+                    span Rejeté
+              td #{timestampToDate($devis['when'])}
+              td #{my_substr($devis['details'], 30)}
+        tfoot
+          tr
+            th Voir
+            th Supprimer
+            th Statut
+            th Date
+            th Détails
+  .hstack.gap-4.mb-3
+    button.btn.btn-danger.back Retour
+
+  .modal(tabindex="-1" role="dialog" aria-hidden="true")#modalDetails
+    .modal-dialog.modal-xl
+      .modal-content
+        .modal-header
+          h5 Détails
+          button.btn.btn-close(type="button" data-bs-dismiss="modal")
+        .modal-body
+          p#date
+          p
+            b Détails:
+          p#details
+          p
+            b Liste des fichiers :
+          table.table.table-striped#fileList
+            thead
+              tr
+                th(width="10%")
+                th(width="40%") Nom
+                th(width="10%") Type
+                th(width="10%") Taille
+            tbody
+            tfoot
+              tr
+                th
+                th Nom
+                th Type
+                th Taille
+        tbody
+        .modal-footer
+          button.btn.btn-secondary(type="button" data-bs-dismiss="modal") Ok

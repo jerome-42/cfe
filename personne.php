@@ -43,6 +43,17 @@ class Personne {
             throw new Exception("Impossible de changer le statut noRevealWhenInDebt de l'utilisateur");
     }
 
+    static public function modifieStatutTreasurer($conn, $num, $statut) {
+        if ($statut === true)
+            $query = "UPDATE personnes set isTreasurer = true WHERE givavNumber = :num";
+        else
+            $query = "UPDATE personnes set isTreasurer = false WHERE givavNumber = :num";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':num' => $num ]);
+        if ($sth->rowCount() !== 1)
+            throw new Exception("Impossible de changer le statut isTreasurer de l'utilisateur");
+    }
+
     static public function creeOuMAJ($conn, $user) {
         $query = "INSERT INTO personnes (name, email, givavNumber) VALUES (:name, :email, :num) ON DUPLICATE KEY UPDATE name = :name, email = :email";
         $sth = $conn->prepare($query);
@@ -142,6 +153,13 @@ ORDER BY name";
 
     static public function estAdmin($conn, $numGivav) {
         $query = "SELECT 1 FROM personnes WHERE givavNumber = :num AND isAdmin IS true";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':num' => $numGivav ]);
+        return $sth->rowCount() === 1;
+    }
+
+    static public function isTreasurer($conn, $numGivav) {
+        $query = "SELECT 1 FROM personnes WHERE givavNumber = :num AND isTreasurer IS true";
         $sth = $conn->prepare($query);
         $sth->execute([ ':num' => $numGivav ]);
         return $sth->rowCount() === 1;

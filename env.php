@@ -14,6 +14,7 @@ include_once __DIR__ . '/ogn.php';
 include_once __DIR__ . '/osrt.php';
 include_once __DIR__ . '/personne.php';
 include_once __DIR__ . '/proposals.php';
+include_once __DIR__ . '/quotes.php';
 include_once __DIR__ . '/settings.php';
 include_once __DIR__ . '/smartGlide.php';
 

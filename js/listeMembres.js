@@ -37,6 +37,20 @@ var changeIsOwnerOfGlider = function(num, isOwnerOfGlider) {
     });
 };
 
+var changeIsTreasurer = function(num, status) {
+    $.ajax({
+        url: '/changeTreasurer',
+        data: { num: num, status: status },
+        type: 'POST',
+        error: function() {
+	    alert("Impossible");
+        },
+        success: function(res) {
+	    // ok
+        }
+    });
+};
+
 var changeNoRevealWhenInDebt = function(num, status) {
     $.ajax({
         url: '/changeNoRevealWhenInDebt',
@@ -63,6 +77,13 @@ var displayIsOwnerOfGlider = function(elem) {
 	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2 small">&nbsp;Enlever le statut propriétaire</span></button>'));
     else
 	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2 small">&nbsp;Déclarer comme étant propriétaire</span></button>'));
+};
+
+var displayIsTreasurer = function(elem) {
+    if (elem.parents('tr').attr('x-isTreasurer') === '1')
+	elem.html($('<button type="button" class="btn btn-danger"><i class="bi bi-check2-circle"></i><span class="d-none d-sm-block2">&nbsp;Révoquer les droits trésorier</span></button>'));
+    else
+	elem.html($('<button type="button" class="btn btn-success"><i class="bi bi-circle"></i><span class="d-none d-sm-block2">&nbsp;Passer trésorier</span></button>'));
 };
 
 var displayNoRevealWhenInDebt = function(elem) {
@@ -154,6 +175,10 @@ var updateList = function() {
 	    if (parseFloat($(this).attr('x-cfeValidated')) === 0)
 		displayLine = false;
 	    break;
+	case 'treasurer':
+	    if ($(this).attr('x-isTreasurer') === '0')
+		displayLine = false;
+	    break;
 	case 'validated':
 	    if ($(this).attr('x-cfeCompleted') === '0')
 		displayLine = false;
@@ -206,6 +231,21 @@ $(document).ready(function() {
 		changeAdmin($(this).parents('tr').attr('x-num'), true);
 	    }
 	    displayIsAdmin($(this));
+	});
+    $('#list').find('td.isTreasurer')
+	.each(function() {
+	    displayIsTreasurer($(this));
+	})
+	.click(function() {
+	    if ($(this).parents('tr').attr('x-isTreasurer') === '1') {
+		$(this).parents('tr').attr('x-isTreasurer', 0);
+		changeIsTreasurer($(this).parents('tr').attr('x-num'), false);
+	    }
+	    else {
+		$(this).parents('tr').attr('x-isTreasurer', 1);
+		changeIsTreasurer($(this).parents('tr').attr('x-num'), true);
+	    }
+	    displayIsTreasurer($(this));
 	});
     $('#list').find('td.isOwnerOfGlider')
 	.each(function() {

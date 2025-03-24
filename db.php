@@ -117,7 +117,7 @@ $tables = [
     ],
 
 
-    'cfe_todo' => "CREATE TABLE `cfe_todo` (
+  'cfe_todo' => "CREATE TABLE `cfe_todo` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `who` bigint unsigned NOT NULL,
   `year` int unsigned NOT NULL,
@@ -126,7 +126,26 @@ $tables = [
   UNIQUE INDEX `cfe_todo_unique` (`who`, `year`)
 ) ENGINE=InnoDB",
 
-    'va' => "CREATE TABLE `va` (
+  'quotation' => "CREATE TABLE `quotation` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `who` bigint unsigned NOT NULL,
+  `when` date NOT NULL,
+  `details` text NOT NULL,
+  `status` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB",
+
+  'quotation_files' => "CREATE TABLE `quotation_files` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `quotation_id` bigint unsigned NOT NULL,
+  `filename` varchar(255) NOT NULL,
+  `size`bigint unsigned NOT NULL,
+  `mime` varchar(255) NOT NULL,
+  `data` longblob NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB",
+
+  'va' => "CREATE TABLE `va` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `who` bigint unsigned NOT NULL,
   `year` int unsigned NOT NULL,
