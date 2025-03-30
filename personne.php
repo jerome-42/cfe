@@ -1,6 +1,28 @@
 <?php
 
 class Personne {
+    static public function emailInscritCetteAnnee($conn, $email) {
+        $query = "SELECT 1 FROM personnes
+JOIN personnes_active ON personnes_active.id_personne = personnes.id
+WHERE email = :email AND year = YEAR(NOW())";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':email' => $email ]);
+        if ($sth->rowCount() === 1)
+            return true;
+        return false;
+    }
+
+    static public function emailInscrit3Ans($conn, $email) {
+        $query = "SELECT 1 FROM personnes
+JOIN personnes_active ON personnes_active.id_personne = personnes.id
+WHERE email = :email AND year >= YEAR(NOW()) - 3";
+        $sth = $conn->prepare($query);
+        $sth->execute([ ':email' => $email ]);
+        if ($sth->rowCount() >= 1)
+            return true;
+        return false;
+    }
+
     static public function loadOGN($conn) {
         $query = "SELECT * FROM personnes WHERE name = 'OGN'";
         $sth = $conn->prepare($query);

@@ -1,0 +1,47 @@
+extends layout.pug
+
+block scripts
+  title Mailing lists
+  script(src="js/mailingLists.js")
+
+block content
+  .row
+    h1 Mailing lists
+  .row.d-print-none
+    .col-md-3
+      button.btn.btn-danger.back Retour
+      button.btn.btn-primary.download Télécharger
+      button.btn.btn-success.add Ajouter un abonné
+    .col-md-3
+      select.form-control#mailingList
+        each list in $mailingLists
+          option(value=$listo)= $list
+    .col-md-3
+      .row
+        label.col-sm-3.col-form-label(for="search") Recherche:&nbsp;
+        .col-sm-9
+          input.form-control(type="text" placeholder="nom / prénom")#search
+  .row
+    .col-4
+      .table-responsive-xxl.d-print-50
+        table.table.table-striped#list
+          thead
+            tr
+              th(width="1%") Supprimer
+              th(width="15%") Email
+              th(width="10%") Inscrit cette année
+              th(width="10%") Inscrit sur les 3 dernières années
+          tbody
+          tfoot.d-print-none
+            tr
+              th Supprimer
+              th Email
+              th Inscrit cette année
+              th Inscrit sur les 3 dernières années
+  .row.mb-4
+    .col-1
+      div#total
+  .hstack.gap-2.mb-3.d-print-none
+    button.btn.btn-danger.back Retour
+    button.btn.btn-primary.download Télécharger
+    button.btn.btn-success.add Ajouter un abonné

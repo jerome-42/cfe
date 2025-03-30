@@ -315,6 +315,8 @@ post('/connexion', function($conn, $pug, $env) {
         $_SESSION['name'] = $user['name'];
         $_SESSION['mail'] = $user['mail'];
         $_SESSION['id'] = $userData['id'];
+        $ovh = new OVH($env->config['ovh']);
+        $ovh->addSubscriberToMailingList($env->config['ovh']['domain'], $env->config['ovh']['mailingList'], $user['mail']);
         syslog(LOG_INFO, "CFE ".getClientIP()." ".$user['number']." ".$user['name']." logged");
         return redirect('/');
     }
@@ -1349,6 +1351,74 @@ get('/listePropositions', function($conn, $pug, $env) {
     $vars = array_merge($_SESSION, [ 'currentUser' => $_SESSION['givavNumber'],
                                      'proposals' => $proposals->list(), ]);
     $pug->displayFile('view/listePropositions.pug', $vars);
+});
+
+get('/mailingLists', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $ovh = new OVH($env->config['ovh']);
+    $mailingLists = $ovh->getMailingList($env->config['ovh']['domain']);
+    sort($mailingLists);
+    $vars = array_merge($_SESSION, [ 'mailingLists' => $mailingLists ]);
+    $pug->displayFile('view/mailingLists.pug', $vars);
+});
+
+post('/mailingLists/addSubscriber', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $ovh = new OVH($env->config['ovh']);
+    if (preg_match('/^[a-zA-Z0-9]+$/', $_POST['listName']) !== 1) {
+        http_response_code(400); // bad request
+        echo "le nom de la liste '".$_POST['listName']."' n'est pas correct";
+        return;
+    }
+    if (filter_var($_POST['subscriber'], FILTER_VALIDATE_EMAIL) === false) {
+        http_response_code(400); // bad request
+        echo "l'email '".$_POST['subscriber']."' n'est pas correct";
+        return;
+    }
+    $ovh->addSubscriberToMailingList($env->config['ovh']['domain'], $_POST['listName'], $_POST['subscriber']);
+    return;
+});
+
+post('/mailingLists/getSubscribers', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $ovh = new OVH($env->config['ovh']);
+    if (preg_match('/^[a-zA-Z0-9]+$/', $_POST['listName']) !== 1) {
+        http_response_code(400); // bad request
+        echo json_encode([ "error" => "le nom de la liste '".$_POST['listName']."' n'est pas correct" ]);
+        return;
+    }
+    $subscribers = $ovh->getSubscribers($env->config['ovh']['domain'], $_POST['listName']);
+    sort($subscribers);
+    $listSubscribers = [];
+    foreach ($subscribers as $email) {
+        $listSubscribers[] = [
+            'email' => $email,
+            'inscritGivavCetteAnnee' => Personne::emailInscritCetteAnnee($conn, $email),
+            'inscritGivav3Ans' => Personne::emailInscrit3Ans($conn, $email),
+        ];
+    }
+    echo json_encode([ 'subscribers' => $listSubscribers ]);
+});
+
+post('/mailingLists/removeSubscriber', function($conn, $pug, $env) {
+    if (!isset($_SESSION['auth']) || $_SESSION['isAdmin'] === false)
+        return redirect('/');
+    $ovh = new OVH($env->config['ovh']);
+    if (preg_match('/^[a-zA-Z0-9]+$/', $_POST['listName']) !== 1) {
+        http_response_code(400); // bad request
+        echo "le nom de la liste '".$_POST['listName']."' n'est pas correct";
+        return;
+    }
+    if (filter_var($_POST['subscriber'], FILTER_VALIDATE_EMAIL) === false) {
+        http_response_code(400); // bad request
+        echo "l'email '".$_POST['subscriber']."' n'est pas correct";
+        return;
+    }
+    $ovh->removeSubscriberFromMailingList($env->config['ovh']['domain'], $_POST['listName'], $_POST['subscriber']);
+    return;
 });
 
 get('/parametresFlarm', function($conn, $pug) {

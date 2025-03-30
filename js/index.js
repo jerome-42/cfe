@@ -22,6 +22,9 @@ $(document).ready(function() {
     $(".listeMachines").click(function() {
         window.location = "/listeMachines";
     });
+    $(".mailingLists").click(function() {
+        window.location = "/mailingLists";
+    });
     $('.logout').click(function() {
         window.location = '/deconnexion';
     });

@@ -64,7 +64,7 @@ let getFormsName = function() {
 let getUrlParameter = function(param) {
     let urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
-}
+};
 
 let timestampToDate = function(timestamp) {
     let d = new Date(timestamp * 1000);
